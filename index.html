@@ -948,11 +948,11 @@ function renderPersonalDials(anchorMs) {
          + ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
   function addLabel(angleDeg, word, timeStr) {
-    const LR = 62;
+    const LR = 66;
     const [lx, ly] = pol(angleDeg, LR);
-    const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(5,8,20,0.85)" stroke-width="3" stroke-linejoin="round"';
-    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-4.5).toFixed(1) + '" font-size="7" font-weight="700" fill="rgba(228,218,193,0.95)" letter-spacing="0.5">' + word + '</text>'
-         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+4.5).toFixed(1) + '" font-size="7" fill="rgba(228,218,193,0.75)">' + timeStr + '</text>';
+    const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="5" stroke-linejoin="round"';
+    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6).toFixed(1) + '" font-size="9.5" font-weight="700" fill="rgba(245,235,215,1)" letter-spacing="0.6">' + word + '</text>'
+         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6).toFixed(1) + '" font-size="9" fill="rgba(235,225,200,0.97)">' + timeStr + '</text>';
   }
 
   const items = Array.from({length: 21}, function(_, i) {
@@ -1012,7 +1012,7 @@ function renderPersonalDials(anchorMs) {
     svg += addLabel(AWAKE_H * D24, 'REST', fmtShort(cardSleepMs));
 
     return '<div class="mini-dial-item">'
-      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 170 170">' + svg + '</svg>'
+      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
       + '</div>';
   });
 
@@ -1041,11 +1041,11 @@ function renderMiniDials(anchorMs) {
          + ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
   function addLabel(angleDeg, word, timeStr) {
-    const LR = 62;
+    const LR = 66;
     const [lx, ly] = pol(angleDeg, LR);
-    const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(5,8,20,0.85)" stroke-width="3" stroke-linejoin="round"';
-    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-4.5).toFixed(1) + '" font-size="7" font-weight="700" fill="rgba(228,218,193,0.95)" letter-spacing="0.5">' + word + '</text>'
-         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+4.5).toFixed(1) + '" font-size="7" fill="rgba(228,218,193,0.75)">' + timeStr + '</text>';
+    const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="5" stroke-linejoin="round"';
+    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6).toFixed(1) + '" font-size="9.5" font-weight="700" fill="rgba(245,235,215,1)" letter-spacing="0.6">' + word + '</text>'
+         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6).toFixed(1) + '" font-size="9" fill="rgba(235,225,200,0.97)">' + timeStr + '</text>';
   }
 
   const items = Array.from({length: 21}, function(_, i) {
@@ -1111,12 +1111,20 @@ function renderMiniDials(anchorMs) {
       }
     }
 
-    // Food segments: pure angular — anchored to wake angle, sin/cos handle midnight wrap
-    const wAngle = wRelH * D24;
+    // Food segments: clipped to visible cream arc [creamStart, creamEnd]
+    const wAngle    = wRelH * D24;
+    const creamStartA = Math.max(0, wAngle);
+    const creamEndA   = Math.min(360, wAngle + AWAKE_H * D24);
     let _cum = 0;
     PERSONAL.pieChart.forEach(seg => {
-      if (seg.type === 'food')
-        svg += '<path d="' + sector(wAngle + _cum * D24, wAngle + (_cum + seg.hours) * D24, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+      if (seg.type === 'food') {
+        const fa0 = wAngle + _cum * D24;
+        const fa1 = wAngle + (_cum + seg.hours) * D24;
+        const dfa0 = Math.max(fa0, creamStartA);
+        const dfa1 = Math.min(fa1, creamEndA);
+        if (dfa1 > dfa0 + 0.01)
+          svg += '<path d="' + sector(dfa0, dfa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+      }
       _cum += seg.hours;
     });
 
@@ -1130,11 +1138,13 @@ function renderMiniDials(anchorMs) {
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
-    svg += addLabel(wAngle, 'AWAKE', fmtShort(cardWakeMs));
-    svg += addLabel(wAngle + AWAKE_H * D24, 'REST', fmtShort(cardSleepMs));
+    const awakeAngle = Math.max(0, Math.min(360, wAngle));
+    const restAngle  = Math.min(360, wAngle + AWAKE_H * D24);
+    svg += addLabel(awakeAngle, 'AWAKE', fmtShort(cardWakeMs));
+    svg += addLabel(restAngle,  'REST',  fmtShort(cardSleepMs));
 
     return '<div class="mini-dial-item">'
-      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 170 170">' + svg + '</svg>'
+      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
       + '</div>';
   });
 
