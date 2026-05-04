@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rikki's Circadian Universe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a1a;--bg2:#212121;--bg3:#2a2a2a;
+  --gold:#c9a84c;--gold2:#e8c978;
+  --warm:#f0ebe3;--dim:#999;--dim2:#666;--dim3:#444;
+  --indigo:#2d3070;--indigo2:#3d42a0;
+  --cream:#f4f0e8;--cream2:#e8e2d6;
+  --r:6px;
+  --pat-sleep:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M7,3.5 L7.7,6.3 L10.5,7 L7.7,7.7 L7,10.5 L6.3,7.7 L3.5,7 L6.3,6.3 Z' fill='rgba(90,100,200,0.55)'/%3E%3C/svg%3E");
+  --pat-dots:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1.3' fill='rgba(150,155,185,0.45)'/%3E%3C/svg%3E");
+}
+body{background:var(--bg);color:var(--warm);font-family:'Inter',sans-serif;font-size:15.5px;line-height:1.6}
+h1{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:400;color:var(--gold);letter-spacing:-.01em}
+h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;color:var(--gold);margin-bottom:4px;letter-spacing:-.01em}
+h3{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:400;color:var(--gold2);margin-bottom:8px}
+.container{max-width:1080px;margin:0 auto;padding:0 24px}
+.section{padding:52px 0}
+hr.div{border:none;border-top:1px solid #272727}
+.dim{color:var(--dim)}
+.gold{color:var(--gold)}
+
+/* ── API Status Bar ── */
+.api-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 24px;font-size:.78rem;border-bottom:1px solid #232323;
+  background:#161616;position:sticky;top:0;z-index:100;gap:12px}
+.api-bar.connected{border-left:3px solid #4a8c4a}
+.api-bar.disconnected{border-left:3px solid #8b7020}
+.api-bar.loading{border-left:3px solid #555}
+.api-bar.error{border-left:3px solid #8b3020}
+.api-msg{color:var(--dim);flex:1}
+.api-bar-btns{display:flex;gap:8px;flex-shrink:0}
+.api-btn{background:transparent;border:1px solid #333;color:var(--dim);
+  padding:3px 10px;border-radius:4px;font-size:.74rem;cursor:pointer;font-family:'Inter',sans-serif}
+.api-btn:hover{border-color:#555;color:var(--warm)}
+
+/* ── Settings Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#1e1e1e;border:1px solid #2e2e2e;border-radius:10px;
+  padding:28px 32px;width:520px;max-width:90vw}
+.modal h3{color:var(--gold);font-size:1.1rem;margin-bottom:4px}
+.modal p{color:var(--dim);font-size:.84rem;margin-bottom:18px;line-height:1.65}
+.modal label{display:block;font-size:.78rem;color:var(--dim2);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:5px}
+.modal input{width:100%;background:#141414;border:1px solid #333;border-radius:var(--r);
+  color:var(--warm);font-family:monospace;font-size:.88rem;padding:9px 12px;outline:none}
+.modal input:focus{border-color:var(--gold)}
+.modal-btns{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+.modal-note{font-size:.75rem;color:var(--dim3);margin-top:12px;line-height:1.6}
+
+/* ── Header ── */
+.page-hdr{padding:36px 0 20px}
+.tagline{color:var(--dim);font-size:0.88rem;margin-top:4px}
+
+/* ── Intro box ── */
+.intro-box{background:#1f1f1f;border:1px solid #2e2e2e;border-left:3px solid var(--gold);
+  border-radius:var(--r);padding:20px 24px;margin:28px 0 0;font-size:0.9rem;
+  color:var(--dim);line-height:1.75}
+.intro-box strong{color:var(--warm)}
+
+/* ── Section explanation ── */
+.chart-intro{font-size:.87rem;color:var(--dim);margin-bottom:16px;
+  padding:12px 16px;background:#1f1f1f;border-radius:var(--r);line-height:1.7}
+.chart-intro strong{color:var(--warm)}
+
+/* ── Sundial section ── */
+.sundial-layout{display:grid;grid-template-columns:420px 1fr;gap:40px;align-items:center}
+@media(max-width:700px){.sundial-layout{grid-template-columns:1fr}}
+.now-summary{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:24px 28px}
+.now-stat{margin-bottom:20px}
+.ns-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);margin-bottom:4px}
+.ns-val{font-size:2rem;font-weight:600;color:var(--warm);line-height:1.1}
+.ns-sub{font-size:.82rem;color:var(--dim);margin-top:4px}
+.now-plain{margin-top:20px;padding-top:20px;border-top:1px solid #2a2a2a;
+  font-size:.9rem;color:var(--dim);line-height:1.8}
+.now-plain strong{color:var(--warm)}
+.cycle-bar-wrap{margin-top:20px}
+.cb-label{font-size:.72rem;color:var(--dim2);margin-bottom:5px}
+.cb-track{height:6px;background:#2a2a2a;border-radius:3px;overflow:hidden}
+.cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
+
+/* ── Near-term cards ── */
+.near-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
+.near-card{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:14px 16px}
+.near-day{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim2);margin-bottom:10px}
+.near-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.nt-lbl{font-size:.73rem;color:var(--dim);white-space:nowrap}
+.nt-val{font-size:.88rem;color:var(--warm);font-weight:500;text-align:right}
+
+.near-sky{height:80px;border-radius:4px;margin:9px 0 7px;width:100%}
+
+/* ── Forecast grid ── */
+.grid-wrap{background:#07091a;border-radius:var(--r);padding:18px 18px 14px;overflow-x:auto}
+.hour-axis{position:relative;height:20px;margin-left:76px;margin-bottom:3px}
+.hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#556;font-family:'Inter',sans-serif}
+.hour-anchor{color:var(--gold);font-weight:500;font-size:9px}
+.grid-row{display:flex;align-items:center;margin-bottom:1px;border-bottom:1px solid rgba(255,255,255,0.035)}
+.row-lbl{width:76px;flex-shrink:0;font-size:10.5px;color:#556;font-family:'Inter',sans-serif;
+  text-align:right;padding-right:8px;white-space:nowrap}
+.row-timeline{flex:1;height:26px;position:relative;border-radius:2px;overflow:hidden}
+.today-row .row-lbl{color:var(--gold);font-weight:600}
+.wake-blk{position:absolute;top:0;bottom:0;background:rgba(201,168,76,0.13);border-radius:0}
+.sleep-blk{position:absolute;top:1px;bottom:1px;background-color:rgba(215,195,165,0.78);background-image:var(--pat-sleep);border-radius:2px;z-index:1}
+.conf-high{opacity:.88}
+.conf-med{opacity:.50}
+.conf-low{opacity:.22}
+.sun-tick{position:absolute;top:0;bottom:0;width:1px;z-index:2;background:rgba(196,168,80,.35)}
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.75);z-index:3;display:none}
+.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;
+  font-size:10.5px;color:#666;font-family:'Inter',sans-serif;align-items:center}
+.csw{display:inline-block;width:18px;height:9px;border-radius:2px;vertical-align:middle;margin-right:3px}
+.sleep-texture{background-color:rgba(215,195,165,0.78);background-image:var(--pat-sleep)}
+
+/* ── Hour table ── */
+.htbl-wrap{margin-top:20px;background:#07091a;border-radius:var(--r);padding:18px 18px 14px}
+.htbl-intro{font-size:.8rem;color:#556;margin-bottom:16px;line-height:1.7;max-width:640px}
+.htbl-scroll{overflow-x:auto}
+.htbl{border-collapse:collapse;font-family:'Inter',sans-serif;min-width:760px}
+.htbl-phase-hdr{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  text-align:center;padding:7px 0 6px;white-space:nowrap}
+.htbl-phase-hdr.ph-act{color:#8ab0cc;border-bottom:2px solid #2a4868}
+.htbl-phase-hdr.ph-rest{color:#3a4a60;border-bottom:2px solid #141e30}
+.htbl-col-hdr{font-size:8px;color:#445;text-align:center;padding:3px 0 4px;
+  font-weight:400;min-width:28px}
+.htbl-date{font-size:9px;color:#556;text-align:right;padding-right:9px;
+  white-space:nowrap;min-width:84px;background:transparent!important;vertical-align:middle}
+.htbl-today .htbl-date{color:var(--gold);font-weight:600}
+/* Cells: sky color as background (set inline per cell), texture = sleep/wake state */
+.htbl-aw{width:28px;height:26px;text-align:center;font-size:9.5px;
+  color:rgba(210,200,185,0.85);padding:0;vertical-align:middle;
+  border:1px solid rgba(255,255,255,0.06);line-height:26px}
+.htbl-sl{width:28px;height:26px;padding:0;vertical-align:middle;
+  background-image:var(--pat-sleep);
+  border:1px solid rgba(255,255,255,.03)}
+/* Row separator for readability */
+.htbl tbody tr{border-bottom:1px solid rgba(255,255,255,0.05)}
+.htbl-today .htbl-aw{outline:1px solid rgba(201,168,76,0.3)}
+.htbl-today .htbl-sl{outline:1px solid rgba(201,168,76,0.15)}
+.htbl-anchor{color:var(--gold)!important;font-weight:600;font-size:8px}
+
+/* ── Tau section ── */
+.tau-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+@media(max-width:700px){.tau-layout{grid-template-columns:1fr}}
+.tau-num{font-size:3.8rem;font-weight:700;font-family:'Playfair Display',serif;
+  color:var(--gold);line-height:1}
+.tau-unit{font-size:.9rem;color:var(--dim);margin-bottom:18px}
+.tau-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.85rem}
+.tau-bar-lbl{width:70px;color:var(--dim)}
+.tau-bar-outer{flex:1;height:10px;background:#2e2e2e;border-radius:3px;position:relative}
+.tau-bar-inner{position:absolute;top:0;left:0;height:100%;border-radius:3px}
+.tau-facts{font-size:.87rem;color:var(--dim);line-height:2;margin-top:18px}
+.tau-facts span{color:var(--warm)}
+.tau-quote{margin-top:20px;padding:16px 20px;border-left:3px solid var(--gold);
+  font-style:italic;color:var(--dim);font-size:.88rem;line-height:1.8}
+
+/* ── Biology ── */
+.bio-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:600px){.bio-stats{grid-template-columns:1fr}}
+.bio-stat{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:16px 18px}
+.bs-num{font-size:1.9rem;font-weight:600;color:var(--gold);line-height:1}
+.bs-unit{font-size:.73rem;color:var(--dim);margin-bottom:6px}
+.bs-desc{font-size:.81rem;color:var(--dim);line-height:1.5}
+
+/* ── States ── */
+.states-track{display:flex;border-radius:var(--r);overflow:hidden;height:8px;margin-bottom:10px}
+.state-seg:nth-child(1){flex:1;background:#4a3080}
+.state-seg:nth-child(2){flex:1;background:#3d6b3d}
+.state-seg:nth-child(3){flex:1;background:#c9a84c}
+.state-seg:nth-child(4){flex:1;background:#8b4513}
+.state-seg:nth-child(5){flex:1;background:#333}
+.states-labels{display:flex}
+.state-lbl{flex:1;font-size:.7rem;color:var(--dim);text-align:center;padding:0 2px;line-height:1.3}
+.state-lbl.cur{color:var(--gold);font-weight:600}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;
+  border-radius:var(--r);font-family:'Inter',sans-serif;font-size:.84rem;
+  font-weight:500;cursor:pointer;border:none;transition:all .2s}
+.btn-outline{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+.btn-outline:hover{background:rgba(201,168,76,.1)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px}
+.share-out{display:none;margin-top:10px;background:#1e1e1e;border:1px solid #333;
+  border-radius:var(--r);padding:14px;font-size:.81rem;font-family:monospace;
+  white-space:pre;color:var(--warm);line-height:1.8}
+
+/* ── Loading placeholder ── */
+.loading-placeholder{color:var(--dim3);font-size:.85rem;padding:20px 0;text-align:center}
+
+/* ── Flow Calendar ── */
+.fc-inner{margin:0}
+.fc-hdr{display:flex;align-items:flex-end;margin-bottom:4px}
+.fc-yr-lbl{width:36px;flex-shrink:0;font-size:.72rem;color:var(--dim2);text-align:right;padding-right:6px}
+.fc-mo-row{flex:1;position:relative;height:14px;font-size:.67rem;color:var(--dim2)}
+.fc-mo-row span{position:absolute;transform:translateX(-50%)}
+.fc-row{display:flex;align-items:center;margin-bottom:3px}
+.fc-cells{display:flex;gap:2px}
+.fc-cell{width:16px;height:22px;border-radius:2px;flex-shrink:0;cursor:default;transition:opacity .1s}
+.fc-cell:hover{opacity:.75}
+.fc-top{outline:2px solid var(--gold);outline-offset:-1px;z-index:2;position:relative}
+.fc-legend{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:.74rem;color:var(--dim)}
+.fc-grad{display:flex;gap:2px}
+.fc-gs{width:16px;height:10px;border-radius:1px}
+
+/* ── Footer ── */
+.page-footer{padding:22px 0;border-top:1px solid #252525;
+  text-align:center;font-size:.76rem;color:var(--dim2)}
+.about-section{padding:52px 0}
+.about-section p{color:var(--dim);font-size:.9rem;line-height:1.85;max-width:700px;margin-bottom:14px}
+.about-section p strong{color:var(--warm)}
+.about-section .about-cols{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px}
+@media(max-width:700px){.about-section .about-cols{grid-template-columns:1fr}}
+.about-section .about-block h3{margin-bottom:10px}
+.about-section .about-block p{margin-bottom:10px}
+
+/* ── Canvas Actogram ── */
+.acto-controls{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.acto-zoom-btn{background:#2a2a2a;border:1px solid #3a3a3a;color:var(--dim);
+  width:28px;height:28px;border-radius:4px;font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.acto-zoom-btn:hover{border-color:#555;color:var(--warm)}
+.acto-zoom-lbl{font-size:.78rem;color:var(--dim);min-width:60px}
+.acto-scroll{border:1px solid #2e2e2e;border-radius:var(--r) var(--r) 0 0;
+  overflow-y:scroll;overflow-x:hidden;height:600px;background:var(--cream)}
+#acto-mini-wrap{height:70px;background:var(--cream2);border:1px solid #2e2e2e;
+  border-top:none;border-radius:0 0 var(--r) var(--r);position:relative;overflow:hidden}
+#acto-mini{display:block;width:100%;height:70px;cursor:pointer}
+.mini-vp{position:absolute;top:0;left:0;right:0;background:rgba(201,168,76,.15);
+  border-top:1px solid rgba(201,168,76,.5);border-bottom:1px solid rgba(201,168,76,.5);
+  pointer-events:none}
+.acto-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--dim);
+  margin-top:10px;align-items:center}
+.csw-sm{display:inline-block;width:14px;height:8px;border-radius:2px;
+  vertical-align:middle;margin-right:4px}
+.acto-tt{position:fixed;background:#1a1a1a;border:1px solid #333;border-radius:6px;
+  padding:10px 14px;min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,.6);
+  pointer-events:none;z-index:500;display:none}
+.tt-date{font-size:.78rem;color:var(--gold);font-weight:600;
+  margin-bottom:8px;font-family:'Playfair Display',serif}
+.tt-row{display:flex;justify-content:space-between;gap:16px;
+  font-size:.76rem;color:var(--dim);margin-bottom:3px}
+.tt-row span:last-child{color:var(--warm);font-weight:500}
+.tt-gap{margin-top:4px;padding-top:4px;border-top:1px solid #2e2e2e}
+.tt-gap .tt-row span:last-child{color:var(--gold)}
+
+/* ── Analysis Charts ── */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px}
+@media(max-width:800px){.analysis-grid{grid-template-columns:1fr}}
+.analysis-panel{background:#1e1e1e;border:1px solid #2e2e2e;border-radius:var(--r);padding:20px 22px}
+.analysis-panel h3{margin-bottom:6px}
+.analysis-desc{font-size:.81rem;color:var(--dim);margin-bottom:14px;line-height:1.65}
+.analysis-chart{overflow-x:auto}
+.analysis-chart svg{display:block}
+.chart-loading{color:var(--dim3);font-size:.83rem;padding:40px 0;text-align:center}
+.hist-loading-bar{background:#2a2a2a;border-radius:3px;height:6px;
+  overflow:hidden;margin-top:14px;margin-bottom:6px}
+.hist-loading-fill{height:100%;background:var(--gold);border-radius:3px;
+  transition:width .3s;width:0%}
+.hist-status{font-size:.78rem;color:var(--dim);text-align:center}
+</style>
+</head>
+<body>
+
+<!-- API Status Bar -->
+<div id="api-bar" class="api-bar loading">
+  <span class="api-msg" id="api-msg">Connecting to Oura…</span>
+  <div class="api-bar-btns">
+    <button class="api-btn" onclick="forceRefresh()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="page-hdr">
+    <h1>Rikki's Circadian Universe</h1>
+    <div class="tagline">A 25.40-hour biological day tracked in real time · All times Eastern Standard (EST)</div>
+  </div>
+
+  <!-- SECTION 1: RIGHT NOW -->
+  <div class="section">
+    <h2 style="margin-bottom:6px">Right Now</h2>
+    <p class="dim" style="margin-bottom:24px;font-size:.88rem">
+      The dial maps position within a 25.40-hour biological day. Hour 0 marks wake time; the hand
+      advances clockwise through the active phase into the scheduled rest window. Position updates every 15 minutes.
+    </p>
+    <div class="sundial-layout">
+      <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:420px;display:block;margin:0 auto">
+        <defs>
+          <!-- 4-pointed star: sleep symbol -->
+          <pattern id="sleep-stars" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+            <path d="M7,3.5 L7.7,6.3 L10.5,7 L7.7,7.7 L7,10.5 L6.3,7.7 L3.5,7 L6.3,6.3 Z" fill="rgba(140,155,240,0.65)"/>
+          </pattern>
+          <!-- soft dot: transitional/hazy symbol -->
+          <pattern id="transition-dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+            <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.45)"/>
+          </pattern>
+          <!-- pie-ring sleep overlay -->
+          <pattern id="pie-sleep-stars" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M5,2 L5.5,4.5 L8,5 L5.5,5.5 L5,8 L4.5,5.5 L2,5 L4.5,4.5 Z" fill="rgba(100,110,210,0.6)"/>
+          </pattern>
+          <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
+          </pattern>
+        </defs>
+        <!-- Pie chart ring (populated by drawPieChart in JS) -->
+        <g id="pie-ring"></g>
+        <circle cx="220" cy="220" r="170" fill="none" stroke="#333" stroke-width="1"/>
+        <!-- Outer ring: 25.4h scale, clock times at each personal-hour position (populated by drawOuterClock in JS) -->
+        <g id="outer-clock"></g>
+        <text x="220.00" y="23.00"  fill="#c9a84c" font-size="12" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Wake</text>
+        <!-- Current-time marker: same 25.4h scale as hand, label shows actual clock time -->
+        <g id="outer-now">
+          <circle id="orn-dot" r="4.5" fill="rgba(255,255,255,0.9)" stroke="#1a1a1a" stroke-width="0.8"/>
+          <text id="orn-lbl" fill="rgba(255,255,255,0.85)" font-size="8.5" font-weight="500" text-anchor="middle"
+                dominant-baseline="middle" font-family="Inter,sans-serif"></text>
+        </g>
+        <!-- Center dot -->
+        <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
+        <!-- Center text -->
+        <text id="dial-center-1" x="220" y="202" fill="#f0ebe3" font-size="15" font-weight="600" text-anchor="middle" font-family="Inter,sans-serif">—</text>
+        <text id="dial-center-2" x="220" y="222" fill="#888" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">personal hour</text>
+        <text id="dial-center-3" x="220" y="242" fill="#666" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">—</text>
+        <!-- Hand (updated by JS) -->
+        <g id="dial-hand">
+          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
+          <circle id="hand-dot" cx="220" cy="76" r="6" fill="#c9a84c"/>
+        </g>
+      </svg>
+
+      <div class="now-summary">
+        <div class="now-stat">
+          <div class="ns-label">Personal hour</div>
+          <div class="ns-val" id="ns-hour">—</div>
+        </div>
+        <div class="now-stat">
+          <div class="ns-label" id="ns-next-label">Next sleep window</div>
+          <div class="ns-val" id="ns-next-time">—</div>
+          <div class="ns-sub" id="ns-next-sub">—</div>
+        </div>
+        <div class="cycle-bar-wrap">
+          <div class="cb-label">Cycle progress · 25.40h personal day</div>
+          <div class="cb-track"><div class="cb-fill" id="cb-fill" style="width:0%"></div></div>
+        </div>
+        <div class="now-plain" id="now-plain">—</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- SECTION 2: COMING UP -->
+  <div class="section">
+    <h2>Coming Up</h2>
+    <div class="chart-intro">
+      <strong>How to read these cards:</strong> Each card is one 25.40-hour cycle.
+      <strong>Awake</strong> marks the start of the active phase. <strong>Rest window</strong> marks the opening of the
+      rest window — approximately 12 hours long and sized to contain roughly 9 hours of actual sleep,
+      with buffer on either side for natural variation. Because each cycle is 84 minutes longer than
+      the calendar day, times shift later with every card.
+    </div>
+    <div class="near-grid" id="near-grid">
+      <div class="loading-placeholder">Loading from Oura…</div>
+    </div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn btn-outline" onclick="doShare()">⎘ Copy next 7 days as text</button>
+    </div>
+    <div class="share-out" id="share-out"></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- SECTION 3: 21-DAY FORECAST -->
+  <div class="section">
+    <h2>21-Day Forecast</h2>
+    <div class="chart-intro">
+      <strong>How to read this grid:</strong> Each row is one calendar day. The blue block is the
+      predicted rest window. White space is the active phase. Yellow marks sunrise and orange marks
+      sunset — showing how much daylight falls within the waking hours each day. Confidence decreases
+      with distance: the 7-day near-term window is shown at full opacity; blocks fade progressively
+      through day 21 to reflect that small daily variations compound over longer horizons. The
+      direction of the trend is reliable; precise timing at day 14–21 should be treated as approximate.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
+    </div>
+    <div class="grid-wrap">
+      <div class="hour-axis">
+        <div class="hour-lbl hour-anchor" style="left:0.00%">midnight</div>
+        <div class="hour-lbl" style="left:12.50%">3A</div>
+        <div class="hour-lbl" style="left:25.00%">6A</div>
+        <div class="hour-lbl" style="left:37.50%">9A</div>
+        <div class="hour-lbl hour-anchor" style="left:50.00%">noon</div>
+        <div class="hour-lbl" style="left:62.50%">3P</div>
+        <div class="hour-lbl" style="left:75.00%">6P</div>
+        <div class="hour-lbl" style="left:87.50%">9P</div>
+      </div>
+      <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
+      <div class="conf-legend">
+        <div><span class="csw sleep-texture" style="opacity:.88"></span>Rest window · Days 1–7</div>
+        <div><span class="csw sleep-texture" style="opacity:.55"></span>Days 8–14</div>
+        <div><span class="csw sleep-texture" style="opacity:.25"></span>Days 15–21 (wider uncertainty)</div>
+        <div><span class="csw" style="background:rgba(255,255,255,.75)"></span>Now</div>
+      </div>
+    </div>
+    <div class="htbl-wrap" id="hour-table-wrap"></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- NEWCOMER INTRO -->
+  <div class="intro-box" style="margin:0 0 0">
+    Rikki has <strong>Non-24-Hour Sleep-Wake Disorder</strong> — their biological clock runs on a
+    25.40-hour cycle, so their sleep drifts approximately 84 minutes later every calendar day, cycling
+    through every hour of the clock roughly every 18 days. This page tracks that drift using their Oura
+    ring data and projects where their sleep window will fall over the coming weeks. For a full explanation
+    of the condition, scroll to the <em>Non-24-Hour Sleep-Wake Disorder</em> section below.
+  </div>
+
+  <hr class="div">
+
+  <!-- SECTION 4: UNDERSTANDING RIKKI'S TIME -->
+  <div class="section">
+    <h2>Understanding Rikki's Time</h2>
+    <div class="tau-layout">
+      <div>
+        <div class="tau-num">25.40</div>
+        <div class="tau-unit">hours per personal day</div>
+        <div class="tau-bar-row">
+          <span class="tau-bar-lbl dim">24h clock</span>
+          <div class="tau-bar-outer"><div class="tau-bar-inner" style="width:94.6%;background:#444"></div></div>
+        </div>
+        <div class="tau-bar-row">
+          <span class="tau-bar-lbl gold">Rikki's day</span>
+          <div class="tau-bar-outer"><div class="tau-bar-inner" style="width:100%;background:var(--gold)"></div></div>
+        </div>
+        <div class="tau-facts">
+          <span>+84 minutes</span> per day relative to the 24-hour calendar.<br>
+          <span>17.7 days</span> to complete one full rotation through all 24 clock hours.<br>
+          <span>Seasonal modulation:</span> period lengthens slightly in summer and compresses
+          slightly in autumn — a secondary biological rhythm overlaid on the daily drift.<br>
+          <span>Since sustained free-running began:</span> HRV increased 8ms and resting heart rate
+          declined — consistent with reduced chronic circadian misalignment.
+        </div>
+        <div class="tau-quote">
+          "When the schedule is uninterrupted and free-running, the physiological markers —
+          HRV, resting heart rate, recovery index — consistently show optimal function.
+          The data reflects a system operating on a different clock, not a disordered one."
+        </div>
+      </div>
+      <div>
+        <h3>Sleep Architecture (143 free-running nights, May–Oct 2025)</h3>
+        <div class="bio-stats">
+          <div class="bio-stat">
+            <div class="bs-num">9.2h</div>
+            <div class="bs-unit">actual sleep per cycle</div>
+            <div class="bs-desc">Within a ~12-hour rest window. 77% efficiency. Stable architectural parameters.</div>
+          </div>
+          <div class="bio-stat">
+            <div class="bs-num">57ms</div>
+            <div class="bs-unit">heart rate variability</div>
+            <div class="bs-desc">Up from 49ms prior to sustained free-running. A marker of improved autonomic regulation.</div>
+          </div>
+          <div class="bio-stat">
+            <div class="bs-num">54 bpm</div>
+            <div class="bs-unit">resting heart rate</div>
+            <div class="bs-desc">Down from 56 bpm prior to sustained free-running. Consistent with reduced chronic circadian stress.</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:8px">Their Five Sleep States</h3>
+        <div class="states-track">
+          <div class="state-seg"></div><div class="state-seg"></div>
+          <div class="state-seg"></div><div class="state-seg"></div>
+          <div class="state-seg"></div>
+        </div>
+        <div class="states-labels">
+          <div class="state-lbl">Entrained<br>tight</div>
+          <div class="state-lbl">Free-running<br>clean</div>
+          <div class="state-lbl">Free-running<br>loose</div>
+          <div class="state-lbl cur">▲ Post-disruption<br>recovering</div>
+          <div class="state-lbl">Compressed<br>life</div>
+        </div>
+        <p style="font-size:.81rem;color:var(--dim);margin-top:10px;line-height:1.6">
+          <strong style="color:var(--warm)">Current state: Post-disruption recovery.</strong>
+          Following the most significant sustained schedule disruption in four years of recorded data,
+          the pattern entered an oscillatory recovery phase. Circadian recovery from major disruption
+          does not normalize linearly — oscillation is expected and consistent with prior recovery
+          episodes. The disruption is bounded. Data consistently shows return to free-running baseline
+          within 4–6 weeks of stable conditions.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<hr class="div">
+
+<div class="container">
+  <div class="about-section">
+    <h2>Non-24-Hour Sleep-Wake Disorder</h2>
+    <div class="about-cols">
+      <div class="about-block">
+        <h3>What it is</h3>
+        <p>Non-24-Hour Sleep-Wake Disorder (Non-24) is a circadian rhythm disorder classified under
+        ICSD-3. The body's master clock — governed by the suprachiasmatic nucleus — runs on an
+        intrinsic period that does not synchronize with the 24-hour solar day. The sleep–wake cycle
+        drifts progressively later, cycling through all 24 clock hours over a period of
+        approximately 17–18 days.</p>
+        <p>This is not a behavioral pattern. Non-24 cannot be corrected through earlier wake times,
+        stronger morning light exposure, sleep hygiene protocols designed for conventional insomnia,
+        or willpower. It is a neurological difference in the endogenous clock period itself — the
+        circadian tau.</p>
+      </div>
+      <div class="about-block">
+        <h3>How this page is calculated</h3>
+        <p>The most accurate measurement of an individual's tau comes from extended free-running
+        intervals — periods with minimal external time cues and no fixed schedule obligations. The
+        <strong>25.40-hour figure</strong> used throughout this page is derived from sustained
+        free-running data recorded via Oura ring.</p>
+        <p>The anchor (most recent confirmed wake time) is pulled live from the Oura API. All
+        forecasts are computed forward from that anchor using the measured tau. The ICS calendar
+        export translates those forecasts into standard calendar events for scheduling purposes.</p>
+        <p>A 25.40-hour clock means no tool built for 24-hour schedules can accurately represent
+        availability or timing. This page exists to make that representation possible.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="container">
+
+  <!-- SECTION 5: HOW WE GOT HERE -->
+  <div class="section" id="section-history">
+    <h2>How We Got Here</h2>
+    <div class="chart-intro">
+      <strong>Four years of recorded sleep, 2022 to present.</strong> Each row is one calendar day.
+      Blue blocks are actual sleep sessions from the Oura ring. The rightward diagonal —
+      the sleep window moving approximately 84 minutes later every day — is the 25.40-hour biological
+      clock in motion. The <span style="color:var(--gold)">gold tick</span> per row marks where
+      the natural thread (the free-running baseline established Aug 2025) predicts wake time for
+      that day. Zoom in to inspect individual nights; hover or tap a row for details.
+    </div>
+
+    <div id="hist-loading" style="padding:24px 0">
+      <div class="hist-loading-bar"><div class="hist-loading-fill" id="hist-prog"></div></div>
+      <div class="hist-status" id="hist-status">Loading 4 years of Oura data…</div>
+    </div>
+
+    <div id="hist-chart-wrap" style="display:none">
+      <div class="acto-controls">
+        <button class="acto-zoom-btn" id="acto-zoom-out" title="Zoom out">−</button>
+        <span class="acto-zoom-lbl" id="acto-zoom-lbl">5px/row</span>
+        <button class="acto-zoom-btn" id="acto-zoom-in" title="Zoom in">+</button>
+        <span class="dim" style="font-size:.78rem">Scroll to navigate · hover for night details · minimap below</span>
+      </div>
+      <div class="acto-scroll" id="acto-scroll">
+        <canvas id="acto-canvas"></canvas>
+      </div>
+      <div id="acto-mini-wrap">
+        <canvas id="acto-mini"></canvas>
+        <div id="mini-vp" class="mini-vp"></div>
+      </div>
+      <div class="acto-legend">
+        <div><span class="csw-sm" style="background:#2d3070;opacity:.82"></span>Recorded sleep</div>
+        <div><span class="csw-sm" style="background:rgba(201,168,76,.75)"></span>Natural thread wake (Aug 2025 baseline)</div>
+        <div><span class="csw-sm" style="background:rgba(255,190,50,.4)"></span>Daylight hours</div>
+      </div>
+      <p class="dim" style="font-size:.82rem;margin-top:10px" id="acto-footer">—</p>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- SECTION 6: THROUGH THE LENS OF DATA -->
+  <div class="section" id="section-analysis">
+    <h2>Through the Lens of Data</h2>
+    <p class="dim" style="margin-bottom:28px;font-size:.88rem;max-width:760px">
+      Four years of physiological signals, examined from different angles. Each chart reveals a
+      different facet of how a 25.40-hour clock moves through calendar time — and what happens
+      to the body when that movement is interrupted or allowed to run free.
+    </p>
+
+    <div class="analysis-grid">
+      <div class="analysis-panel">
+        <h3>Phase Position</h3>
+        <p class="analysis-desc">Wake time (hour of day, NY) across all recorded nights.
+        The gold line traces the natural thread — where the free-running baseline predicts wake.
+        Periods where blue dots track the gold line are free-running alignment. Flat clusters
+        reveal schedule suppression. The rightward shift over time reflects 84 min/day drift.</p>
+        <div class="analysis-chart" id="chart-phase"><div class="chart-loading">Loading…</div></div>
+      </div>
+      <div class="analysis-panel">
+        <h3>Sleep Architecture by Month</h3>
+        <p class="analysis-desc">Monthly average breakdown of deep sleep, REM, and light sleep
+        as proportions of total recorded sleep time. Sustained free-running tends to produce
+        higher deep-sleep fractions — a physiological signature of uninterrupted ultradian cycling.</p>
+        <div class="analysis-chart" id="chart-arch"><div class="chart-loading">Loading…</div></div>
+      </div>
+      <div class="analysis-panel" style="grid-column:1/-1">
+        <h3>HRV &amp; Resting Heart Rate</h3>
+        <p class="analysis-desc">Heart rate variability (gold, left axis) and resting heart rate
+        (indigo, right axis) across the full data period, smoothed with a 14-day rolling average.
+        HRV rises and resting HR falls during sustained free-running — physiological evidence
+        that alignment with the biological clock reduces chronic stress on the autonomic nervous system.</p>
+        <div class="analysis-chart" id="chart-health"><div class="chart-loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="analysis-panel" style="grid-column:1/-1;margin-top:32px">
+      <h3>Flow Calendar</h3>
+      <p class="analysis-desc">Each cell is one week from Jan 2022 to present, colored by flow score — the proportion of nights that week where sleep duration, sleep quality, and sleep stage balance all fell within optimal ranges simultaneously. Darker cells are low flow or missing data; brighter cells are high-flow weeks. <span style="color:var(--gold)">Amber-outlined</span> stretches are the five longest consecutive runs above the flow threshold in four years of data.</p>
+      <div id="flow-cal"><div class="chart-loading">Loading…</div></div>
+    </div>
+
+    <div style="margin-top:44px">
+      <h3>The Natural Thread</h3>
+      <p class="analysis-desc" style="max-width:740px">
+        During August–September 2025 — 14 consecutive free-running sessions with minimal external
+        schedule pressure — the measured tau compressed to a clean 25.357 hours. This is the
+        purest expression of the underlying biological clock recorded across the full dataset.
+        The <strong style="color:var(--gold)">natural thread</strong> anchored to this window
+        (midpoint: Aug 20, 2025) represents where the body wants to be, absent constraint.
+        The chart below shows how far each recorded night fell from that thread over four years —
+        how much earlier or later the actual wake was relative to the free-running prediction.
+      </p>
+      <div class="analysis-chart" id="chart-phase-gap" style="margin-top:16px"><div class="chart-loading">Loading…</div></div>
+      <p class="dim" style="font-size:.81rem;margin-top:10px;line-height:1.7;max-width:740px">
+        <span style="color:rgba(74,140,74,0.9)">Green</span> dots are within 2 hours of the thread.
+        <span style="color:var(--gold)">Gold</span> dots are 2–6 hours off.
+        <span style="color:#c0392b">Red</span> dots are more than 6 hours off.
+        Positive values mean wake occurred later than the thread; negative values mean earlier.
+        Extended red periods correspond to heavily entrained or disrupted phases.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="page-footer">
+  <div class="container">
+    Tau: 25.40h ·
+    <span id="footer-anchor">Anchor: loading…</span> ·
+    Oura data: 1,512+ nights ·
+    Cowork analysis: 143 free-running nights May–Oct 2025 ·
+    <span id="footer-time"></span>
+  </div>
+</div>
+
+<!-- Tooltip overlay (position:fixed, JS-controlled) -->
+<div class="acto-tt" id="acto-tt"></div>
+
+<script>
+// ── Personal configuration — template seed (all personal params in one place) ──
+const PERSONAL = {
+  name: 'Rikki',
+  pronoun: { subject: 'they', object: 'them', possessive: 'their' },
+  tau:    25.4,   // circadian period in hours
+  awakeH: 13.4,   // hours of active waking per cycle
+  tibH:   12.0,   // time in bed per cycle
+  lat:    42.97,  // Ada, MI
+  lng:   -85.48,
+  tz:    'America/New_York',
+  // Shared daily life wheel (Rikki + Luke). Types: waking, food, open, winddown, sleep
+  // Hours must sum to tau (25.4). Sleep = tibH (12.0).
+  pieChart: [
+    { type: 'waking',   hours: 1.0          },
+    { type: 'food',     hours: 0.5          },
+    { type: 'open',     hours: 9.4 / 3      },
+    { type: 'food',     hours: 0.5          },
+    { type: 'open',     hours: 9.4 / 3      },
+    { type: 'food',     hours: 0.5          },
+    { type: 'open',     hours: 9.4 / 3      },
+    { type: 'food',     hours: 0.5          },
+    { type: 'winddown', hours: 1.0          },
+    { type: 'sleep',    hours: 12.0         },
+  ],
+};
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const TAU_MS    = PERSONAL.tau    * 3600000;
+const AWAKE_H   = PERSONAL.awakeH;
+const TIB_H     = PERSONAL.tibH;
+const AWAKE_MS  = AWAKE_H * 3600000;
+const TIB_MS    = TIB_H   * 3600000;
+const CACHE_TTL = 30 * 60 * 1000;
+const FALLBACK_ANCHOR_MS = 1745974800000;
+const WORKER_URL = 'https://circadian.rikkidelaine84.workers.dev';
+
+// Natural thread anchor — Aug 20 2025 07:09:58 EDT, midpoint of cleanest free-running window
+const NATURAL_ANCHOR_MS = 1755688198000;
+function naturalThreadWake(targetMs) {
+  const n = Math.round((targetMs - NATURAL_ANCHOR_MS) / TAU_MS);
+  return NATURAL_ANCHOR_MS + n * TAU_MS;
+}
+
+// Historical data constants
+const HIST_CACHE_KEY = 'oura_hist_v3';
+const HIST_CACHE_TTL = 12 * 60 * 60 * 1000;
+const HIST_START = '2022-01-24';
+
+// ── Near-term cache ────────────────────────────────────────────────────────
+function getCached() {
+  try {
+    const raw = localStorage.getItem('oura_sleep_cache');
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    return (Date.now() - ts < CACHE_TTL) ? data : null;
+  } catch { return null; }
+}
+function setCache(data) {
+  try { localStorage.setItem('oura_sleep_cache', JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
+
+// ── Oura API ──────────────────────────────────────────────────────────────
+async function fetchSleep(days = 90) {
+  const end   = isoDate(new Date());
+  const start = isoDate(new Date(Date.now() - days * 86400000));
+  let url = `${WORKER_URL}/v2/usercollection/sleep?start_date=${start}&end_date=${end}`;
+  const out = [];
+  while (url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Oura ${r.status}`);
+    const j = await r.json();
+    out.push(...(j.data || []));
+    url = j.next_token
+      ? `${WORKER_URL}/v2/usercollection/sleep?start_date=${start}&end_date=${end}&next_token=${j.next_token}`
+      : null;
+  }
+  return out;
+}
+
+async function fetchSleepRange(startDate, endDate) {
+  let url = `${WORKER_URL}/v2/usercollection/sleep?start_date=${startDate}&end_date=${endDate}`;
+  const out = [];
+  while (url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Oura ${r.status}`);
+    const j = await r.json();
+    out.push(...(j.data || []));
+    url = j.next_token
+      ? `${WORKER_URL}/v2/usercollection/sleep?start_date=${startDate}&end_date=${endDate}&next_token=${j.next_token}`
+      : null;
+  }
+  return out;
+}
+
+async function loadHistoricalData(onProgress) {
+  try {
+    const raw = localStorage.getItem(HIST_CACHE_KEY);
+    if (raw) {
+      const { data, ts } = JSON.parse(raw);
+      if (Date.now() - ts < HIST_CACHE_TTL) return data;
+    }
+  } catch {}
+
+  const all = [];
+  let start = new Date(HIST_START + 'T12:00:00');
+  const end = new Date();
+  const totalMs = end - new Date(HIST_START + 'T12:00:00');
+
+  while (start <= end) {
+    const chunkEnd = new Date(Math.min(start.getTime() + 180 * 86400000, end.getTime()));
+    const sessions = await fetchSleepRange(isoDate(start), isoDate(chunkEnd));
+    all.push(...sessions);
+    if (onProgress) onProgress(Math.min(98, (start - new Date(HIST_START + 'T12:00:00')) / totalMs * 100));
+    start = new Date(chunkEnd.getTime() + 86400000);
+  }
+
+  const slim = all.map(s => ({
+    bs: s.bedtime_start, be: s.bedtime_end,
+    tsd: s.total_sleep_duration,
+    rem: s.rem_sleep_duration,
+    deep: s.deep_sleep_duration,
+    light: s.light_sleep_duration,
+    hrv: s.average_hrv,
+    hr: s.average_heart_rate,
+    score: s.score,
+    type: s.type
+  }));
+
+  try { localStorage.setItem(HIST_CACHE_KEY, JSON.stringify({ data: slim, ts: Date.now() })); } catch {}
+  if (onProgress) onProgress(100);
+  return slim;
+}
+
+// ── NY time helpers ────────────────────────────────────────────────────────
+const _nyFmt = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  year:'numeric', month:'2-digit', day:'2-digit',
+  hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
+});
+function nyParts(ms) {
+  const p = {};
+  _nyFmt.formatToParts(new Date(ms)).forEach(({type,value}) => {
+    if (type !== 'literal') p[type] = +value;
+  });
+  if (p.hour === 24) p.hour = 0;
+  return p;
+}
+function nyDateStr(ms) {
+  const {year,month,day} = nyParts(ms);
+  return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+function nyHour(ms) {
+  const {hour,minute,second} = nyParts(ms);
+  return hour + minute/60 + second/3600;
+}
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── Sunrise / sunset for Ada, MI (42.97°N, 85.48°W) ──────────────────────
+function isInDST(d) {
+  const y = d.getFullYear();
+  const mar = new Date(y,2,1), nov = new Date(y,10,1);
+  const on  = new Date(y,2,  8 + (7-mar.getDay())%7, 2);
+  const off = new Date(y,10, 1 + (7-nov.getDay())%7, 2);
+  return d >= on && d < off;
+}
+function sunTimes(dateObj) {
+  const y = dateObj.getFullYear();
+  const doy = Math.round((dateObj - new Date(y,0,1)) / 86400000) + 1;
+  const lat  = 42.97 * Math.PI / 180;
+  const B    = 2*Math.PI*(doy-1)/365;
+  const decl = 0.006918 - 0.399912*Math.cos(B) + 0.070257*Math.sin(B)
+             - 0.006758*Math.cos(2*B) + 0.000907*Math.sin(2*B);
+  const ha   = Math.acos(-Math.tan(lat)*Math.tan(decl));
+  const haH  = ha * 12 / Math.PI;
+  const eot  = 229.18*(0.000075 + 0.001868*Math.cos(B) - 0.032077*Math.sin(B)
+                      -0.014615*Math.cos(2*B) - 0.04089*Math.sin(2*B));
+  const utcOff = isInDST(dateObj) ? -4 : -5;
+  const lonCorr = (-85.48 - utcOff*15) / 15;
+  const noon = 12 - lonCorr - eot/60;
+  return { sunrise: noon - haH, sunset: noon + haH };
+}
+
+// ── Format helpers ─────────────────────────────────────────────────────────
+function fmt12(ms) {
+  const parts = new Date(ms).toLocaleTimeString('en-US',{
+    hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
+  });
+  if (parts === '12:00 PM') return 'noon EST';
+  if (parts === '12:00 AM') return 'midnight EST';
+  return parts + ' EST';
+}
+function fmtHM(h) {
+  const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+  return mm===0 ? hh+'h' : hh+'h '+mm+'m';
+}
+function fmtCountdown(ms) {
+  const diff=ms-Date.now();
+  if(diff<=0) return 'now';
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000);
+  return 'in '+(h>0?h+'h ':'')+m+'m';
+}
+function fmtICS(ms) {
+  const d=new Date(ms), pad=n=>String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+}
+
+// ── Anchor from sleep data ─────────────────────────────────────────────────
+function getAnchor(sessions) {
+  if (!sessions || !sessions.length) return FALLBACK_ANCHOR_MS;
+  const sorted = [...sessions].sort((a,b) =>
+    new Date(b.bedtime_end) - new Date(a.bedtime_end)
+  );
+  for (const s of sorted) {
+    const ms = new Date(s.bedtime_end).getTime();
+    if (Date.now() - ms < 5 * 86400000) return ms;
+  }
+  return new Date(sorted[0].bedtime_end).getTime();
+}
+
+// ── Cycle math ─────────────────────────────────────────────────────────────
+function cyclePos(anchorMs, nowMs = Date.now()) {
+  const elapsed  = nowMs - anchorMs;
+  const cycleN   = Math.floor(elapsed / TAU_MS);
+  const h_into   = (elapsed % TAU_MS) / 3600000;
+  const wakeMs   = anchorMs + cycleN * TAU_MS;
+  const sleepMs  = wakeMs + AWAKE_MS;
+  const nwakeMs  = sleepMs + TIB_MS;
+  return { cycleN, h_into, wakeMs, sleepMs, nwakeMs, asleep: h_into >= AWAKE_H };
+}
+
+function nextCycles(anchorMs, n = 7) {
+  const { cycleN, h_into } = cyclePos(anchorMs);
+  const startN = (h_into >= AWAKE_H) ? cycleN + 1 : cycleN;
+  return Array.from({length: n}, (_,i) => {
+    const N      = startN + i;
+    const wakeMs  = anchorMs + N * TAU_MS;
+    const sleepMs = wakeMs + AWAKE_MS;
+    const nwakeMs = sleepMs + TIB_MS;
+    return { wakeMs, sleepMs, nwakeMs };
+  });
+}
+
+// ── Render: Near-term cards ─────────────────────────────────────────────────
+function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
+  const wH = nyHour(wakeMs);
+  let eH = nyHour(sleepMs);
+  if (eH <= wH) eH += 24;
+  const span = eH - wH;
+
+  function pp(h) {
+    let d = h - wH; if (d < 0) d += 24;
+    return Math.max(0, Math.min(1, d / span));
+  }
+  function add(pts, p, c) { if (p > 0.01 && p < 0.99) pts.push([p, c]); }
+
+  // Night = deep navy. Day = calm steel blue.
+  // Yellow/gold is contained to the solar transition zones; day is tranquil blue.
+  const C = {
+    night:    '#040918',  // deep midnight navy
+    darkNight:'#080f26',  // pre-transition dark
+    indigo:   '#100a36',  // indigo — warm shift begins
+    dawnPurp: '#261640',  // soft purple just before sunrise
+    srAmber:  '#7a5a10',  // muted amber at the horizon
+    srGold:   '#c49820',  // golden yellow at the solar peak
+    dayEdge:  '#3a6898',  // warm blue, easing out of golden hour
+    day:      '#2a5690',  // calm steel blue, full daytime
+    preEve:   '#3a6898',  // same warm blue leading into evening
+    ssGold:   '#c49820',  // mirrored golden yellow
+    ssAmber:  '#7a5a10',  // mirrored horizon amber
+    duskPurp: '#261640',  // mirrored soft purple
+    lateIndig:'#100a36',  // mirrored indigo
+    lateNight:'#080f26',  // mirrored dark navy
+  };
+
+  const pts = [];
+  const startNight = !(wH >= sunrise && wH < sunset);
+  pts.push([0, startNight ? C.night : C.day]);
+
+  // Sunrise — slow lead-in from night, golden peak, fade to blue
+  const srOff = ((sunrise - wH) % 24 + 24) % 24;
+  if (srOff <= span) {
+    add(pts, pp(sunrise - 1.5), C.night);
+    add(pts, pp(sunrise - 1.0), C.darkNight);
+    add(pts, pp(sunrise - 0.5), C.indigo);
+    add(pts, pp(sunrise - 0.15),C.dawnPurp);
+    pts.push([pp(sunrise),       C.srAmber]);
+    add(pts, pp(sunrise + 0.4), C.srGold);
+    add(pts, pp(sunrise + 1.2), C.dayEdge);
+    add(pts, pp(sunrise + 2.2), C.day);
+  }
+
+  // Sunset — blue warms to golden peak, then fades to night
+  const ssOff = ((sunset - wH) % 24 + 24) % 24;
+  if (ssOff <= span) {
+    add(pts, pp(sunset - 2.2), C.day);
+    add(pts, pp(sunset - 1.2), C.preEve);
+    add(pts, pp(sunset - 0.4), C.ssGold);
+    pts.push([pp(sunset),       C.ssAmber]);
+    add(pts, pp(sunset + 0.15), C.duskPurp);
+    add(pts, pp(sunset + 0.5), C.lateIndig);
+    add(pts, pp(sunset + 1.0), C.lateNight);
+    add(pts, pp(sunset + 1.5), C.night);
+  }
+
+  const endH24 = eH % 24;
+  const endNight = !(endH24 >= sunrise && endH24 < sunset);
+  const last = pts[pts.length - 1];
+  if (last[0] < 0.99) pts.push([1, endNight ? C.night : C.day]);
+  else last[0] = 1;
+
+  pts.sort((a,b) => a[0] - b[0]);
+  const deduped = pts.filter((p,i) => i===0 || p[0] > pts[i-1][0] + 0.001);
+  return `linear-gradient(to bottom,${deduped.map(([p2,c]) => `${c} ${(p2*100).toFixed(1)}%`).join(',')})`;
+}
+
+function renderCards(anchorMs) {
+  const cycles = nextCycles(anchorMs, 20);
+  const html = cycles.map(c => {
+    const dayLabel = new Date(c.wakeMs).toLocaleDateString('en-US',{
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+    });
+    const dayDate = new Date(new Date(c.wakeMs)
+      .toLocaleDateString('en-US',{timeZone:'America/New_York'}));
+    const {sunrise,sunset} = sunTimes(dayDate);
+    return `<div class="near-card">
+      <div class="near-day">${dayLabel}</div>
+      <div class="near-row"><span class="nt-lbl">Awake</span><span class="nt-val">${fmt12(c.wakeMs)}</span></div>
+      <div class="near-sky" style="background:${skyGradient(c.wakeMs,c.sleepMs,sunrise,sunset)}"></div>
+      <div class="near-row"><span class="nt-lbl">Rest</span><span class="nt-val">${fmt12(c.sleepMs)}</span></div>
+    </div>`;
+  }).join('');
+  const el = document.getElementById('near-grid');
+  if (el) el.innerHTML = html;
+}
+
+// ── Sky gradient for absolute 0–24h timeline (forecast rows) ────────────────
+function skyGradientRow(sunrise, sunset) {
+  const C = {
+    night:    '#040918', darkNight:'#080f26', indigo:'#100a36',
+    dawnPurp: '#261640', srAmber:  '#7a5a10', srGold:'#c49820',
+    dayEdge:  '#3a6898', day:      '#2a5690',
+    preEve:   '#3a6898', ssGold:   '#c49820', ssAmber:'#7a5a10',
+    duskPurp: '#261640', lateIndig:'#100a36', lateNight:'#080f26',
+  };
+  const mid = (sunrise + sunset) / 2;
+  const pts = [
+    [0,                              C.night    ],
+    [sunrise - 1.5,                  C.night    ],
+    [sunrise - 1.0,                  C.darkNight],
+    [sunrise - 0.5,                  C.indigo   ],
+    [sunrise - 0.15,                 C.dawnPurp ],
+    [sunrise,                        C.srAmber  ],
+    [sunrise + 0.4,                  C.srGold   ],
+    [sunrise + 1.2,                  C.dayEdge  ],
+    [Math.min(sunrise + 2.2, mid),   C.day      ],
+    [Math.max(sunset  - 2.2, mid),   C.day      ],
+    [sunset  - 1.2,                  C.preEve   ],
+    [sunset  - 0.4,                  C.ssGold   ],
+    [sunset,                         C.ssAmber  ],
+    [sunset  + 0.15,                 C.duskPurp ],
+    [sunset  + 0.5,                  C.lateIndig],
+    [sunset  + 1.0,                  C.lateNight],
+    [sunset  + 1.5,                  C.night    ],
+    [24,                             C.night    ],
+  ];
+  const clamped = pts.map(([h,c]) => [Math.max(0, Math.min(24, h)), c]);
+  clamped.sort((a,b) => a[0] - b[0]);
+  const deduped = clamped.filter((p,i) => i===0 || p[0] > clamped[i-1][0] + 0.05);
+  return `linear-gradient(to right,${deduped.map(([h,c]) => `${c} ${(h/24*100).toFixed(1)}%`).join(',')})`;
+}
+
+// ── Render: 21-day forecast grid ────────────────────────────────────────────
+function renderForecast(anchorMs) {
+  const todayMs = (() => { const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const rows = [];
+
+  for (let day = 0; day < 21; day++) {
+    const dayMs  = todayMs + day * 86400000;
+    const dayEnd = dayMs + 86400000;
+    const isToday = day === 0;
+
+    const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+    });
+    const conf     = day < 7 ? 'conf-high' : day < 14 ? 'conf-med' : 'conf-low';
+    const rowClass = isToday ? 'today-row' : '';
+
+    const dayDate  = new Date(dayMs);
+    const {sunrise,sunset} = sunTimes(dayDate);
+    const srPct = (sunrise/24*100).toFixed(2);
+    const ssPct = (sunset /24*100).toFixed(2);
+
+    const blocks = [], wakeBlks = [];
+    const startN = Math.floor((dayMs - anchorMs) / TAU_MS) - 1;
+    for (let c = startN; c <= startN + 3; c++) {
+      // Sleep blocks
+      const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
+      const s1 = s0 + TIB_MS;
+      const sl0 = Math.max(s0, dayMs), sl1 = Math.min(s1, dayEnd);
+      if (sl1 > sl0) {
+        const left  = ((sl0-dayMs)/86400000*100).toFixed(3);
+        const width = ((sl1-sl0)/86400000*100).toFixed(3);
+        blocks.push(`<div class="sleep-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
+      }
+      // Wake (awake) blocks — gold tint to make wakefulness explicit
+      const w0 = anchorMs + c * TAU_MS;
+      const w1 = w0 + AWAKE_MS;
+      const wk0 = Math.max(w0, dayMs), wk1 = Math.min(w1, dayEnd);
+      if (wk1 > wk0) {
+        const left  = ((wk0-dayMs)/86400000*100).toFixed(3);
+        const width = ((wk1-wk0)/86400000*100).toFixed(3);
+        wakeBlks.push(`<div class="wake-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
+      }
+    }
+
+    const nlPart = isToday ? `<div class="now-line" id="now-line"></div>` : '';
+    // Sky gradient at moderate intensity — readable but ambient.
+    const skyBg  = `linear-gradient(to right,rgba(5,8,20,0.28),rgba(5,8,20,0.28)),${skyGradientRow(sunrise, sunset)}`;
+    rows.push(`<div class="grid-row ${rowClass}">
+      <div class="row-lbl">${dayLabel}</div>
+      <div class="row-timeline" style="background:${skyBg}">${wakeBlks.join('')}${blocks.join('')}<div class="sun-tick" style="left:${srPct}%"></div><div class="sun-tick" style="left:${ssPct}%"></div>${nlPart}</div>
+    </div>`);
+  }
+
+  const el = document.getElementById('forecast-rows');
+  if (el) el.innerHTML = rows.join('\n');
+}
+
+// ── Canvas Actogram ────────────────────────────────────────────────────────
+const ACTO_ZOOM = [2, 3, 4, 5, 6, 8, 10, 14, 18];
+let _actoZoomIdx = 3;
+let _histRows    = null;
+let _actoCanvas  = null;
+let _miniCanvas  = null;
+let _actoScroll  = null;
+
+function buildActoRows(slim) {
+  const byDate = {}, statsMap = {};
+  for (const s of slim) {
+    if (s.type !== 'long_sleep' && s.type !== 'sleep') continue;
+    const s0ms = new Date(s.bs).getTime();
+    const s1ms = new Date(s.be).getTime();
+    const d0   = nyDateStr(s0ms), d1 = nyDateStr(s1ms);
+    const h0   = nyHour(s0ms),    h1 = nyHour(s1ms);
+    if (!byDate[d0]) byDate[d0] = [];
+    if (!byDate[d1]) byDate[d1] = [];
+    if (d0 === d1) {
+      byDate[d0].push({h0, h1});
+    } else {
+      byDate[d0].push({h0, h1: 24});
+      byDate[d1].push({h0: 0, h1});
+    }
+    const m = (statsMap[d0] = statsMap[d0] || {});
+    if (s.hrv)   m.hrv   = s.hrv;
+    if (s.hr)    m.hr    = s.hr;
+    if (s.tsd)   m.tsd   = (m.tsd   || 0) + s.tsd;
+    if (s.rem)   m.rem   = (m.rem   || 0) + s.rem;
+    if (s.deep)  m.deep  = (m.deep  || 0) + s.deep;
+    if (s.light) m.light = (m.light || 0) + s.light;
+    if (s.score) m.score = s.score;
+  }
+
+  const rows = [];
+  const todayStr = nyDateStr(Date.now());
+  let cur = HIST_START;
+  while (cur <= todayStr) {
+    const [yr, mo, dy] = cur.split('-').map(Number);
+    const d = new Date(yr, mo - 1, dy);
+    rows.push({ date: cur, d, segs: byDate[cur] || [], ...(statsMap[cur] || {}) });
+    const next = new Date(yr, mo - 1, dy + 1);
+    cur = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`;
+  }
+  return rows;
+}
+
+function drawActogram() {
+  if (!_histRows || !_actoCanvas || !_actoScroll) return;
+  const rowH = ACTO_ZOOM[_actoZoomIdx];
+  const W    = _actoScroll.clientWidth;
+  if (!W) return;
+  const LW = 44, DW = W - LW;
+  _actoCanvas.width  = W;
+  _actoCanvas.height = _histRows.length * rowH;
+
+  const ctx = _actoCanvas.getContext('2d');
+  ctx.fillStyle = '#f4f0e8';
+  ctx.fillRect(0, 0, W, _actoCanvas.height);
+
+  // Build star pattern for sleep blocks (created once per draw call)
+  const starTile = document.createElement('canvas');
+  starTile.width = 14; starTile.height = 14;
+  const sc = starTile.getContext('2d');
+  sc.fillStyle = 'rgba(140,155,240,0.65)';
+  sc.beginPath();
+  const cx2 = 7, cy2 = 7;
+  const pts = [[cx2,3.5],[7.7,6.3],[10.5,7],[7.7,7.7],[cx2,10.5],[6.3,7.7],[3.5,7],[6.3,6.3]];
+  sc.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) sc.lineTo(pts[i][0], pts[i][1]);
+  sc.closePath(); sc.fill();
+  const sleepPattern = ctx.createPattern(starTile, 'repeat');
+
+  // Vertical grid lines at 6h
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+  ctx.lineWidth = 0.5;
+  for (let h = 0; h <= 24; h += 6) {
+    const x = LW + (h / 24) * DW;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _actoCanvas.height); ctx.stroke();
+  }
+
+  const today = nyDateStr(Date.now());
+  ctx.textAlign = 'right';
+
+  for (let i = 0; i < _histRows.length; i++) {
+    const row = _histRows[i];
+    const y   = i * rowH;
+
+    if (row.date === today) {
+      ctx.fillStyle = '#ede8de';
+      ctx.fillRect(LW, y, DW, rowH);
+    }
+
+    const dom = row.d.getDate();
+    if (dom === 1 || dom === 15) {
+      const fs = Math.max(7, Math.min(rowH - 1, 9));
+      ctx.fillStyle = '#888';
+      ctx.font = `${fs}px Inter,sans-serif`;
+      ctx.fillText(`${row.d.getMonth()+1}/${dom}`, LW - 2, y + rowH * 0.8);
+    }
+
+    const { sunrise, sunset } = sunTimes(row.d);
+    ctx.fillStyle = 'rgba(255,190,50,0.13)';
+    ctx.fillRect(LW + (sunrise/24)*DW, y, (sunset - sunrise)/24*DW, rowH);
+
+    // Sleep block base color
+    ctx.fillStyle = 'rgba(28,31,74,0.85)';
+    for (const seg of row.segs) {
+      const x0   = LW + (seg.h0 / 24) * DW;
+      const segW = Math.max(1, (seg.h1 - seg.h0) / 24 * DW);
+      ctx.fillRect(x0, y + 0.5, segW, Math.max(1, rowH - 1));
+    }
+    // Star texture overlay on sleep blocks
+    ctx.fillStyle = sleepPattern;
+    for (const seg of row.segs) {
+      const x0   = LW + (seg.h0 / 24) * DW;
+      const segW = Math.max(1, (seg.h1 - seg.h0) / 24 * DW);
+      ctx.fillRect(x0, y + 0.5, segW, Math.max(1, rowH - 1));
+    }
+
+    const ntMs = naturalThreadWake(row.d.getTime() + 12 * 3600000);
+    const ntH  = nyHour(ntMs);
+    const ntX  = LW + (ntH / 24) * DW;
+    ctx.fillStyle = 'rgba(201,168,76,0.78)';
+    ctx.fillRect(ntX - 1, y, 2, rowH);
+  }
+
+  drawMinimap();
+  updateMinimapVP();
+}
+
+function drawMinimap() {
+  if (!_histRows || !_miniCanvas) return;
+  const W  = _miniCanvas.parentElement.clientWidth;
+  if (!W) return;
+  _miniCanvas.width  = W;
+  _miniCanvas.height = 70;
+  const LW = 44, DW = W - LW;
+  const rowH = Math.max(0.3, 70 / _histRows.length);
+  const ctx  = _miniCanvas.getContext('2d');
+  ctx.fillStyle = '#e8e2d6';
+  ctx.fillRect(0, 0, W, 70);
+
+  for (let i = 0; i < _histRows.length; i++) {
+    const row = _histRows[i];
+    const y   = i * rowH;
+    ctx.fillStyle = 'rgba(45,48,112,0.65)';
+    for (const seg of row.segs) {
+      ctx.fillRect(LW + (seg.h0/24)*DW, y, Math.max(0.5, (seg.h1-seg.h0)/24*DW), Math.max(0.5, rowH));
+    }
+    const ntH = nyHour(naturalThreadWake(row.d.getTime() + 12*3600000));
+    ctx.fillStyle = 'rgba(201,168,76,0.55)';
+    ctx.fillRect(LW + (ntH/24)*DW - 0.5, y, 1, Math.max(0.5, rowH));
+  }
+}
+
+function updateMinimapVP() {
+  const vp = document.getElementById('mini-vp');
+  if (!vp || !_actoScroll || !_actoCanvas || !_miniCanvas) return;
+  const sf = _actoScroll.scrollTop  / _actoCanvas.height;
+  const vf = _actoScroll.clientHeight / _actoCanvas.height;
+  vp.style.top    = (sf * 70).toFixed(1) + 'px';
+  vp.style.height = Math.max(2, vf * 70).toFixed(1) + 'px';
+}
+
+function setupActoEvents() {
+  if (!_actoScroll || !_actoCanvas || !_miniCanvas) return;
+
+  _actoScroll.addEventListener('scroll', updateMinimapVP, { passive: true });
+
+  _miniCanvas.addEventListener('click', e => {
+    const rect = _miniCanvas.getBoundingClientRect();
+    const frac = (e.clientY - rect.top) / 70;
+    _actoScroll.scrollTop = frac * _actoCanvas.height - _actoScroll.clientHeight / 2;
+  });
+
+  const tt = document.getElementById('acto-tt');
+
+  function showTooltip(clientX, clientY, canvasY) {
+    if (!tt || !_histRows) return;
+    const rowH = ACTO_ZOOM[_actoZoomIdx];
+    const i = Math.floor(canvasY / rowH);
+    if (i < 0 || i >= _histRows.length) { tt.style.display = 'none'; return; }
+    const row = _histRows[i];
+    const ntH    = nyHour(naturalThreadWake(row.d.getTime() + 12*3600000));
+    const wakeH  = row.segs.length ? row.segs[row.segs.length - 1].h1 : null;
+    let gapH = null;
+    if (wakeH !== null) {
+      gapH = wakeH - ntH;
+      if (gapH > 12)  gapH -= 24;
+      if (gapH < -12) gapH += 24;
+    }
+
+    let html = `<div class="tt-date">${row.d.toLocaleDateString('en-US',{
+      weekday:'long', month:'long', day:'numeric', year:'numeric'
+    })}</div>`;
+    if (row.segs.length) {
+      const tot = row.segs.reduce((s, seg) => s + (seg.h1 - seg.h0), 0);
+      html += `<div class="tt-row"><span>Sleep recorded</span><span>${fmtHM(tot)}</span></div>`;
+    } else {
+      html += `<div class="tt-row"><span>No data recorded</span><span>—</span></div>`;
+    }
+    if (row.hrv)   html += `<div class="tt-row"><span>HRV</span><span>${Math.round(row.hrv)} ms</span></div>`;
+    if (row.hr)    html += `<div class="tt-row"><span>Resting HR</span><span>${Math.round(row.hr)} bpm</span></div>`;
+    if (row.score) html += `<div class="tt-row"><span>Sleep score</span><span>${row.score}</span></div>`;
+    if (gapH !== null) {
+      const abs  = Math.abs(gapH);
+      const sign = gapH >= 0 ? '+' : '−';
+      const gapStr = abs < 0.1 ? 'Aligned' : sign + fmtHM(abs);
+      html += `<div class="tt-gap"><div class="tt-row"><span>vs natural thread</span><span>${gapStr}</span></div></div>`;
+    }
+    tt.innerHTML = html;
+    tt.style.display = 'block';
+    tt.style.left = Math.min(clientX + 14, window.innerWidth  - 230) + 'px';
+    tt.style.top  = Math.min(clientY - 10, window.innerHeight - 220) + 'px';
+  }
+
+  _actoCanvas.addEventListener('mousemove', e => {
+    const rect = _actoCanvas.getBoundingClientRect();
+    const canvasY = e.clientY - rect.top + _actoScroll.scrollTop;
+    showTooltip(e.clientX, e.clientY, canvasY);
+  });
+  _actoCanvas.addEventListener('mouseleave', () => { if (tt) tt.style.display = 'none'; });
+
+  _actoCanvas.addEventListener('touchstart', e => {
+    if (!e.touches.length) return;
+    const t = e.touches[0];
+    const rect = _actoCanvas.getBoundingClientRect();
+    const canvasY = t.clientY - rect.top + _actoScroll.scrollTop;
+    showTooltip(t.clientX, t.clientY, canvasY);
+  }, { passive: true });
+  _actoCanvas.addEventListener('touchend', () => {
+    setTimeout(() => { if (tt) tt.style.display = 'none'; }, 2000);
+  }, { passive: true });
+
+  document.getElementById('acto-zoom-in')?.addEventListener('click', () => {
+    if (_actoZoomIdx < ACTO_ZOOM.length - 1) {
+      const prevRatio = _actoScroll.scrollTop / _actoCanvas.height;
+      _actoZoomIdx++;
+      document.getElementById('acto-zoom-lbl').textContent = ACTO_ZOOM[_actoZoomIdx] + 'px/row';
+      drawActogram();
+      _actoScroll.scrollTop = prevRatio * _actoCanvas.height;
+    }
+  });
+  document.getElementById('acto-zoom-out')?.addEventListener('click', () => {
+    if (_actoZoomIdx > 0) {
+      const prevRatio = _actoScroll.scrollTop / _actoCanvas.height;
+      _actoZoomIdx--;
+      document.getElementById('acto-zoom-lbl').textContent = ACTO_ZOOM[_actoZoomIdx] + 'px/row';
+      drawActogram();
+      _actoScroll.scrollTop = prevRatio * _actoCanvas.height;
+    }
+  });
+
+  new ResizeObserver(() => {
+    const ratio = _actoCanvas.height ? _actoScroll.scrollTop / _actoCanvas.height : 1;
+    drawActogram();
+    _actoScroll.scrollTop = ratio * _actoCanvas.height;
+  }).observe(_actoScroll);
+}
+
+// ── Analysis: Phase Position chart ────────────────────────────────────────
+function renderPhaseChart(slim) {
+  const W=800, H=210, PL=40, PR=14, PT=18, PB=30;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const pts = [];
+  for (const s of slim) {
+    if (s.type !== 'long_sleep' && s.type !== 'sleep') continue;
+    const wakeMs = new Date(s.be).getTime();
+    pts.push({ ms: wakeMs, h: nyHour(wakeMs) });
+  }
+  if (!pts.length) return;
+  pts.sort((a,b)=>a.ms-b.ms);
+  const t0 = new Date(HIST_START+'T12:00:00').getTime();
+  const t1 = Date.now();
+  const tSp = t1 - t0;
+  const tx = ms => PL + (ms-t0)/tSp*CW;
+  const ty = h  => PT + (h/24)*CH;
+
+  // Natural thread — one dot per day shows the correct sawtooth drift pattern
+  const ntDots = [];
+  for (let d = new Date(HIST_START+'T12:00:00'); d.getTime() <= t1; d.setDate(d.getDate()+1)) {
+    const ntH = nyHour(naturalThreadWake(d.getTime()));
+    const x = tx(d.getTime()), y = ty(ntH);
+    if (x >= PL && x <= W-PR)
+      ntDots.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.2" fill="rgba(201,168,76,0.35)"/>`);
+  }
+  const ntDotsStr = ntDots.join('');
+
+  const circles = pts.map(p => {
+    const x=tx(p.ms), y=ty(p.h);
+    if (x<PL||x>W-PR) return '';
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.7" fill="rgba(45,48,112,0.42)"/>`;
+  }).join('');
+
+  const hLines = [0,6,12,18].map(h => {
+    const y=ty(h), lbl=h===0?'12A':h===6?'6A':h===12?'12P':'6P';
+    return `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+<text x="${PL-3}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#666">${lbl}</text>`;
+  }).join('');
+
+  const yrs = [];
+  for (let yr=2022; yr<=new Date().getFullYear()+1; yr++) {
+    const ms = new Date(yr,0,1).getTime();
+    if (ms>=t0&&ms<=t1) {
+      const x=tx(ms);
+      yrs.push(`<line x1="${x.toFixed(1)}" y1="${PT}" x2="${x.toFixed(1)}" y2="${H-PB}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+<text x="${x.toFixed(1)}" y="${H-PB+12}" font-size="9" fill="#666" text-anchor="middle">${yr}</text>`);
+    }
+  }
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:${H}px">
+<rect width="${W}" height="${H}" fill="#1a1a1a" rx="4"/>
+${hLines}${yrs.join('')}${ntDotsStr}${circles}
+<text x="${PL}" y="${PT-5}" font-size="9" fill="#666">Wake time (hour of day)</text>
+<circle cx="${W-PR-68}" cy="${PT-6}" r="3" fill="rgba(45,48,112,0.7)"/>
+<text x="${W-PR-62}" y="${PT-3}" font-size="9" fill="#666">Actual</text>
+<circle cx="${W-PR-21}" cy="${PT-7}" r="3" fill="rgba(201,168,76,0.55)"/>
+<text x="${W-PR-15}" y="${PT-3}" font-size="9" fill="rgba(201,168,76,0.8)">Thread</text>
+</svg>`;
+
+  const el = document.getElementById('chart-phase');
+  if (el) el.innerHTML = svg;
+}
+
+// ── Analysis: Sleep Architecture chart ────────────────────────────────────
+function renderArchitectureChart(slim) {
+  const W=800, H=180, PL=36, PR=14, PT=16, PB=30;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const months = {};
+  for (const s of slim) {
+    if (s.type !== 'long_sleep' && s.type !== 'sleep') continue;
+    if (!s.tsd || s.tsd < 1800) continue;
+    const p = nyParts(new Date(s.be).getTime());
+    const key = `${p.year}-${String(p.month).padStart(2,'0')}`;
+    const m = (months[key] = months[key] || {deep:0,rem:0,light:0,tsd:0,n:0});
+    m.deep  += s.deep  || 0;
+    m.rem   += s.rem   || 0;
+    m.light += s.light || 0;
+    m.tsd   += s.tsd;
+    m.n++;
+  }
+  const keys = Object.keys(months).sort();
+  if (!keys.length) return;
+
+  const bars = keys.map((key, i) => {
+    const m   = months[key];
+    const tot = m.tsd || 1;
+    const x   = PL + (i / keys.length) * CW;
+    const bW  = Math.max(1, CW / keys.length - 1);
+    const segs = [
+      { pct: m.deep/tot,  col:'#2d3070' },
+      { pct: m.rem/tot,   col:'#4a52a0' },
+      { pct: m.light/tot, col:'#8890c0' },
+    ];
+    let yy = PT;
+    return segs.map(seg => {
+      const segH = seg.pct * CH;
+      const r = `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0.5,segH).toFixed(1)}" fill="${seg.col}" opacity="0.88"/>`;
+      yy += segH;
+      return r;
+    }).join('');
+  }).join('');
+
+  const yLabels = [0,25,50,75,100].map(pct => {
+    const y = PT + (1-pct/100)*CH;
+    return `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+<text x="${PL-3}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#666">${pct}%</text>`;
+  }).join('');
+
+  const yrs = [];
+  let prevYr = '';
+  keys.forEach((key, i) => {
+    const yr = key.slice(0,4);
+    if (yr !== prevYr) {
+      const x = PL + (i/keys.length)*CW;
+      yrs.push(`<text x="${x.toFixed(1)}" y="${H-PB+12}" font-size="9" fill="#666">${yr}</text>`);
+      prevYr = yr;
+    }
+  });
+
+  const legend = [
+    {col:'#2d3070',lbl:'Deep'},{col:'#4a52a0',lbl:'REM'},{col:'#8890c0',lbl:'Light'}
+  ].map((item,i)=>
+    `<rect x="${PL+i*72}" y="${H-PB+18}" width="10" height="6" fill="${item.col}" opacity="0.9"/>
+<text x="${PL+i*72+13}" y="${H-PB+24}" font-size="9" fill="#888">${item.lbl}</text>`
+  ).join('');
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:${H}px">
+<rect width="${W}" height="${H}" fill="#1a1a1a" rx="4"/>
+${yLabels}${bars}${yrs.join('')}${legend}
+<text x="${PL}" y="${PT-3}" font-size="9" fill="#666">% of total sleep time</text>
+</svg>`;
+
+  const el = document.getElementById('chart-arch');
+  if (el) el.innerHTML = svg;
+}
+
+// ── Analysis: HRV + HR chart ───────────────────────────────────────────────
+function renderHealthChart(slim) {
+  const W=800, H=210, PL=40, PR=40, PT=18, PB=30;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const daily = {};
+  for (const s of slim) {
+    if (s.type !== 'long_sleep' && s.type !== 'sleep') continue;
+    const key = nyDateStr(new Date(s.be).getTime());
+    const d = (daily[key] = daily[key] || {hrv:[],hr:[]});
+    if (s.hrv && s.hrv > 0) d.hrv.push(s.hrv);
+    if (s.hr  && s.hr  > 0) d.hr.push(s.hr);
+  }
+  const dates = Object.keys(daily).sort();
+  if (!dates.length) return;
+
+  const t0 = new Date(HIST_START+'T12:00:00').getTime();
+  const t1 = Date.now();
+  const tSp = t1 - t0;
+
+  const rawHRV = [], rawHR = [], dMs = [];
+  for (const k of dates) {
+    const d = daily[k];
+    dMs.push(new Date(k+'T12:00:00').getTime());
+    rawHRV.push(d.hrv.length ? d.hrv.reduce((a,b)=>a+b)/d.hrv.length : null);
+    rawHR.push(d.hr.length  ? d.hr.reduce((a,b)=>a+b)/d.hr.length  : null);
+  }
+
+  function roll14(arr) {
+    return arr.map((_,i)=>{
+      const win=arr.slice(Math.max(0,i-13),i+1).filter(v=>v!=null);
+      return win.length ? win.reduce((a,b)=>a+b)/win.length : null;
+    });
+  }
+  const sHRV = roll14(rawHRV);
+  const sHR  = roll14(rawHR);
+
+  const vHRV = sHRV.filter(v=>v!=null);
+  const vHR  = sHR.filter(v=>v!=null);
+  if (!vHRV.length || !vHR.length) return;
+
+  const hrvMin = Math.max(0,  Math.min(...vHRV)-6);
+  const hrvMax = Math.max(...vHRV)+6;
+  const hrMin  = Math.max(40, Math.min(...vHR)-4);
+  const hrMax  = Math.min(80, Math.max(...vHR)+4);
+
+  const tx    = ms => PL + (ms-t0)/tSp*CW;
+  const tyHRV = v  => PT + (1-(v-hrvMin)/(hrvMax-hrvMin))*CH;
+  const tyHR  = v  => PT + (1-(v-hrMin)/(hrMax-hrMin))*CH;
+
+  let hrvPath='', hrPath='', fHRV=true, fHR=true;
+  for (let i=0; i<dMs.length; i++) {
+    const x=tx(dMs[i]);
+    if (sHRV[i]!=null){ hrvPath+=`${fHRV?'M':'L'}${x.toFixed(1)},${tyHRV(sHRV[i]).toFixed(1)} `; fHRV=false; }
+    if (sHR[i] !=null){ hrPath +=`${fHR ?'M':'L'}${x.toFixed(1)},${tyHR(sHR[i]).toFixed(1)} `;  fHR =false; }
+  }
+
+  const hrvTicks = [], hrTicks = [];
+  const hrvStep = Math.max(2, Math.ceil((hrvMax-hrvMin)/4));
+  for (let v=Math.ceil(hrvMin/5)*5; v<=hrvMax; v+=hrvStep) {
+    const y=tyHRV(v);
+    if(y>=PT&&y<=H-PB) hrvTicks.push(`<text x="${PL-3}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="rgba(201,168,76,0.7)">${v}</text>`);
+  }
+  for (let v=Math.ceil(hrMin); v<=hrMax; v+=2) {
+    const y=tyHR(v);
+    if(y>=PT&&y<=H-PB) hrTicks.push(`<text x="${W-PR+3}" y="${y.toFixed(1)}" dominant-baseline="middle" font-size="9" fill="rgba(100,110,200,0.7)">${v}</text>`);
+  }
+
+  const yrs=[];
+  for (let yr=2022; yr<=new Date().getFullYear()+1; yr++) {
+    const ms=new Date(yr,0,1).getTime();
+    if(ms>=t0&&ms<=t1){
+      const x=tx(ms);
+      yrs.push(`<line x1="${x.toFixed(1)}" y1="${PT}" x2="${x.toFixed(1)}" y2="${H-PB}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+<text x="${x.toFixed(1)}" y="${H-PB+12}" font-size="9" fill="#666" text-anchor="middle">${yr}</text>`);
+    }
+  }
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:${H}px">
+<rect width="${W}" height="${H}" fill="#1a1a1a" rx="4"/>
+${hrvTicks.join('')}${hrTicks.join('')}${yrs.join('')}
+<path d="${hrvPath.trim()}" fill="none" stroke="rgba(201,168,76,0.8)" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="${hrPath.trim()}"  fill="none" stroke="rgba(80,90,180,0.8)"  stroke-width="1.5" stroke-linejoin="round"/>
+<text x="${PL}" y="${PT-5}" font-size="9" fill="rgba(201,168,76,0.8)">HRV (ms, 14d avg)</text>
+<text x="${W-PR}" y="${PT-5}" font-size="9" fill="rgba(80,90,180,0.8)" text-anchor="end">HR (bpm, 14d avg)</text>
+</svg>`;
+
+  const el = document.getElementById('chart-health');
+  if (el) el.innerHTML = svg;
+}
+
+// ── Analysis: Phase Gap chart ──────────────────────────────────────────────
+function renderPhaseGapChart(slim) {
+  const W=800, H=170, PL=40, PR=14, PT=18, PB=30;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const pts=[];
+  for (const s of slim) {
+    if (s.type !== 'long_sleep' && s.type !== 'sleep') continue;
+    const wakeMs = new Date(s.be).getTime();
+    const wakeH  = nyHour(wakeMs);
+    const ntH    = nyHour(naturalThreadWake(wakeMs));
+    let gap = wakeH - ntH;
+    if (gap > 12)  gap -= 24;
+    if (gap < -12) gap += 24;
+    pts.push({ ms: wakeMs, gap });
+  }
+  if (!pts.length) return;
+  pts.sort((a,b)=>a.ms-b.ms);
+
+  const t0 = new Date(HIST_START+'T12:00:00').getTime();
+  const t1 = Date.now();
+  const tSp = t1 - t0;
+
+  const gapMax = Math.min(20, Math.max(
+    Math.abs(Math.min(...pts.map(p=>p.gap))),
+    Math.abs(Math.max(...pts.map(p=>p.gap)))
+  ) + 1);
+
+  const tx = ms => PL + (ms-t0)/tSp*CW;
+  const ty = g  => PT + CH/2 - (g/gapMax)*(CH/2);
+
+  const circles = pts.map(p => {
+    const x=tx(p.ms), y=ty(p.gap), abs=Math.abs(p.gap);
+    const col = abs<2 ? 'rgba(74,140,74,0.55)' : abs<6 ? 'rgba(201,168,76,0.55)' : 'rgba(192,57,43,0.5)';
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.7" fill="${col}"/>`;
+  }).join('');
+
+  const yLabels = [-gapMax, -Math.round(gapMax/2), 0, Math.round(gapMax/2), gapMax].map(g => {
+    const y = ty(g);
+    const lbl = g>0 ? `+${g}h` : g===0 ? '0' : `${g}h`;
+    const isZero = g===0;
+    return `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}" stroke="${isZero?'rgba(201,168,76,0.35)':'rgba(255,255,255,0.05)'}" stroke-width="${isZero?1:0.5}"/>
+<text x="${PL-3}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="${isZero?'rgba(201,168,76,0.7)':'#666'}">${lbl}</text>`;
+  }).join('');
+
+  const yrs=[];
+  for (let yr=2022; yr<=new Date().getFullYear()+1; yr++) {
+    const ms=new Date(yr,0,1).getTime();
+    if(ms>=t0&&ms<=t1){
+      const x=tx(ms);
+      yrs.push(`<line x1="${x.toFixed(1)}" y1="${PT}" x2="${x.toFixed(1)}" y2="${H-PB}" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+<text x="${x.toFixed(1)}" y="${H-PB+12}" font-size="9" fill="#666" text-anchor="middle">${yr}</text>`);
+    }
+  }
+
+  const legend=[
+    {col:'rgba(74,140,74,0.8)',lbl:'< 2h gap'},
+    {col:'rgba(201,168,76,0.8)',lbl:'2–6h gap'},
+    {col:'rgba(192,57,43,0.75)',lbl:'> 6h gap'},
+  ].map((item,i)=>
+    `<circle cx="${PL+i*90+4}" cy="${H-PB+20}" r="3.5" fill="${item.col}"/>
+<text x="${PL+i*90+11}" y="${H-PB+24}" font-size="9" fill="#888">${item.lbl}</text>`
+  ).join('');
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:${H}px">
+<rect width="${W}" height="${H}" fill="#1a1a1a" rx="4"/>
+${yLabels}${yrs.join('')}${circles}${legend}
+<text x="${PL}" y="${PT-5}" font-size="9" fill="#666">Phase gap vs natural thread (hours)</text>
+</svg>`;
+
+  const el = document.getElementById('chart-phase-gap');
+  if (el) el.innerHTML = svg;
+}
+
+// ── Flow Calendar ─────────────────────────────────────────────────────────
+function weekMonday(date) {
+  const d = new Date(+date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function renderFlowCalendar(slim) {
+  const el = document.getElementById('flow-cal');
+  if (!el) return;
+
+  const sleepSessions = slim
+    .filter(s => (s.type==='long_sleep'||s.type==='sleep') && s.tsd > 0)
+    .sort((a,b) => new Date(a.be) - new Date(b.be));
+
+  const wkData = {};
+  for (let i = 0; i < sleepSessions.length; i++) {
+    const s = sleepSessions[i];
+    const wakeMs = new Date(s.be).getTime();
+    const monKey = isoDate(weekMonday(new Date(wakeMs)));
+    let ns = 0;
+    const hrs = s.tsd / 3600;
+    if (hrs >= 7.5 && hrs <= 11) ns++;
+    if (s.score && s.score >= 68) ns++;
+    if (s.tsd > 0 && s.rem) { const rf = s.rem/s.tsd; if (rf>=0.16&&rf<=0.29) ns++; }
+    if (i > 0) {
+      const prevWake = new Date(sleepSessions[i-1].be).getTime();
+      const delta = (wakeMs - prevWake) / 3600000;
+      if (delta >= 23.5 && delta <= 27) ns++;
+    } else { ns++; }
+    if (!wkData[monKey]) wkData[monKey] = {total:0, n:0};
+    wkData[monKey].total += ns/4;
+    wkData[monKey].n++;
+  }
+
+  const wkScore = {};
+  for (const [k,d] of Object.entries(wkData)) wkScore[k] = d.n ? d.total/d.n : null;
+
+  const THRESH = 0.48;
+  const todayKey = isoDate(new Date());
+  const startMon = weekMonday(new Date(HIST_START+'T12:00:00'));
+  const allMons = [];
+  for (let d = new Date(startMon); isoDate(d) <= todayKey; d.setDate(d.getDate()+7))
+    allMons.push(isoDate(d));
+
+  const runs = [];
+  let curRun = [];
+  for (const k of allMons) {
+    const s = wkScore[k];
+    if (s != null && s >= THRESH) { curRun.push(k); }
+    else { if (curRun.length >= 2) runs.push([...curRun]); curRun = []; }
+  }
+  if (curRun.length >= 2) runs.push(curRun);
+  runs.sort((a,b) => b.length - a.length);
+  const topSet = new Set(runs.slice(0,5).flat());
+
+  function scoreColor(s) {
+    if (s === null) return '#252525';
+    const t = Math.pow(Math.min(1,s), 0.65);
+    const r = Math.round(0x25+(0xca-0x25)*t);
+    const g = Math.round(0x28+(0xa8-0x28)*t);
+    const b = Math.round(0x38+(0x4c-0x38)*t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  const YEARS = [2022,2023,2024,2025,2026];
+  const yearRows = YEARS.map(yr => {
+    const jan1Day = new Date(yr,0,1).getDay();
+    const offsetToMon = jan1Day===0 ? -6 : jan1Day===1 ? 0 : -(jan1Day-1);
+    const firstMon = new Date(yr,0,1+offsetToMon);
+    const cells = [];
+    let d = new Date(firstMon);
+    let count = 0;
+    while (count < 53) {
+      const key = isoDate(d);
+      const isFuture = key > todayKey;
+      const score = wkScore[key] ?? null;
+      const isTop = topSet.has(key);
+      const bg = isFuture ? 'transparent' : scoreColor(score);
+      const weekEnd = new Date(d); weekEnd.setDate(weekEnd.getDate()+6);
+      const tip = `${d.getMonth()+1}/${d.getDate()}–${weekEnd.getMonth()+1}/${weekEnd.getDate()}/${yr}${score!=null?' · flow '+(score*100).toFixed(0)+'%':''}${isTop?' ★ top flow stretch':''}`;
+      cells.push(`<div class="fc-cell${isTop?' fc-top':''}" style="background:${bg}" title="${tip}"></div>`);
+      d.setDate(d.getDate()+7); count++;
+    }
+    return `<div class="fc-row"><div class="fc-yr-lbl">${yr}</div><div class="fc-cells">${cells.join('')}</div></div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="fc-inner">${yearRows}</div>
+  <div class="fc-legend">
+    <span>Low flow</span>
+    <div class="fc-grad">${[0,.25,.5,.75,1].map(v=>`<div class="fc-gs" style="background:${scoreColor(v)}"></div>`).join('')}</div>
+    <span>High flow</span>
+    <span style="margin-left:12px;color:var(--gold)">■</span><span>Top 5 consecutive stretches</span>
+  </div>`;
+}
+
+// ── Render historical sections ─────────────────────────────────────────────
+function renderHistoricalSections(slim) {
+  _histRows   = buildActoRows(slim);
+  _actoCanvas = document.getElementById('acto-canvas');
+  _miniCanvas = document.getElementById('acto-mini');
+  _actoScroll = document.getElementById('acto-scroll');
+
+  document.getElementById('hist-loading').style.display   = 'none';
+  document.getElementById('hist-chart-wrap').style.display = 'block';
+
+  requestAnimationFrame(() => {
+    drawActogram();
+    setupActoEvents();
+    if (_actoScroll && _actoCanvas) _actoScroll.scrollTop = _actoCanvas.height;
+
+    const ft = document.getElementById('acto-footer');
+    if (ft) {
+      const nightCount = _histRows.filter(r => r.segs.length > 0).length;
+      ft.textContent = `${nightCount} nights recorded · Jan 2022 → present · Gold tick per row: natural thread wake prediction (Aug 2025 baseline)`;
+    }
+  });
+
+  renderPhaseChart(slim);
+  renderArchitectureChart(slim);
+  renderHealthChart(slim);
+  renderPhaseGapChart(slim);
+  renderFlowCalendar(slim);
+}
+
+// ── Share text + ICS ───────────────────────────────────────────────────────
+let _shareText = '', _icsData = '';
+
+function buildShareICS(anchorMs) {
+  const cycles  = nextCycles(anchorMs, 7);
+  const lines   = ["Rikki's predicted sleep/wake schedule:"];
+  cycles.forEach(c => {
+    const day = new Date(c.wakeMs).toLocaleDateString('en-US',{
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+    });
+    lines.push(`${day}: awake ${fmt12(c.wakeMs)} → sleep ${fmt12(c.sleepMs)} → wake ${fmt12(c.nwakeMs)}`);
+  });
+  _shareText = lines.join('\n');
+
+  const all  = nextCycles(anchorMs, 21);
+  const evts = all.map((c,i) =>
+    `BEGIN:VEVENT\nUID:circ-${i}@rikki\nDTSTART:${fmtICS(c.sleepMs)}\nDTEND:${fmtICS(c.nwakeMs)}\nSUMMARY:💤 Sleep window\nDESCRIPTION:Predicted sleep (25.40h tau)\nEND:VEVENT`
+  ).join('\n');
+  _icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Rikki Circadian//EN\n${evts}\nEND:VCALENDAR`;
+}
+
+function doShare() {
+  const out = document.getElementById('share-out');
+  if (out) { out.textContent = _shareText; out.style.display = 'block'; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(_shareText).then(() => {
+      const b = document.querySelector('[onclick="doShare()"]');
+      if (b) { const t=b.textContent; b.textContent='✓ Copied!'; setTimeout(()=>b.textContent=t,2000); }
+    });
+  }
+}
+
+function doICS() {
+  const blob = new Blob([_icsData],{type:'text/calendar;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href=url; a.download='rikki-sleep.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ── Live dial ──────────────────────────────────────────────────────────────
+function updateDial(h) {
+  const deg = (h/25.4)*360, rad = (deg-90)*Math.PI/180;
+  const x   = 220 + 144*Math.cos(rad), y = 220 + 144*Math.sin(rad);
+  const col = h >= AWAKE_H ? '#3d42a0' : '#c9a84c';
+  const hl  = document.getElementById('hand-line');
+  const hd  = document.getElementById('hand-dot');
+  if (hl) { hl.setAttribute('x2',x.toFixed(1)); hl.setAttribute('y2',y.toFixed(1)); hl.setAttribute('stroke',col); }
+  if (hd) { hd.setAttribute('cx',x.toFixed(1)); hd.setAttribute('cy',y.toFixed(1)); hd.setAttribute('fill',col); }
+}
+
+function updateNow(anchorMs) {
+  const {cycleN,h_into,sleepMs,nwakeMs,asleep} = cyclePos(anchorMs);
+  updateDial(h_into);
+  drawPieChart(anchorMs);
+
+  // Current-time dot on outer ring — same 25.4h scale as hand, so they stay aligned
+  const {h_into: h_now} = cyclePos(anchorMs);
+  const rAngle = (h_now / 25.4) * 360;
+  const rRad   = rAngle * Math.PI / 180;
+  const rMid   = 182, rOuter = 207;
+  const dx = Math.sin(rRad), dy = -Math.cos(rRad);
+  const dot = document.getElementById('orn-dot');
+  const lbl = document.getElementById('orn-lbl');
+  if (dot) { dot.setAttribute('cx',(220+rMid*dx).toFixed(1)); dot.setAttribute('cy',(220+rMid*dy).toFixed(1)); }
+  if (lbl) {
+    lbl.setAttribute('x',(220+rOuter*dx).toFixed(1));
+    lbl.setAttribute('y',(220+rOuter*dy).toFixed(1));
+    lbl.textContent = fmt12(Date.now()).replace(' EST','');
+  }
+
+  const set  = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const html = (id,v) => { const e=document.getElementById(id); if(e) e.innerHTML=v; };
+
+  set('dial-center-1','Hour '+h_into.toFixed(1));
+  set('dial-center-3', asleep ? 'sleeping' : 'awake');
+  set('ns-hour', fmtHM(h_into)+' of 25.4h');
+  const cb = document.getElementById('cb-fill');
+  if (cb) cb.style.width = (h_into/25.4*100).toFixed(1)+'%';
+
+  if (asleep) {
+    set('ns-next-label','Next wake');
+    set('ns-next-time', fmt12(nwakeMs));
+    set('ns-next-sub',  fmtCountdown(nwakeMs));
+    html('now-plain','<strong>Rikki is currently in their rest window.</strong> They are expected to wake around '+fmt12(nwakeMs)+'. Typical actual sleep within this ~12h window is ~9.2h.');
+  } else {
+    set('ns-next-label','Rest window opens');
+    set('ns-next-time', fmt12(sleepMs));
+    set('ns-next-sub',  fmtCountdown(sleepMs)+' · window closes ~'+fmt12(nwakeMs));
+    html('now-plain','<strong>Rikki has been awake for '+fmtHM(h_into)+'.</strong> Their ~12h rest window opens around '+fmt12(sleepMs)+'. Typical actual sleep within the window is ~9.2h.');
+  }
+
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0);
+  const nl = document.getElementById('now-line');
+  if (nl) { nl.style.left=((Date.now()-todayMid.getTime())/86400000*100).toFixed(2)+'%'; nl.style.display='block'; }
+
+  const ft = document.getElementById('footer-time');
+  if (ft) ft.textContent = 'Updated '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+
+// ── Status bar ─────────────────────────────────────────────────────────────
+function setStatus(state, msg) {
+  const bar   = document.getElementById('api-bar');
+  const msgEl = document.getElementById('api-msg');
+  if (bar)   bar.className = 'api-bar ' + state;
+  if (msgEl) msgEl.textContent = msg;
+}
+
+// ── Outer 25.4h clock ring (same scale as gold hand) ─────────────────────
+// Map a clock hour to an approximate sky color using the existing palette
+function clockSkyColor(h, sr, ss) {
+  if (h >= sr + 1.5 && h <= ss - 1.5) return '#2a5690';  // full day
+  if (h >= sr - 1.5 && h < sr + 1.5)  return '#c49820';  // dawn
+  if (h > ss - 1.5  && h <= ss + 1.5) return '#7a5a10';  // dusk
+  return '#040918';                                        // night
+}
+
+function drawOuterClock(anchorMs) {
+  const g = document.getElementById('outer-clock');
+  if (!g) return;
+  const OCX = 220, OCY = 220, R1 = 174, R2 = 190;
+  const wakeHour = nyHour(anchorMs);
+  const DEG = 360 / 25.4;
+
+  function nToA(n) { return n * DEG; }
+  function pol(deg, r) {
+    const rad = deg * Math.PI / 180;
+    return [+(OCX + r * Math.sin(rad)).toFixed(2), +(OCY - r * Math.cos(rad)).toFixed(2)];
+  }
+  // SVG arc path for a ring segment (donut sector between R1 and R2)
+  function arcSegment(a1, a2, ri, ro) {
+    const large = (a2 - a1) > 180 ? 1 : 0;
+    const [x1o,y1o] = pol(a1, ro); const [x2o,y2o] = pol(a2, ro);
+    const [x1i,y1i] = pol(a1, ri); const [x2i,y2i] = pol(a2, ri);
+    return `M ${x1o} ${y1o} A ${ro} ${ro} 0 ${large} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${ri} ${ri} 0 ${large} 0 ${x1i} ${y1i} Z`;
+  }
+
+  const today = new Date(anchorMs);
+  const { sunrise, sunset } = sunTimes(today);
+
+  let html = '';
+
+  // Fine-grained astronomical sky coloring: sample skyColorAt() every 0.25 personal hours.
+  // Covers the full 25.4h ring (including the ~1.4h overage beyond the 24h mark).
+  const STEP = 0.25;
+  for (let n = 0; n < PERSONAL.tau; n += STEP) {
+    const clockH = ((wakeHour + n + STEP / 2) % 24 + 24) % 24;
+    const col = skyColorAt(clockH, sunrise, sunset);
+    const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, PERSONAL.tau));
+    html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}" opacity="0.75"/>`;
+  }
+
+  // Ring outlines over the color
+  html += `<circle cx="${OCX}" cy="${OCY}" r="${R1}" fill="none" stroke="#333" stroke-width="0.5"/>`;
+  html += `<circle cx="${OCX}" cy="${OCY}" r="${R2}" fill="none" stroke="#333" stroke-width="0.5"/>`;
+
+  // Ticks: major every 2 personal hours, minor every 1
+  for (let n = 0; n <= 25; n++) {
+    const isMaj = n % 2 === 0;
+    const ang = nToA(n);
+    const [x1,y1] = pol(ang, R2);
+    const [x2,y2] = pol(ang, R2 + (isMaj ? 8 : 4));
+    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isMaj?'#505050':'#333'}" stroke-width="${isMaj?1:0.5}"/>`;
+  }
+
+  // Compact clock-time formatter for ring labels (e.g. "12:55A", "noon", "3P")
+  function ringLabel(ms) {
+    const s = new Date(ms).toLocaleTimeString('en-US',{
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+    });
+    const [time, period] = s.split(' ');
+    const suf = period[0];
+    const [h, m] = time.split(':');
+    if (h === '12' && m === '00') return period === 'PM' ? 'noon' : 'midn';
+    return m === '00' ? `${h}${suf}` : `${h}:${m}${suf}`;
+  }
+
+  // Clock time labels every 2 personal hours
+  for (let n = 0; n <= 24; n += 2) {
+    let label, fontSize, fillColor, fontWeight;
+    if (n === 0) {
+      // Show exact wake time at the top
+      label = ringLabel(anchorMs);
+      fontSize = '8'; fillColor = '#c9a84c'; fontWeight = '600';
+    } else {
+      const clockH = ((wakeHour + n) % 24 + 24) % 24;
+      const isNoon     = Math.abs(clockH - 12) < 0.5;
+      const isMidnight = clockH < 0.5 || clockH > 23.5;
+      if (isNoon) {
+        label = 'noon'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+      } else if (isMidnight) {
+        label = 'midn'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+      } else {
+        const ch = Math.round(clockH);
+        const h12 = ch % 12 || 12;
+        const ampm = ch < 12 ? 'A' : 'P';
+        label = h12 + ampm; fontSize = '8.5'; fillColor = '#606060'; fontWeight = '400';
+      }
+    }
+    const [lx,ly] = pol(nToA(n), R2 + 17);
+    html += `<text x="${lx}" y="${ly}" font-size="${fontSize}" fill="${fillColor}" font-weight="${fontWeight}" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${label}</text>`;
+  }
+
+  // Wake tick (gold) at angle 0 = top
+  const [wt1x,wt1y] = pol(0, R1 - 1);
+  const [wt2x,wt2y] = pol(0, R2 + 1);
+  html += `<line x1="${wt1x}" y1="${wt1y}" x2="${wt2x}" y2="${wt2y}" stroke="rgba(201,168,76,0.5)" stroke-width="1.5"/>`;
+
+  g.innerHTML = html;
+}
+
+// ── Sky color sampler (interpolates gradient stops at a given clock hour) ──
+function skyColorAt(h, sunrise, sunset) {
+  const mid = (sunrise + sunset) / 2;
+  const stops = [
+    [0,                           [4,9,24]     ],
+    [sunrise - 1.5,               [4,9,24]     ],
+    [sunrise - 1.0,               [8,15,38]    ],
+    [sunrise - 0.5,               [16,10,54]   ],
+    [sunrise - 0.15,              [38,22,64]   ],
+    [sunrise,                     [122,90,16]  ],
+    [sunrise + 0.4,               [196,152,32] ],
+    [sunrise + 1.2,               [58,104,152] ],
+    [Math.min(sunrise + 2.2,mid), [42,86,144]  ],
+    [Math.max(sunset  - 2.2,mid), [42,86,144]  ],
+    [sunset  - 1.2,               [58,104,152] ],
+    [sunset  - 0.4,               [196,152,32] ],
+    [sunset,                      [122,90,16]  ],
+    [sunset  + 0.15,              [38,22,64]   ],
+    [sunset  + 0.5,               [16,10,54]   ],
+    [sunset  + 1.0,               [8,15,38]    ],
+    [sunset  + 1.5,               [4,9,24]     ],
+    [24,                          [4,9,24]     ],
+  ];
+  const cl = stops.map(([x,c]) => [Math.max(0,Math.min(24,x)), c]);
+  cl.sort((a,b) => a[0]-b[0]);
+  const hc = Math.max(0, Math.min(23.99, h));
+  for (let i = 0; i < cl.length-1; i++) {
+    if (hc >= cl[i][0] && hc <= cl[i+1][0]) {
+      const sp = cl[i+1][0] - cl[i][0];
+      const t  = sp > 0 ? (hc - cl[i][0]) / sp : 0;
+      const [r1,g1,b1] = cl[i][1], [r2,g2,b2] = cl[i+1][1];
+      return `rgb(${Math.round(r1+t*(r2-r1))},${Math.round(g1+t*(g2-g1))},${Math.round(b1+t*(b2-b1))})`;
+    }
+  }
+  return 'rgb(4,9,24)';
+}
+
+// ── Render: personal-day hour table ────────────────────────────────────────
+// Binary contrast: light = awake, dark = rest.
+// Columns flow left→right through Rikki's personal 25.4h day.
+// Clock hours shown in awake cells only; drift is visible reading down any column.
+function renderHourTable(anchorMs) {
+  const el = document.getElementById('hour-table-wrap');
+  if (!el) return;
+  const todayMs = (() => { const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+
+  const COLS       = 26;  // personal hours 0–25 (full 25.4h cycle)
+  const REST_START = 14;  // cols 14–25 = rest window (~12h)
+
+  let html = '<p class="htbl-intro">'
+    + 'Each column is one personal hour, from wake (left) through the rest window (right). '
+    + 'Cell color = sky color for that clock hour (day blue → night navy). '
+    + '<strong style="color:#8890c0">★ Starred cells</strong> = rest window. '
+    + 'Reading down any column, watch the clock hours advance ~84 min per day — that drift is Non-24.'
+    + '</p>';
+
+  html += '<div class="htbl-scroll"><table class="htbl"><thead>';
+
+  // Phase header row
+  html += '<tr><th style="border:none"></th>';
+  html += `<th class="htbl-phase-hdr ph-act" colspan="${REST_START}">← Awake</th>`;
+  html += `<th class="htbl-phase-hdr ph-rest" colspan="${COLS - REST_START}">Rest Window →</th>`;
+  html += '</tr>';
+
+  // Personal hour label row (every 4 cols)
+  html += '<tr><th style="border:none;font-size:8px;color:#445;text-align:right;'
+        + 'padding-right:9px;padding-bottom:4px">Date</th>';
+  for (let col = 0; col < COLS; col++) {
+    html += `<th class="htbl-col-hdr">${col % 4 === 0 ? 'h' + col : ''}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (let day = 0; day < 21; day++) {
+    const dayMs   = todayMs + day * 86400000;
+    const isToday = day === 0;
+    const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+    });
+    const n      = Math.round((dayMs + 12 * 3600000 - anchorMs) / TAU_MS);
+    const wakeMs = anchorMs + n * TAU_MS;
+    const { sunrise: sr, sunset: ss } = sunTimes(new Date(dayMs));
+
+    html += `<tr class="${isToday ? 'htbl-today' : ''}">`;
+    html += `<td class="htbl-date">${dayLabel}</td>`;
+
+    for (let col = 0; col < COLS; col++) {
+      const isRest = col >= REST_START;
+      const bLeft  = col === REST_START ? 'border-left:2px solid #1c2840;' : '';
+      // Sky color for this cell's clock hour — applies to both awake and sleep columns
+      const clockH  = nyHour(wakeMs + col * 3600000);
+      const hFloor  = Math.floor(clockH) % 24;
+      const skyCol  = skyColorAt(hFloor + 0.5, sr, ss);  // +0.5 = mid-hour sample
+      if (isRest) {
+        html += `<td class="htbl-sl" style="${bLeft}background-color:${skyCol}"></td>`;
+      } else {
+        const label   = hFloor === 12 ? 'noon' : hFloor === 0 ? 'midn' : hFloor;
+        const isAnchr = hFloor === 12 || hFloor === 0;
+        html += `<td class="htbl-aw${isAnchr?' htbl-anchor':''}" style="${bLeft}background-color:${skyCol}">${label}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+// ── Pie chart ring (shared daily life wheel, inside the sundial) ───────────
+function drawPieChart(anchorMs) {
+  const g = document.getElementById('pie-ring');
+  if (!g) return;
+
+  const CX = 220, CY = 220, RI = 5, RO = 168;
+  const TAU = PERSONAL.tau;
+  const DEG = 360 / TAU;
+
+  function pol(deg, r) {
+    const rad = deg * Math.PI / 180;
+    return [+(CX + r * Math.sin(rad)).toFixed(2), +(CY - r * Math.cos(rad)).toFixed(2)];
+  }
+
+  function sector(a1, a2, ri, ro) {
+    const large = (a2 - a1) >= 180 ? 1 : 0;
+    const [x1o,y1o] = pol(a1, ro); const [x2o,y2o] = pol(a2 - 0.01, ro);
+    const [x1i,y1i] = pol(a1, ri); const [x2i,y2i] = pol(a2 - 0.01, ri);
+    return `M ${x1o} ${y1o} A ${ro} ${ro} 0 ${large} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${ri} ${ri} 0 ${large} 0 ${x1i} ${y1i} Z`;
+  }
+
+  const { h_into, wakeMs } = cyclePos(anchorMs, Date.now());
+  const wakeHour = nyHour(wakeMs);
+  const { sunrise, sunset } = sunTimes(new Date(wakeMs));
+  const STEP = 0.25; // personal hours per sky-color sub-slice
+
+  let svg = '';
+  let cumH = 0;
+  let sleepLabelAngle = null;
+
+  for (const seg of PERSONAL.pieChart) {
+    const segStart = cumH;
+    const segEnd   = cumH + seg.hours;
+    const dFull    = sector(segStart * DEG, segEnd * DEG, RI, RO);
+
+    if (seg.type === 'food') {
+      svg += `<path d="${dFull}" fill="rgba(130,130,130,0.55)" stroke="#1a1a1a" stroke-width="0.5"/>`;
+    } else {
+      // Sky-colored sub-slices — each 0.25h gets its own accurate sky color
+      let h = segStart;
+      while (h < segEnd) {
+        const hNext  = Math.min(h + STEP, segEnd);
+        const midH   = (h + hNext) / 2;
+        const clockH = ((wakeHour + midH) % 24 + 24) % 24;
+        svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${skyColorAt(clockH, sunrise, sunset)}" stroke="none"/>`;
+        h = hNext;
+      }
+      // Texture overlay on full segment shape
+      if (seg.type === 'sleep') {
+        svg += `<path d="${dFull}" fill="url(#pie-sleep-stars)" stroke="none"/>`;
+        sleepLabelAngle = (segStart + segEnd) / 2 * DEG;
+      } else if (seg.type === 'waking' || seg.type === 'winddown') {
+        svg += `<path d="${dFull}" fill="url(#pie-trans-dots)" stroke="none"/>`;
+      }
+      // Segment border (stroke only, no fill — sub-slices already filled)
+      svg += `<path d="${dFull}" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>`;
+    }
+
+    cumH = segEnd;
+  }
+
+  if (sleepLabelAngle !== null) {
+    const [lx, ly] = pol(sleepLabelAngle, 90);
+    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.82)" font-size="13" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="1">Sleep</text>`;
+  }
+
+  const nowAngle = h_into * DEG;
+  const arcSpan  = 8;
+  svg += `<path d="${sector(nowAngle - arcSpan/2, nowAngle + arcSpan/2, RO - 14, RO - 2)}" fill="rgba(201,168,76,0.95)" stroke="none"/>`;
+
+  g.innerHTML = svg;
+}
+
+// ── Render everything ──────────────────────────────────────────────────────
+let _liveTimer = null;
+let _anchorMs  = FALLBACK_ANCHOR_MS;
+
+function renderAll(anchorMs) {
+  _anchorMs = anchorMs;
+  renderCards(anchorMs);
+  renderForecast(anchorMs);
+  renderHourTable(anchorMs);
+  buildShareICS(anchorMs);
+  drawOuterClock(anchorMs);
+  drawPieChart(anchorMs);
+  updateNow(anchorMs);
+
+  const footAnchor = document.getElementById('footer-anchor');
+  if (footAnchor) {
+    footAnchor.textContent = 'Last wake: ' + new Date(anchorMs).toLocaleString('en-US',{
+      month:'short',day:'numeric',year:'numeric',
+      hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
+    }) + ' EST';
+  }
+
+  if (_liveTimer) clearInterval(_liveTimer);
+  _liveTimer = setInterval(() => updateNow(anchorMs), 900000);
+}
+
+// ── Main init ──────────────────────────────────────────────────────────────
+function startHistoricalLoad() {
+  loadHistoricalData(pct => {
+    const bar  = document.getElementById('hist-prog');
+    const stat = document.getElementById('hist-status');
+    if (bar)  bar.style.width = pct + '%';
+    if (stat) stat.textContent = pct < 100 ? `Loading… ${Math.round(pct)}%` : 'Processing data…';
+  }).then(slim => {
+    renderHistoricalSections(slim);
+  }).catch(err => {
+    const stat = document.getElementById('hist-status');
+    if (stat) stat.textContent = `Could not load historical data: ${err.message}`;
+  });
+}
+
+async function init() {
+  const cached = getCached();
+  if (cached) {
+    renderAll(getAnchor(cached));
+    setStatus('connected', `✓ Live Oura data · refreshing…`);
+    refreshFromAPI();
+  } else {
+    setStatus('loading', '↻ Fetching from Oura…');
+    await refreshFromAPI();
+  }
+  startHistoricalLoad();
+}
+
+async function refreshFromAPI() {
+  try {
+    const sessions = await fetchSleep(90);
+    setCache(sessions);
+    const anchor = getAnchor(sessions);
+    renderAll(anchor);
+    const latestStr = new Date(anchor).toLocaleString('en-US', {
+      month:'short', day:'numeric',
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+    });
+    setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} ET`);
+  } catch (e) {
+    const cached = getCached();
+    if (cached) {
+      renderAll(getAnchor(cached));
+      setStatus('error', `⚠ Refresh failed (${e.message}) — showing cached data`);
+    } else {
+      renderAll(FALLBACK_ANCHOR_MS);
+      setStatus('error', `⚠ Could not reach Oura (${e.message})`);
+    }
+  }
+}
+
+async function forceRefresh() {
+  localStorage.removeItem('oura_sleep_cache');
+  setStatus('loading', '↻ Refreshing…');
+  await refreshFromAPI();
+}
+
+init();
+</script>
+</body>
+</html>
