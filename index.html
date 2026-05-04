@@ -311,8 +311,8 @@ hr.div{border:none;border-top:1px solid #272727}
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
             <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
           </pattern>
-          <pattern id="mini-sleep-stars" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M5,1 L5.9,3.7 L8.8,3.8 L6.5,5.5 L7.4,8.2 L5,6.6 L2.6,8.2 L3.5,5.5 L1.2,3.8 L4.1,3.7 Z" fill="none" stroke="rgba(140,215,200,0.82)" stroke-width="0.75" stroke-linejoin="round" stroke-linecap="round"/>
+          <pattern id="mini-sleep-stars" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+            <path d="M3.5,0.7 L4.1,2.6 L6.2,2.7 L4.6,3.9 L5.2,5.7 L3.5,4.6 L1.8,5.7 L2.5,3.9 L0.8,2.7 L2.9,2.6 Z" fill="none" stroke="rgba(140,215,200,0.82)" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
         </defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
@@ -844,6 +844,13 @@ function fmt12(ms) {
   if (parts === '12:00 AM') return 'midnight EST';
   return parts + ' EST';
 }
+function fmtShort(ms) {
+  const s = new Date(ms).toLocaleTimeString('en-US',
+    {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'});
+  if (s === '12:00 PM') return 'noon';
+  if (s === '12:00 AM') return 'midn';
+  return s.replace(' AM','A').replace(' PM','P');
+}
 function fmtHM(h) {
   const hh=Math.floor(h), mm=Math.round((h-hh)*60);
   return mm===0 ? hh+'h' : hh+'h '+mm+'m';
@@ -1003,6 +1010,7 @@ function renderPersonalDials(anchorMs) {
     if (wMs >= dayStartMs)       { cardWakeMs = wMs; }
     else if (slMs > dayStartMs)  { cardWakeMs = (nwMs >= dayStartMs && nwMs < dayEndMs) ? nwMs : wMs; }
     else                         { cardWakeMs = nwMs; }
+    const cardSleepMs = cardWakeMs + AWAKE_MS;
 
     const wakeHour = nyHour(cardWakeMs);
     const sr = sunTimes(dayDate);
@@ -1022,23 +1030,30 @@ function renderPersonalDials(anchorMs) {
     // Star overlay on sleep portion
     svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
 
-    // Gold noon marker on outer ring — tracks drift across the 20 dials
-    const noonRelH = ((12 - wakeHour) % 24 + 24) % 24;
-    if (noonRelH < TAU) {
-      const nA = noonRelH * DEG_P;
-      svg += '<path d="' + sector(nA - 4, nA + 4, R1, R2) + '" fill="rgba(201,168,76,0.92)" stroke="none"/>';
-    }
-
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>';
+
+    // Wake label at top (angle=0), Rest label at sleep boundary
+    const RLBL = R2 + 10;
+    const restAngle = AWAKE_H * DEG_P;
+    function labelAnchor(a) { const s = Math.sin(a * Math.PI / 180); return s > 0.35 ? 'start' : s < -0.35 ? 'end' : 'middle'; }
+    function addLabel(angle, text) {
+      const [lx, ly] = pol(angle, RLBL);
+      const anchor = labelAnchor(angle);
+      const base = 'x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" font-size="6.5" font-family="Inter,sans-serif" text-anchor="' + anchor + '" dominant-baseline="middle"';
+      svg += '<text ' + base + ' fill="none" stroke="#04070f" stroke-width="2.5" stroke-linejoin="round">' + text + '</text>';
+      svg += '<text ' + base + ' fill="rgba(225,215,195,0.92)">' + text + '</text>';
+    }
+    addLabel(0, fmtShort(cardWakeMs));
+    addLabel(restAngle, fmtShort(cardSleepMs));
 
     const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short', timeZone: 'America/New_York'}).toUpperCase();
     const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
-    return '<div class="mini-dial-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">' + svg + '</svg></div>';
+    return '<div class="mini-dial-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -16 122 138">' + svg + '</svg></div>';
   });
 
   el.innerHTML = items.join('');
