@@ -2149,9 +2149,12 @@ function drawPieChart(anchorMs) {
   const { sunrise, sunset } = sunTimes(new Date(wakeMs));
   const STEP = 0.25; // personal hours per sky-color sub-slice
 
+  const FOOD_NAMES = ['Breakfast', 'Snack', 'Snack', 'Dinner'];
   let svg = '';
   let cumH = 0;
   let sleepLabelAngle = null;
+  const foodLabelAngles = [];
+  let foodIdx = 0;
 
   for (const seg of PERSONAL.pieChart) {
     const segStart = cumH;
@@ -2160,6 +2163,7 @@ function drawPieChart(anchorMs) {
 
     if (seg.type === 'food') {
       svg += `<path d="${dFull}" fill="rgba(130,130,130,0.55)" stroke="#1a1a1a" stroke-width="0.5"/>`;
+      foodLabelAngles.push({ angle: (segStart + segEnd) / 2 * DEG, label: FOOD_NAMES[foodIdx++] });
     } else {
       // Sky-colored sub-slices — each 0.25h gets its own accurate sky color
       let h = segStart;
@@ -2184,7 +2188,17 @@ function drawPieChart(anchorMs) {
 
   if (sleepLabelAngle !== null) {
     const [lx, ly] = pol(sleepLabelAngle, 90);
-    svg += `<text x="${lx}" y="${ly}" fill="#c49820" font-size="26" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="2">Sleep</text>`;
+    const sleepAttrs = `x="${lx}" y="${ly}" font-size="26" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="2"`;
+    svg += `<text ${sleepAttrs} fill="none" stroke="#06090f" stroke-width="5" stroke-linejoin="round">Sleep</text>`;
+    svg += `<text ${sleepAttrs} fill="#c49820">Sleep</text>`;
+  }
+
+  for (const {angle, label} of foodLabelAngles) {
+    const [lx, ly] = pol(angle, 90);
+    const rot = `rotate(${(angle - 90).toFixed(1)},${lx},${ly})`;
+    const attrs = `x="${lx}" y="${ly}" font-size="7" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" transform="${rot}"`;
+    svg += `<text ${attrs} fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round">${label}</text>`;
+    svg += `<text ${attrs} fill="rgba(210,205,195,0.82)">${label}</text>`;
   }
 
 
