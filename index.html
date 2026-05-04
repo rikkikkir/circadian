@@ -972,21 +972,29 @@ function renderCards(anchorMs) {
     });
 
     // Find which cycle overlaps the start of this calendar day
-    const cycleN  = Math.floor((dayStartMs - anchorMs) / TAU_MS);
-    const wakeMs  = anchorMs + cycleN * TAU_MS;
-    const sleepMs = wakeMs + AWAKE_MS;
+    const dayEndMs    = dayStartMs + 86400000;
+    const cycleN      = Math.floor((dayStartMs - anchorMs) / TAU_MS);
+    const wakeMs      = anchorMs + cycleN * TAU_MS;
+    const sleepMs     = wakeMs + AWAKE_MS;
+    const nextWakeMs  = anchorMs + (cycleN + 1) * TAU_MS;
+    const nextSleepMs = nextWakeMs + AWAKE_MS;
 
     let cardWakeMs, cardSleepMs, carryOver;
     if (wakeMs >= dayStartMs) {
       // Wake event falls at/after midnight — normal day
       cardWakeMs = wakeMs; cardSleepMs = sleepMs; carryOver = false;
     } else if (sleepMs > dayStartMs) {
-      // Still in awake window from previous day — carry-over
-      cardWakeMs = wakeMs; cardSleepMs = sleepMs; carryOver = true;
+      // Carry-over: still in yesterday's awake window at midnight.
+      // But if a fresh wake also falls within this day, prefer it — prevents cascade.
+      if (nextWakeMs >= dayStartMs && nextWakeMs < dayEndMs) {
+        cardWakeMs = nextWakeMs; cardSleepMs = nextSleepMs; carryOver = false;
+      } else {
+        cardWakeMs = wakeMs; cardSleepMs = sleepMs; carryOver = true;
+      }
     } else {
       // In sleep window at midnight; next wake falls within this day
-      cardWakeMs  = anchorMs + (cycleN + 1) * TAU_MS;
-      cardSleepMs = cardWakeMs + AWAKE_MS;
+      cardWakeMs  = nextWakeMs;
+      cardSleepMs = nextSleepMs;
       carryOver   = false;
     }
 
