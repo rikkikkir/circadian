@@ -82,7 +82,8 @@ hr.div{border:none;border-top:1px solid #272727}
 .cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
 /* ── Near-term cards ── */
-.mini-section-lbl{font-size:9.5px;color:var(--dim2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;margin-top:20px}
+.mini-section-lbl{font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.01em;margin-bottom:5px;margin-top:28px;font-family:Inter,sans-serif}
+.mini-section-sub{font-size:10.5px;color:var(--dim);margin-bottom:12px;line-height:1.55}
 .mini-dials-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:4px}
 .mini-dial-item{display:flex;align-items:center;justify-content:center}
 .mini-dial-item svg{width:100%;height:auto;display:block}
@@ -352,9 +353,11 @@ hr.div{border:none;border-top:1px solid #272727}
       with buffer on either side for natural variation. Because each cycle is 84 minutes longer than
       the calendar day, times shift later with every card.
     </div>
-    <div class="mini-section-lbl">Your body's view — wake at top, noon tracked in gold</div>
+    <div class="mini-section-lbl">Your Rhythm</div>
+    <div class="mini-section-sub">Each circle is one personal day (25.40 hours). Your wake time is always at the top — cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
-    <div class="mini-section-lbl">Calendar view — midnight at top</div>
+    <div class="mini-section-lbl">On the Clock</div>
+    <div class="mini-section-sub">The same 20 days mapped to the 24-hour calendar — midnight at top. Sky colors show how dawn and dusk fall across your day. Cream arcs show when you'll be awake; stars mark your rest window.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
@@ -1027,7 +1030,9 @@ function renderPersonalDials(anchorMs) {
       svg += '<path d="' + sector(h * DEG_P, hEnd * DEG_P, RI, RO) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Star overlay on sleep portion
+    // Cream overlay on wake portion (covers sky gradient → clearly awake)
+    svg += '<path d="' + sector(0, AWAKE_H * DEG_P, RI, RO) + '" fill="rgba(228,218,195,0.82)" stroke="none"/>';
+    // Star overlay on sleep portion (sky gradient shows through underneath)
     svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
 
     // Boundaries
