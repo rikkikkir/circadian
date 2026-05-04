@@ -1037,23 +1037,33 @@ function renderPersonalDials(anchorMs) {
     // Star overlay on sleep portion
     svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
 
+    // Food segment dividers within cream awake window
+    let _cum = 0;
+    PERSONAL.pieChart.forEach(seg => {
+      if (seg.type === 'food')
+        svg += '<path d="' + sector(_cum * DEG_P, (_cum + seg.hours) * DEG_P, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+      _cum += seg.hours;
+    });
+
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>';
 
-    // Wake label at top (angle=0), Rest label at sleep boundary
+    // Two-line labels outside outer ring
     const RLBL = R2 + 10;
     const restAngle = AWAKE_H * DEG_P;
     function labelAnchor(a) { const s = Math.sin(a * Math.PI / 180); return s > 0.35 ? 'start' : s < -0.35 ? 'end' : 'middle'; }
-    function addLabel(angle, text) {
+    function addLabel(angle, label, time) {
       const [lx, ly] = pol(angle, RLBL);
       const anchor = labelAnchor(angle);
-      const base = 'x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" font-size="6.5" font-family="Inter,sans-serif" text-anchor="' + anchor + '" dominant-baseline="middle"';
-      svg += '<text ' + base + ' fill="none" stroke="#04070f" stroke-width="2.5" stroke-linejoin="round">' + text + '</text>';
-      svg += '<text ' + base + ' fill="rgba(225,215,195,0.92)">' + text + '</text>';
+      const fa = 'font-family="Inter,sans-serif" text-anchor="' + anchor + '" dominant-baseline="middle"';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly - 4).toFixed(1) + '" ' + fa + ' font-size="5" fill="none" stroke="#04070f" stroke-width="2" stroke-linejoin="round">' + label + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly - 4).toFixed(1) + '" ' + fa + ' font-size="5" fill="rgba(180,170,150,0.85)">' + label + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 4).toFixed(1) + '" ' + fa + ' font-size="6.5" fill="none" stroke="#04070f" stroke-width="2.5" stroke-linejoin="round">' + time + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 4).toFixed(1) + '" ' + fa + ' font-size="6.5" fill="rgba(225,215,195,0.92)">' + time + '</text>';
     }
-    addLabel(0, fmtShort(cardWakeMs));
-    addLabel(restAngle, fmtShort(cardSleepMs));
+    addLabel(0, 'Awake', fmtShort(cardWakeMs));
+    addLabel(restAngle, 'Rest', fmtShort(cardSleepMs));
 
     const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short', timeZone: 'America/New_York'}).toUpperCase();
     const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
@@ -1151,24 +1161,56 @@ function renderMiniDials(anchorMs) {
       }
     }
 
-    // Gold wake marker on outer ring at actual clock-hour position
-    if (wRelH >= 0 && wRelH < 24) {
-      const wA = wRelH * D24;
-      svg += '<path d="' + sector(wA - 4, wA + 4, R1, R2) + '" fill="rgba(201,168,76,0.92)" stroke="none"/>';
+    // Food segment dividers within cream wake arcs
+    for (let c = startN; c <= startN + 2; c++) {
+      const w0c = anchorMs + c * TAU_MS;
+      let _cum = 0;
+      PERSONAL.pieChart.forEach(seg => {
+        if (seg.type === 'food') {
+          const fs0 = w0c + _cum * 3600000;
+          const fs1 = w0c + (_cum + seg.hours) * 3600000;
+          const fol0 = Math.max(fs0, dayStartMs);
+          const fol1 = Math.min(fs1, dayEndMs);
+          if (fol1 > fol0) {
+            const fa0 = (fol0 - dayStartMs) / 3600000 * D24;
+            const fa1 = (fol1 - dayStartMs) / 3600000 * D24;
+            svg += '<path d="' + sector(fa0, fa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+          }
+        }
+        _cum += seg.hours;
+      });
     }
 
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>';
 
-    // Center label: day name + date, on dark navy background
+    // Two-line labels at wake/sleep positions (same style as personal dials)
+    const RLBL2 = R2 + 10;
+    function labelAnchor2(a) { const s = Math.sin(a * Math.PI / 180); return s > 0.35 ? 'start' : s < -0.35 ? 'end' : 'middle'; }
+    function addLabel2(angle, label, time) {
+      const [lx, ly] = pol(angle, RLBL2);
+      const anchor = labelAnchor2(angle);
+      const fa = 'font-family="Inter,sans-serif" text-anchor="' + anchor + '" dominant-baseline="middle"';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly - 4).toFixed(1) + '" ' + fa + ' font-size="5" fill="none" stroke="#04070f" stroke-width="2" stroke-linejoin="round">' + label + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly - 4).toFixed(1) + '" ' + fa + ' font-size="5" fill="rgba(180,170,150,0.85)">' + label + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 4).toFixed(1) + '" ' + fa + ' font-size="6.5" fill="none" stroke="#04070f" stroke-width="2.5" stroke-linejoin="round">' + time + '</text>';
+      svg += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 4).toFixed(1) + '" ' + fa + ' font-size="6.5" fill="rgba(225,215,195,0.92)">' + time + '</text>';
+    }
+    const wAngle = wRelH * D24;
+    const sHoursFromMidn = (cardSleepMs - dayStartMs) / 3600000;
+    const sAngle = sHoursFromMidn * D24;
+    if (wRelH >= 0 && wRelH < 24) addLabel2(wAngle, 'Awake', fmtShort(cardWakeMs));
+    if (sHoursFromMidn >= 0 && sHoursFromMidn < 24) addLabel2(sAngle, 'Rest', fmtShort(cardSleepMs));
+
+    // Center label: day name + date
     const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short',  timeZone: 'America/New_York'}).toUpperCase();
     const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
     return '<div class="mini-dial-item">'
-      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">' + svg + '</svg>'
+      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -16 122 138">' + svg + '</svg>'
       + '</div>';
   });
 
