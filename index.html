@@ -82,10 +82,9 @@ hr.div{border:none;border-top:1px solid #272727}
 .cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
 /* ── Near-term cards ── */
-.mini-dials-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-.mini-dial-item{display:flex;flex-direction:column;align-items:center}
+.mini-dials-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px}
+.mini-dial-item{display:flex;align-items:center;justify-content:center}
 .mini-dial-item svg{width:100%;height:auto;display:block}
-.mini-dial-lbl{font-size:9px;color:var(--dim2);margin-top:5px;text-align:center;letter-spacing:.04em;text-transform:uppercase}
 @media(max-width:700px){.mini-dials-grid{grid-template-columns:repeat(2,1fr)}}
 .near-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
 @media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
@@ -310,6 +309,9 @@ hr.div{border:none;border-top:1px solid #272727}
           </pattern>
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
             <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
+          </pattern>
+          <pattern id="mini-sleep-stars" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M5,1 L5.9,3.7 L8.8,3.8 L6.5,5.5 L7.4,8.2 L5,6.6 L2.6,8.2 L3.5,5.5 L1.2,3.8 L4.1,3.7 Z" fill="none" stroke="rgba(140,215,200,0.82)" stroke-width="0.75" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
         </defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
@@ -968,10 +970,9 @@ function renderMiniDials(anchorMs) {
 
   const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
   const CX = 55, CY = 55;
-  const RI = 3, RO = 43;
-  const R1 = 45, R2 = 53;
-  const STEP = 0.25;
-  const D24 = 15; // degrees per hour on a 24h clock face
+  const RI = 15, RO = 40;  // inner disk: hole RI for center label, outer edge RO
+  const R1 = 42, R2 = 52;  // outer ring
+  const D24 = 15;           // 15° per hour, midnight at top
 
   function pol(deg, r) {
     const rad = deg * Math.PI / 180;
@@ -981,8 +982,8 @@ function renderMiniDials(anchorMs) {
     const large = (a2 - a1) > 180 ? 1 : 0;
     const [x1o, y1o] = pol(a1, ro); const [x2o, y2o] = pol(a2 - 0.01, ro);
     const [x1i, y1i] = pol(a1, ri); const [x2i, y2i] = pol(a2 - 0.01, ri);
-    return 'M ' + x1o + ' ' + y1o + ' A ' + ro + ' ' + ro + ' 0 ' + large + ' 1 ' + x2o + ' ' + y2o +
-           ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
+    return 'M ' + x1o + ' ' + y1o + ' A ' + ro + ' ' + ro + ' 0 ' + large + ' 1 ' + x2o + ' ' + y2o
+         + ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
 
   const items = Array.from({length: 20}, function(_, i) {
@@ -991,60 +992,71 @@ function renderMiniDials(anchorMs) {
     const dayDate    = new Date(dayStartMs);
     const sr = sunTimes(dayDate);
     const sunrise = sr.sunrise, sunset = sr.sunset;
-    const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
 
-    var svg = '';
+    // Calendar-day wake/sleep times (same logic as renderCards)
+    const cycleN = Math.floor((dayStartMs - anchorMs) / TAU_MS);
+    const wMs  = anchorMs + cycleN * TAU_MS;
+    const slMs = wMs + AWAKE_MS;
+    const nwMs = anchorMs + (cycleN + 1) * TAU_MS;
+    let cardWakeMs;
+    if (wMs >= dayStartMs)       { cardWakeMs = wMs; }
+    else if (slMs > dayStartMs)  { cardWakeMs = (nwMs >= dayStartMs && nwMs < dayEndMs) ? nwMs : wMs; }
+    else                         { cardWakeMs = nwMs; }
+    const cardSleepMs = cardWakeMs + AWAKE_MS;
 
-    // Outer ring + pie disk: fixed 24h clock, midnight at top
-    for (var h = 0; h < 24; h += STEP) {
-      var hEnd = Math.min(h + STEP, 24);
-      var col = skyColorAt((h + hEnd) / 2, sunrise, sunset);
+    let svg = '';
+
+    // Outer ring: 24h sky gradient
+    for (let h = 0; h < 24; h += 0.25) {
+      const hEnd = Math.min(h + 0.25, 24);
+      const col  = skyColorAt((h + hEnd) / 2, sunrise, sunset);
       svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
-      svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Sleep texture: overlay for any sleep that falls within this calendar day
-    for (var c = startN; c <= startN + 2; c++) {
-      var s0 = anchorMs + c * TAU_MS + AWAKE_MS;
-      var s1 = s0 + TIB_MS;
-      var ol0 = Math.max(s0, dayStartMs);
-      var ol1 = Math.min(s1, dayEndMs);
+    // Inner disk base: dark navy
+    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="rgb(6,10,26)"/>';
+
+    // Wake arc: cream/white from wake → sleep (clamp to this day)
+    const wRelH = (cardWakeMs  - dayStartMs) / 3600000;
+    const sRelH = (cardSleepMs - dayStartMs) / 3600000;
+    if (wRelH < 24 && sRelH > 0) {
+      const a0 = Math.max(wRelH, 0) * D24;
+      const a1 = Math.min(sRelH, 24) * D24;
+      if (a1 > a0) svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="rgba(230,220,200,0.88)" stroke="none"/>';
+    }
+
+    // Sleep arcs: star texture for each sleep window overlapping this day
+    const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
+    for (let c = startN; c <= startN + 2; c++) {
+      const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
+      const s1 = s0 + TIB_MS;
+      const ol0 = Math.max(s0, dayStartMs);
+      const ol1 = Math.min(s1, dayEndMs);
       if (ol1 > ol0) {
-        var a0 = (ol0 - dayStartMs) / 3600000 * D24;
-        var a1 = (ol1 - dayStartMs) / 3600000 * D24;
-        svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="url(#pie-sleep-stars)" stroke="none"/>';
+        const sa0 = (ol0 - dayStartMs) / 3600000 * D24;
+        const sa1 = (ol1 - dayStartMs) / 3600000 * D24;
+        svg += '<path d="' + sector(sa0, sa1, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
       }
     }
 
-    // Subtle ring boundaries
-    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>';
-    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>';
-
-    // Gold wake tick at the actual wake time position on the outer ring
-    var cycleN = Math.floor((dayStartMs - anchorMs) / TAU_MS);
-    var wMs = anchorMs + cycleN * TAU_MS;
-    var slMs = wMs + AWAKE_MS;
-    var nwMs = anchorMs + (cycleN + 1) * TAU_MS;
-    var cardWakeMs;
-    if (wMs >= dayStartMs) {
-      cardWakeMs = wMs;
-    } else if (slMs > dayStartMs) {
-      cardWakeMs = (nwMs >= dayStartMs && nwMs < dayEndMs) ? nwMs : wMs;
-    } else {
-      cardWakeMs = nwMs;
-    }
-    var wRelH = (cardWakeMs - dayStartMs) / 3600000;
+    // Gold wake marker on outer ring at actual clock-hour position
     if (wRelH >= 0 && wRelH < 24) {
-      var wAngle = wRelH * D24;
-      svg += '<path d="' + sector(wAngle - 3.5, wAngle + 3.5, R1, R2) + '" fill="rgba(201,168,76,0.9)" stroke="none"/>';
+      const wA = wRelH * D24;
+      svg += '<path d="' + sector(wA - 4, wA + 4, R1, R2) + '" fill="rgba(201,168,76,0.92)" stroke="none"/>';
     }
 
-    var dayLabel = dayDate.toLocaleDateString('en-US',
-      {weekday: 'short', month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
+    // Boundaries
+    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
+    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>';
+
+    // Center label: day name + date, on dark navy background
+    const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short',  timeZone: 'America/New_York'}).toUpperCase();
+    const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
+    svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
+    svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
     return '<div class="mini-dial-item">'
       + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">' + svg + '</svg>'
-      + '<div class="mini-dial-lbl">' + dayLabel + '</div>'
       + '</div>';
   });
 
