@@ -1030,9 +1030,11 @@ function renderPersonalDials(anchorMs) {
       svg += '<path d="' + sector(h * DEG_P, hEnd * DEG_P, RI, RO) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Cream overlay on wake portion (covers sky gradient → clearly awake)
-    svg += '<path d="' + sector(0, AWAKE_H * DEG_P, RI, RO) + '" fill="rgba(228,218,195,0.82)" stroke="none"/>';
-    // Star overlay on sleep portion (sky gradient shows through underneath)
+    // Cream overlay on wake portion — fully opaque so sky gradient doesn't bleed through
+    svg += '<path d="' + sector(0, AWAKE_H * DEG_P, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
+    // Dark dampener on sleep portion so sunset/dawn colors don't overpower the stars
+    svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
+    // Star overlay on sleep portion
     svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
 
     // Boundaries
@@ -1113,10 +1115,14 @@ function renderMiniDials(anchorMs) {
       svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Inner disk base: dark navy
-    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="rgb(6,10,26)"/>';
+    // Inner disk: sky gradient (24h, same orientation as outer ring)
+    for (let h = 0; h < 24; h += 0.25) {
+      const hEnd = Math.min(h + 0.25, 24);
+      const col  = skyColorAt((h + hEnd) / 2, sunrise, sunset);
+      svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
+    }
 
-    // Wake arc: iterate nearby cycles, show all awake time falling in this calendar day
+    // Wake arc: cream over sky gradient
     const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
     const wRelH = (cardWakeMs - dayStartMs) / 3600000;
     for (let c = startN; c <= startN + 2; c++) {
@@ -1127,11 +1133,11 @@ function renderMiniDials(anchorMs) {
       if (wol1 > wol0) {
         const wa0 = (wol0 - dayStartMs) / 3600000 * D24;
         const wa1 = (wol1 - dayStartMs) / 3600000 * D24;
-        svg += '<path d="' + sector(wa0, wa1, RI, RO) + '" fill="rgba(230,220,200,0.88)" stroke="none"/>';
+        svg += '<path d="' + sector(wa0, wa1, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
       }
     }
 
-    // Sleep arcs: star texture for each sleep window overlapping this day
+    // Sleep arcs: dark dampener then stars over sky gradient
     for (let c = startN; c <= startN + 2; c++) {
       const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
       const s1 = s0 + TIB_MS;
@@ -1140,6 +1146,7 @@ function renderMiniDials(anchorMs) {
       if (ol1 > ol0) {
         const sa0 = (ol0 - dayStartMs) / 3600000 * D24;
         const sa1 = (ol1 - dayStartMs) / 3600000 * D24;
+        svg += '<path d="' + sector(sa0, sa1, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
         svg += '<path d="' + sector(sa0, sa1, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
       }
     }
