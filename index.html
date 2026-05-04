@@ -354,7 +354,7 @@ hr.div{border:none;border-top:1px solid #272727}
       the calendar day, times shift later with every card.
     </div>
     <div class="mini-section-lbl">Your Rhythm</div>
-    <div class="mini-section-sub">Each circle is one personal day (25.40 hours). Your wake time is always at the top — cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
+    <div class="mini-section-sub">Each circle spans 24 hours with your wake time at the top. Cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
     <div class="mini-section-sub">The same 20 days mapped to the 24-hour calendar — midnight at top. Sky colors show how dawn and dusk fall across your day. Cream arcs show when you'll be awake; stars mark your rest window.</div>
@@ -985,8 +985,7 @@ function renderPersonalDials(anchorMs) {
   const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
   const CX = 55, CY = 55;
   const RI = 15, RO = 40, R1 = 42, R2 = 52;
-  const TAU = PERSONAL.tau;
-  const DEG_P = 360 / TAU;
+  const D24 = 15; // 15°/h — full circle = 24h, wake at top (same as calendar dials)
 
   function pol(deg, r) {
     const rad = deg * Math.PI / 180;
@@ -1021,27 +1020,26 @@ function renderPersonalDials(anchorMs) {
 
     let svg = '';
 
-    // Outer ring + inner disk: sky gradient for full 25.4h cycle, wake at top
-    for (let h = 0; h < TAU; h += 0.25) {
-      const hEnd   = Math.min(h + 0.25, TAU);
+    // Outer ring + inner disk: sky gradient across 24h, wake at top
+    for (let h = 0; h < 24; h += 0.25) {
+      const hEnd   = Math.min(h + 0.25, 24);
       const clockH = ((h + hEnd) / 2 + wakeHour) % 24;
       const col    = skyColorAt(clockH, sunrise, sunset);
-      svg += '<path d="' + sector(h * DEG_P, hEnd * DEG_P, R1, R2) + '" fill="' + col + '" stroke="none"/>';
-      svg += '<path d="' + sector(h * DEG_P, hEnd * DEG_P, RI, RO) + '" fill="' + col + '" stroke="none"/>';
+      svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
+      svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Cream overlay on wake portion — fully opaque so sky gradient doesn't bleed through
-    svg += '<path d="' + sector(0, AWAKE_H * DEG_P, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
-    // Dark dampener on sleep portion so sunset/dawn colors don't overpower the stars
-    svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
-    // Star overlay on sleep portion
-    svg += '<path d="' + sector(AWAKE_H * DEG_P, TAU * DEG_P, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
+    // Cream overlay on wake portion (13.4h) — fully opaque
+    svg += '<path d="' + sector(0, AWAKE_H * D24, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
+    // Dark dampener + stars on sleep portion (remaining ~10.6h shown; last 84min clipped at 360°)
+    svg += '<path d="' + sector(AWAKE_H * D24, 360, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
+    svg += '<path d="' + sector(AWAKE_H * D24, 360, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
 
     // Food segment dividers within cream awake window
     let _cum = 0;
     PERSONAL.pieChart.forEach(seg => {
       if (seg.type === 'food')
-        svg += '<path d="' + sector(_cum * DEG_P, (_cum + seg.hours) * DEG_P, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+        svg += '<path d="' + sector(_cum * D24, (_cum + seg.hours) * D24, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
       _cum += seg.hours;
     });
 
@@ -1051,7 +1049,7 @@ function renderPersonalDials(anchorMs) {
 
     // Two-line labels outside outer ring
     const RLBL = R2 + 10;
-    const restAngle = AWAKE_H * DEG_P;
+    const restAngle = AWAKE_H * D24;
     function labelAnchor(a) { const s = Math.sin(a * Math.PI / 180); return s > 0.35 ? 'start' : s < -0.35 ? 'end' : 'middle'; }
     function addLabel(angle, label, time) {
       const [lx, ly] = pol(angle, RLBL);
