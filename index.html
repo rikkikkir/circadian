@@ -1111,21 +1111,34 @@ function renderMiniDials(anchorMs) {
       }
     }
 
-    // 4 proportionally-spaced dividers within the visible cream arc
+    // Food dividers: multi-cycle, fixed meal positions relative to each cycle's wake.
+    // When awake window crosses midnight, meals naturally carry to the next day's dial.
+    for (let c = startN; c <= startN + 2; c++) {
+      const cw0   = anchorMs + c * TAU_MS;
+      const cw1   = cw0 + AWAKE_MS;
+      const cwol0 = Math.max(cw0, dayStartMs);
+      const cwol1 = Math.min(cw1, dayEndMs);
+      if (cwol1 <= cwol0) continue;
+      const cwAngle = (cw0   - dayStartMs) / 3600000 * D24;
+      const cFa0    = (cwol0 - dayStartMs) / 3600000 * D24;
+      const cFa1    = (cwol1 - dayStartMs) / 3600000 * D24;
+      let _cum = 0;
+      PERSONAL.pieChart.forEach(seg => {
+        if (seg.type === 'food') {
+          const fa0  = cwAngle + _cum * D24;
+          const fa1  = cwAngle + (_cum + seg.hours) * D24;
+          const dfa0 = Math.max(fa0, cFa0);
+          const dfa1 = Math.min(fa1, cFa1);
+          if (dfa1 > dfa0 + 0.01)
+            svg += '<path d="' + sector(dfa0, dfa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+        }
+        _cum += seg.hours;
+      });
+    }
+
     const wAngle      = wRelH * D24;
     const creamStartA = Math.max(0, wAngle);
     const creamEndA   = Math.min(360, wAngle + AWAKE_H * D24);
-    const creamSpan   = creamEndA - creamStartA;
-    if (creamSpan > 20) {
-      const divStep = creamSpan / 5;
-      for (let d = 1; d <= 4; d++) {
-        const da  = creamStartA + divStep * d;
-        const da0 = Math.max(creamStartA + 0.5, da - 3);
-        const da1 = Math.min(creamEndA   - 0.5, da + 3);
-        if (da1 > da0)
-          svg += '<path d="' + sector(da0, da1, RI, RO) + '" fill="rgba(100,95,85,0.5)" stroke="none"/>';
-      }
-    }
 
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
