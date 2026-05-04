@@ -306,7 +306,7 @@ hr.div{border:none;border-top:1px solid #272727}
           </pattern>
           <!-- pie-ring sleep overlay -->
           <pattern id="pie-sleep-stars" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-            <path d="M9,2 L10.2,7.2 L15.5,9 L10.2,10.8 L9,16 L7.8,10.8 L2.5,9 L7.8,7.2 Z" fill="rgba(210,220,255,0.92)"/>
+            <path d="M9,2 L10.2,7.2 L15.5,9 L10.2,10.8 L9,16 L7.8,10.8 L2.5,9 L7.8,7.2 Z" fill="none" stroke="rgba(200,215,255,0.88)" stroke-width="0.9"/>
           </pattern>
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
             <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
@@ -327,9 +327,6 @@ hr.div{border:none;border-top:1px solid #272727}
         <!-- Center dot -->
         <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
         <!-- Center text -->
-        <text id="dial-center-1" x="220" y="202" fill="#f0ebe3" font-size="15" font-weight="600" text-anchor="middle" font-family="Inter,sans-serif">—</text>
-        <text id="dial-center-2" x="220" y="222" fill="#888" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">personal hour</text>
-        <text id="dial-center-3" x="220" y="242" fill="#666" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">—</text>
         <!-- Hand (updated by JS) -->
         <g id="dial-hand">
           <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
@@ -338,15 +335,6 @@ hr.div{border:none;border-top:1px solid #272727}
       </svg>
 
       <div class="now-summary">
-        <div class="now-stat">
-          <div class="ns-label">Personal hour</div>
-          <div class="ns-val" id="ns-hour">—</div>
-        </div>
-        <div class="now-stat">
-          <div class="ns-label" id="ns-next-label">Next sleep window</div>
-          <div class="ns-val" id="ns-next-time">—</div>
-          <div class="ns-sub" id="ns-next-sub">—</div>
-        </div>
         <div class="cycle-bar-wrap">
           <div class="cb-label">Cycle progress · 25.40h personal day</div>
           <div class="cb-track"><div class="cb-fill" id="cb-fill" style="width:0%"></div></div>
@@ -1833,7 +1821,7 @@ function updateDial(h) {
 }
 
 function updateNow(anchorMs) {
-  const {cycleN,h_into,sleepMs,nwakeMs,asleep} = cyclePos(anchorMs);
+  const {cycleN,h_into,wakeMs,sleepMs,nwakeMs,asleep} = cyclePos(anchorMs);
   updateDial(h_into);
   drawPieChart(anchorMs);
 
@@ -1855,22 +1843,13 @@ function updateNow(anchorMs) {
   const set  = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
   const html = (id,v) => { const e=document.getElementById(id); if(e) e.innerHTML=v; };
 
-  set('dial-center-1','Hour '+h_into.toFixed(1));
-  set('dial-center-3', asleep ? 'sleeping' : 'awake');
-  set('ns-hour', fmtHM(h_into)+' of 25.4h');
   const cb = document.getElementById('cb-fill');
   if (cb) cb.style.width = (h_into/25.4*100).toFixed(1)+'%';
 
   if (asleep) {
-    set('ns-next-label','Next wake');
-    set('ns-next-time', fmt12(nwakeMs));
-    set('ns-next-sub',  fmtCountdown(nwakeMs));
-    html('now-plain','<strong>Rikki is currently in their rest window.</strong> They are expected to wake around '+fmt12(nwakeMs)+'. Typical actual sleep within this ~12h window is ~9.2h.');
+    html('now-plain','Rikki entered their rest window around <strong>'+fmt12(sleepMs)+'</strong> and is expected to wake around <strong>'+fmt12(nwakeMs)+'</strong>. They have been in their rest window for <strong>'+fmtHM(h_into - AWAKE_H)+'</strong> of their 25.4-hour day.');
   } else {
-    set('ns-next-label','Rest window opens');
-    set('ns-next-time', fmt12(sleepMs));
-    set('ns-next-sub',  fmtCountdown(sleepMs)+' · window closes ~'+fmt12(nwakeMs));
-    html('now-plain','<strong>Rikki has been awake for '+fmtHM(h_into)+'.</strong> Their ~12h rest window opens around '+fmt12(sleepMs)+'. Typical actual sleep within the window is ~9.2h.');
+    html('now-plain','Rikki woke up at <strong>'+fmt12(wakeMs)+'</strong> and will be heading towards sleep around <strong>'+fmt12(sleepMs)+'</strong>. They have been awake for <strong>'+fmtHM(h_into)+'</strong> of their 25.4-hour day.');
   }
 
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
