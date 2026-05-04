@@ -1111,22 +1111,21 @@ function renderMiniDials(anchorMs) {
       }
     }
 
-    // Food segments: clipped to visible cream arc [creamStart, creamEnd]
-    const wAngle    = wRelH * D24;
+    // 4 proportionally-spaced dividers within the visible cream arc
+    const wAngle      = wRelH * D24;
     const creamStartA = Math.max(0, wAngle);
     const creamEndA   = Math.min(360, wAngle + AWAKE_H * D24);
-    let _cum = 0;
-    PERSONAL.pieChart.forEach(seg => {
-      if (seg.type === 'food') {
-        const fa0 = wAngle + _cum * D24;
-        const fa1 = wAngle + (_cum + seg.hours) * D24;
-        const dfa0 = Math.max(fa0, creamStartA);
-        const dfa1 = Math.min(fa1, creamEndA);
-        if (dfa1 > dfa0 + 0.01)
-          svg += '<path d="' + sector(dfa0, dfa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+    const creamSpan   = creamEndA - creamStartA;
+    if (creamSpan > 20) {
+      const divStep = creamSpan / 5;
+      for (let d = 1; d <= 4; d++) {
+        const da  = creamStartA + divStep * d;
+        const da0 = Math.max(creamStartA + 0.5, da - 3);
+        const da1 = Math.min(creamEndA   - 0.5, da + 3);
+        if (da1 > da0)
+          svg += '<path d="' + sector(da0, da1, RI, RO) + '" fill="rgba(100,95,85,0.5)" stroke="none"/>';
       }
-      _cum += seg.hours;
-    });
+    }
 
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
@@ -1138,10 +1137,8 @@ function renderMiniDials(anchorMs) {
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
-    const awakeAngle = Math.max(0, Math.min(360, wAngle));
-    const restAngle  = Math.min(360, wAngle + AWAKE_H * D24);
-    svg += addLabel(awakeAngle, 'AWAKE', fmtShort(cardWakeMs));
-    svg += addLabel(restAngle,  'REST',  fmtShort(cardSleepMs));
+    svg += addLabel(creamStartA, 'AWAKE', fmtShort(cardWakeMs));
+    svg += addLabel(creamEndA,   'REST',  fmtShort(cardSleepMs));
 
     return '<div class="mini-dial-item">'
       + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
