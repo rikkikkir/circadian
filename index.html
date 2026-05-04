@@ -967,82 +967,85 @@ function renderMiniDials(anchorMs) {
   if (!el) return;
 
   const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
-  const TAU = PERSONAL.tau;
-  const DEG = 360 / TAU;
   const CX = 55, CY = 55;
-  const RI = 3, RO = 43;   // pie disk inner/outer
-  const R1 = 45, R2 = 53;  // outer ring inner/outer
+  const RI = 3, RO = 43;
+  const R1 = 45, R2 = 53;
   const STEP = 0.25;
+  const D24 = 15; // degrees per hour on a 24h clock face
 
   function pol(deg, r) {
     const rad = deg * Math.PI / 180;
     return [+(CX + r * Math.sin(rad)).toFixed(2), +(CY - r * Math.cos(rad)).toFixed(2)];
   }
   function sector(a1, a2, ri, ro) {
-    const large = (a2 - a1) >= 180 ? 1 : 0;
-    const [x1o,y1o] = pol(a1, ro); const [x2o,y2o] = pol(a2 - 0.01, ro);
-    const [x1i,y1i] = pol(a1, ri); const [x2i,y2i] = pol(a2 - 0.01, ri);
-    return `M ${x1o} ${y1o} A ${ro} ${ro} 0 ${large} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${ri} ${ri} 0 ${large} 0 ${x1i} ${y1i} Z`;
+    const large = (a2 - a1) > 180 ? 1 : 0;
+    const [x1o, y1o] = pol(a1, ro); const [x2o, y2o] = pol(a2 - 0.01, ro);
+    const [x1i, y1i] = pol(a1, ri); const [x2i, y2i] = pol(a2 - 0.01, ri);
+    return 'M ' + x1o + ' ' + y1o + ' A ' + ro + ' ' + ro + ' 0 ' + large + ' 1 ' + x2o + ' ' + y2o +
+           ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
 
-  const items = Array.from({length: 20}, (_, i) => {
+  const items = Array.from({length: 20}, function(_, i) {
     const dayStartMs = todayMs + i * 86400000;
     const dayEndMs   = dayStartMs + 86400000;
     const dayDate    = new Date(dayStartMs);
+    const sr = sunTimes(dayDate);
+    const sunrise = sr.sunrise, sunset = sr.sunset;
+    const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
 
-    // Same calendar-day logic as renderCards
-    const cycleN     = Math.floor((dayStartMs - anchorMs) / TAU_MS);
-    const wakeMs     = anchorMs + cycleN * TAU_MS;
-    const sleepMs    = wakeMs + AWAKE_MS;
-    const nextWakeMs = anchorMs + (cycleN + 1) * TAU_MS;
-    let cardWakeMs;
-    if (wakeMs >= dayStartMs) {
-      cardWakeMs = wakeMs;
-    } else if (sleepMs > dayStartMs) {
-      cardWakeMs = (nextWakeMs >= dayStartMs && nextWakeMs < dayEndMs) ? nextWakeMs : wakeMs;
+    var svg = '';
+
+    // Outer ring + pie disk: fixed 24h clock, midnight at top
+    for (var h = 0; h < 24; h += STEP) {
+      var hEnd = Math.min(h + STEP, 24);
+      var col = skyColorAt((h + hEnd) / 2, sunrise, sunset);
+      svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
+      svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
+    }
+
+    // Sleep texture: overlay for any sleep that falls within this calendar day
+    for (var c = startN; c <= startN + 2; c++) {
+      var s0 = anchorMs + c * TAU_MS + AWAKE_MS;
+      var s1 = s0 + TIB_MS;
+      var ol0 = Math.max(s0, dayStartMs);
+      var ol1 = Math.min(s1, dayEndMs);
+      if (ol1 > ol0) {
+        var a0 = (ol0 - dayStartMs) / 3600000 * D24;
+        var a1 = (ol1 - dayStartMs) / 3600000 * D24;
+        svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="url(#pie-sleep-stars)" stroke="none"/>';
+      }
+    }
+
+    // Subtle ring boundaries
+    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>';
+    svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>';
+
+    // Gold wake tick at the actual wake time position on the outer ring
+    var cycleN = Math.floor((dayStartMs - anchorMs) / TAU_MS);
+    var wMs = anchorMs + cycleN * TAU_MS;
+    var slMs = wMs + AWAKE_MS;
+    var nwMs = anchorMs + (cycleN + 1) * TAU_MS;
+    var cardWakeMs;
+    if (wMs >= dayStartMs) {
+      cardWakeMs = wMs;
+    } else if (slMs > dayStartMs) {
+      cardWakeMs = (nwMs >= dayStartMs && nwMs < dayEndMs) ? nwMs : wMs;
     } else {
-      cardWakeMs = nextWakeMs;
+      cardWakeMs = nwMs;
+    }
+    var wRelH = (cardWakeMs - dayStartMs) / 3600000;
+    if (wRelH >= 0 && wRelH < 24) {
+      var wAngle = wRelH * D24;
+      svg += '<path d="' + sector(wAngle - 3.5, wAngle + 3.5, R1, R2) + '" fill="rgba(201,168,76,0.9)" stroke="none"/>';
     }
 
-    const wakeHour = nyHour(cardWakeMs);
-    const {sunrise, sunset} = sunTimes(dayDate);
-    const dayLabel = dayDate.toLocaleDateString('en-US',
-      {weekday:'short', month:'numeric', day:'numeric', timeZone:'America/New_York'});
+    var dayLabel = dayDate.toLocaleDateString('en-US',
+      {weekday: 'short', month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
 
-    let svg = '';
-
-    // Outer ring: sky gradient band
-    let h = 0;
-    while (h < TAU) {
-      const hNext = Math.min(h + STEP, TAU);
-      const clockH = (((h + hNext) / 2 + wakeHour) % 24 + 24) % 24;
-      svg += `<path d="${sector(h * DEG, hNext * DEG, R1, R2)}" fill="${skyColorAt(clockH, sunrise, sunset)}" stroke="none"/>`;
-      h = hNext;
-    }
-
-    // Pie disk: sky-colored sub-slices for full 25.4h
-    h = 0;
-    while (h < TAU) {
-      const hNext = Math.min(h + STEP, TAU);
-      const clockH = (((h + hNext) / 2 + wakeHour) % 24 + 24) % 24;
-      svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${skyColorAt(clockH, sunrise, sunset)}" stroke="none"/>`;
-      h = hNext;
-    }
-
-    // Star texture overlay on sleep portion
-    svg += `<path d="${sector(AWAKE_H * DEG, TAU * DEG, RI, RO)}" fill="url(#pie-sleep-stars)" stroke="none"/>`;
-
-    // Ring and disk boundaries
-    svg += `<circle cx="${CX}" cy="${CY}" r="${RO}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
-    svg += `<circle cx="${CX}" cy="${CY}" r="${R2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
-
-    // Gold wake tick at top
-    svg += `<path d="${sector(-4, 4, R1, R2)}" fill="rgba(201,168,76,0.85)" stroke="none"/>`;
-
-    return `<div class="mini-dial-item">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">${svg}</svg>
-      <div class="mini-dial-lbl">${dayLabel}</div>
-    </div>`;
+    return '<div class="mini-dial-item">'
+      + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">' + svg + '</svg>'
+      + '<div class="mini-dial-lbl">' + dayLabel + '</div>'
+      + '</div>';
   });
 
   el.innerHTML = items.join('');
