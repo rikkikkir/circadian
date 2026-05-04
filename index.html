@@ -91,6 +91,8 @@ hr.div{border:none;border-top:1px solid #272727}
 /* ── Near-term cards ── */
 .near-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
 @media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
+.near-card-co{border-color:#3a3040}
+.near-card-co .near-day{color:var(--dim)}
 .near-card{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:14px 16px}
 .near-day{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim2);margin-bottom:10px}
 .near-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
@@ -969,23 +971,51 @@ function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
 }
 
 function renderCards(anchorMs) {
-  const cycles = nextCycles(anchorMs, 20);
-  const html = cycles.map(c => {
-    const dayLabel = new Date(c.wakeMs).toLocaleDateString('en-US',{
-      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+  const el = document.getElementById('near-grid');
+  if (!el) return;
+
+  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+
+  const html = Array.from({length: 20}, (_, i) => {
+    const dayStartMs = todayMs + i * 86400000;
+    const dayDate    = new Date(dayStartMs);
+    const dayLabel   = dayDate.toLocaleDateString('en-US', {
+      weekday:'short', month:'short', day:'numeric', timeZone:'America/New_York'
     });
-    const dayDate = new Date(new Date(c.wakeMs)
-      .toLocaleDateString('en-US',{timeZone:'America/New_York'}));
-    const {sunrise,sunset} = sunTimes(dayDate);
-    return `<div class="near-card">
+
+    // Find which cycle overlaps the start of this calendar day
+    const cycleN  = Math.floor((dayStartMs - anchorMs) / TAU_MS);
+    const wakeMs  = anchorMs + cycleN * TAU_MS;
+    const sleepMs = wakeMs + AWAKE_MS;
+
+    let cardWakeMs, cardSleepMs, carryOver;
+    if (wakeMs >= dayStartMs) {
+      // Wake event falls at/after midnight — normal day
+      cardWakeMs = wakeMs; cardSleepMs = sleepMs; carryOver = false;
+    } else if (sleepMs > dayStartMs) {
+      // Still in awake window from previous day — carry-over
+      cardWakeMs = wakeMs; cardSleepMs = sleepMs; carryOver = true;
+    } else {
+      // In sleep window at midnight; next wake falls within this day
+      cardWakeMs  = anchorMs + (cycleN + 1) * TAU_MS;
+      cardSleepMs = cardWakeMs + AWAKE_MS;
+      carryOver   = false;
+    }
+
+    const {sunrise, sunset} = sunTimes(dayDate);
+    // Carry-over: gradient from midnight (already awake); normal: from wake time
+    const gradStartMs = carryOver ? dayStartMs : cardWakeMs;
+    const grad = skyGradient(gradStartMs, cardSleepMs, sunrise, sunset);
+
+    return `<div class="near-card${carryOver ? ' near-card-co' : ''}">
       <div class="near-day">${dayLabel}</div>
-      <div class="near-row"><span class="nt-lbl">Awake</span><span class="nt-val">${fmt12(c.wakeMs)}</span></div>
-      <div class="near-sky" style="background:${skyGradient(c.wakeMs,c.sleepMs,sunrise,sunset)}"></div>
-      <div class="near-row"><span class="nt-lbl">Rest</span><span class="nt-val">${fmt12(c.sleepMs)}</span></div>
+      <div class="near-row"><span class="nt-lbl">${carryOver ? 'Awake since' : 'Awake'}</span><span class="nt-val">${fmt12(cardWakeMs)}</span></div>
+      <div class="near-sky" style="background:${grad}"></div>
+      <div class="near-row"><span class="nt-lbl">Rest</span><span class="nt-val">${fmt12(cardSleepMs)}</span></div>
     </div>`;
   }).join('');
-  const el = document.getElementById('near-grid');
-  if (el) el.innerHTML = html;
+
+  el.innerHTML = html;
 }
 
 // ── Sky gradient for absolute 0–24h timeline (forecast rows) ────────────────
