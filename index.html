@@ -19,11 +19,12 @@
 }
 body{background:var(--bg);color:var(--warm);font-family:'Inter',sans-serif;font-size:15.5px;line-height:1.6}
 h1{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:400;color:var(--gold);letter-spacing:-.01em}
-h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;color:var(--gold);margin-bottom:4px;letter-spacing:-.01em}
+h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;color:var(--gold);margin-bottom:14px;letter-spacing:-.01em;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18)}
 h3{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:400;color:var(--gold2);margin-bottom:8px}
 .container{max-width:1080px;margin:0 auto;padding:0 24px}
-.section{padding:52px 0}
-hr.div{border:none;border-top:1px solid #272727}
+.section{padding:56px 0}
+@media(max-width:600px){.container{padding:0 16px}.section{padding:40px 0}}
+hr.div{border:none;border-top:1px solid #2e2e2e}
 .dim{color:var(--dim)}
 .gold{color:var(--gold)}
 
@@ -63,8 +64,8 @@ hr.div{border:none;border-top:1px solid #272727}
 
 /* ── Intro box ── */
 .intro-box{background:#1f1f1f;border:1px solid #2e2e2e;border-left:3px solid var(--gold);
-  border-radius:var(--r);padding:20px 24px;margin:28px 0 0;font-size:0.9rem;
-  color:var(--dim);line-height:1.75}
+  border-radius:var(--r);padding:20px 24px;margin:20px 0;font-size:0.92rem;
+  color:var(--dim);line-height:1.75;max-width:780px}
 .intro-box strong{color:var(--warm)}
 
 /* ── Section explanation ── */
@@ -285,7 +286,10 @@ hr.div{border:none;border-top:1px solid #272727}
   <!-- HEADER -->
   <div class="page-hdr">
     <h1>Rikki's Circadian Universe</h1>
-    <div class="tagline">A 25.40-hour biological day tracked in real time · All times Eastern Standard (EST)</div>
+    <div class="tagline">A non-24-hour biological clock, tracked in real time · All times Eastern</div>
+    <div class="intro-box">
+      Rikki's biological clock runs on a <strong>25.40-hour cycle</strong> — a condition called <strong>Non-24-Hour Sleep-Wake Disorder</strong>. Sleep drifts 84 minutes later every day, cycling through all 24 hours of the clock about every 18 days. This page tracks that drift using Oura ring data and shows where the sleep window is right now and where it's headed.
+    </div>
   </div>
 
   <!-- SECTION 1: RIGHT NOW -->
@@ -347,11 +351,7 @@ hr.div{border:none;border-top:1px solid #272727}
   <div class="section">
     <h2>Coming Up</h2>
     <div class="chart-intro">
-      <strong>How to read these cards:</strong> Each card is one 25.40-hour cycle.
-      <strong>Awake</strong> marks the start of the active phase. <strong>Rest window</strong> marks the opening of the
-      rest window — approximately 12 hours long and sized to contain roughly 9 hours of actual sleep,
-      with buffer on either side for natural variation. Because each cycle is 84 minutes longer than
-      the calendar day, times shift later with every card.
+      Each dial and card is one personal day. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks the opening of the sleep window. Times shift 84 minutes later with every row because each personal day is that much longer than the calendar.
     </div>
     <div class="mini-section-lbl">Your Rhythm</div>
     <div class="mini-section-sub">Each circle spans 24 hours with your wake time at the top. Cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
@@ -374,12 +374,7 @@ hr.div{border:none;border-top:1px solid #272727}
   <div class="section">
     <h2>21-Day Forecast</h2>
     <div class="chart-intro">
-      <strong>How to read this grid:</strong> Each row is one calendar day. The blue block is the
-      predicted rest window. White space is the active phase. Yellow marks sunrise and orange marks
-      sunset — showing how much daylight falls within the waking hours each day. Confidence decreases
-      with distance: the 7-day near-term window is shown at full opacity; blocks fade progressively
-      through day 21 to reflect that small daily variations compound over longer horizons. The
-      direction of the trend is reliable; precise timing at day 14–21 should be treated as approximate.
+      Each row is one calendar day. The star-textured block is the predicted rest window; open space is the active phase. Blocks fade with distance — the trend is reliable, but day 14–21 timing is approximate.
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
@@ -407,15 +402,6 @@ hr.div{border:none;border-top:1px solid #272727}
   </div>
 
   <hr class="div">
-
-  <!-- NEWCOMER INTRO -->
-  <div class="intro-box" style="margin:0 0 0">
-    Rikki has <strong>Non-24-Hour Sleep-Wake Disorder</strong> — their biological clock runs on a
-    25.40-hour cycle, so their sleep drifts approximately 84 minutes later every calendar day, cycling
-    through every hour of the clock roughly every 18 days. This page tracks that drift using their Oura
-    ring data and projects where their sleep window will fall over the coming weeks. For a full explanation
-    of the condition, scroll to the <em>Non-24-Hour Sleep-Wake Disorder</em> section below.
-  </div>
 
   <hr class="div">
 
@@ -483,11 +469,7 @@ hr.div{border:none;border-top:1px solid #272727}
         </div>
         <p style="font-size:.81rem;color:var(--dim);margin-top:10px;line-height:1.6">
           <strong style="color:var(--warm)">Current state: Post-disruption recovery.</strong>
-          Following the most significant sustained schedule disruption in four years of recorded data,
-          the pattern entered an oscillatory recovery phase. Circadian recovery from major disruption
-          does not normalize linearly — oscillation is expected and consistent with prior recovery
-          episodes. The disruption is bounded. Data consistently shows return to free-running baseline
-          within 4–6 weeks of stable conditions.
+          Following a major schedule disruption, the pattern entered an oscillatory recovery phase. Circadian recovery is non-linear — oscillation is expected and consistent with prior episodes. Return to free-running baseline typically occurs within 4–6 weeks of stable conditions.
         </p>
       </div>
     </div>
@@ -503,27 +485,13 @@ hr.div{border:none;border-top:1px solid #272727}
     <div class="about-cols">
       <div class="about-block">
         <h3>What it is</h3>
-        <p>Non-24-Hour Sleep-Wake Disorder (Non-24) is a circadian rhythm disorder classified under
-        ICSD-3. The body's master clock — governed by the suprachiasmatic nucleus — runs on an
-        intrinsic period that does not synchronize with the 24-hour solar day. The sleep–wake cycle
-        drifts progressively later, cycling through all 24 clock hours over a period of
-        approximately 17–18 days.</p>
-        <p>This is not a behavioral pattern. Non-24 cannot be corrected through earlier wake times,
-        stronger morning light exposure, sleep hygiene protocols designed for conventional insomnia,
-        or willpower. It is a neurological difference in the endogenous clock period itself — the
-        circadian tau.</p>
+        <p>Non-24-Hour Sleep-Wake Disorder (Non-24) is a circadian rhythm disorder where the body's master clock can't synchronize with the 24-hour solar day. The sleep–wake cycle drifts progressively later, cycling through all 24 clock hours over approximately 17–18 days.</p>
+        <p>This is not a behavioral pattern. Non-24 cannot be corrected through earlier wake times, light exposure, sleep hygiene protocols designed for conventional insomnia, or willpower. It is a neurological difference in the endogenous clock period — the circadian tau.</p>
       </div>
       <div class="about-block">
         <h3>How this page is calculated</h3>
-        <p>The most accurate measurement of an individual's tau comes from extended free-running
-        intervals — periods with minimal external time cues and no fixed schedule obligations. The
-        <strong>25.40-hour figure</strong> used throughout this page is derived from sustained
-        free-running data recorded via Oura ring.</p>
-        <p>The anchor (most recent confirmed wake time) is pulled live from the Oura API. All
-        forecasts are computed forward from that anchor using the measured tau. The ICS calendar
-        export translates those forecasts into standard calendar events for scheduling purposes.</p>
-        <p>A 25.40-hour clock means no tool built for 24-hour schedules can accurately represent
-        availability or timing. This page exists to make that representation possible.</p>
+        <p>The <strong>25.40-hour figure</strong> is derived from extended free-running intervals — periods with minimal external time cues — recorded via Oura ring. The anchor (most recent confirmed wake time) is pulled live from the Oura API. All forecasts are computed forward from that anchor using the measured tau.</p>
+        <p>No standard scheduling tool can accurately represent a 25.40-hour timeline. This page exists to make that representation possible.</p>
       </div>
     </div>
   </div>
@@ -537,12 +505,7 @@ hr.div{border:none;border-top:1px solid #272727}
   <div class="section" id="section-history">
     <h2>How We Got Here</h2>
     <div class="chart-intro">
-      <strong>Four years of recorded sleep, 2022 to present.</strong> Each row is one calendar day.
-      Blue blocks are actual sleep sessions from the Oura ring. The rightward diagonal —
-      the sleep window moving approximately 84 minutes later every day — is the 25.40-hour biological
-      clock in motion. The <span style="color:var(--gold)">gold tick</span> per row marks where
-      the natural thread (the free-running baseline established Aug 2025) predicts wake time for
-      that day. Zoom in to inspect individual nights; hover or tap a row for details.
+      Four years of sleep data from Rikki's Oura ring, 2022 to present. Each row is one calendar day; the rightward diagonal across the chart is the 25.40-hour clock in motion. The <span style="color:var(--gold)">gold tick</span> marks the natural thread — where the free-running baseline predicts wake. Zoom in to inspect nights; hover or tap for details.
     </div>
 
     <div id="hist-loading" style="padding:24px 0">
@@ -587,53 +550,35 @@ hr.div{border:none;border-top:1px solid #272727}
     <div class="analysis-grid">
       <div class="analysis-panel">
         <h3>Phase Position</h3>
-        <p class="analysis-desc">Wake time (hour of day, NY) across all recorded nights.
-        The gold line traces the natural thread — where the free-running baseline predicts wake.
-        Periods where blue dots track the gold line are free-running alignment. Flat clusters
-        reveal schedule suppression. The rightward shift over time reflects 84 min/day drift.</p>
+        <p class="analysis-desc">Wake time across all recorded nights. Blue dots = actual wake; gold line = natural thread prediction. Dots near the gold line = free-running. Flat clusters = schedule suppression.</p>
         <div class="analysis-chart" id="chart-phase"><div class="chart-loading">Loading…</div></div>
       </div>
       <div class="analysis-panel">
         <h3>Sleep Architecture by Month</h3>
-        <p class="analysis-desc">Monthly average breakdown of deep sleep, REM, and light sleep
-        as proportions of total recorded sleep time. Sustained free-running tends to produce
-        higher deep-sleep fractions — a physiological signature of uninterrupted ultradian cycling.</p>
+        <p class="analysis-desc">Deep sleep, REM, and light sleep as monthly proportions. Sustained free-running tends to deepen the slow-wave fraction.</p>
         <div class="analysis-chart" id="chart-arch"><div class="chart-loading">Loading…</div></div>
       </div>
       <div class="analysis-panel" style="grid-column:1/-1">
         <h3>HRV &amp; Resting Heart Rate</h3>
-        <p class="analysis-desc">Heart rate variability (gold, left axis) and resting heart rate
-        (indigo, right axis) across the full data period, smoothed with a 14-day rolling average.
-        HRV rises and resting HR falls during sustained free-running — physiological evidence
-        that alignment with the biological clock reduces chronic stress on the autonomic nervous system.</p>
+        <p class="analysis-desc">HRV (gold, left axis) and resting HR (indigo, right axis), 14-day rolling average. Both trend toward healthier values during sustained free-running — a physiological marker of reduced circadian stress.</p>
         <div class="analysis-chart" id="chart-health"><div class="chart-loading">Loading…</div></div>
       </div>
     </div>
 
     <div class="analysis-panel" style="grid-column:1/-1;margin-top:32px">
       <h3>Flow Calendar</h3>
-      <p class="analysis-desc">Each cell is one week from Jan 2022 to present, colored by flow score — the proportion of nights that week where sleep duration, sleep quality, and sleep stage balance all fell within optimal ranges simultaneously. Darker cells are low flow or missing data; brighter cells are high-flow weeks. <span style="color:var(--gold)">Amber-outlined</span> stretches are the five longest consecutive runs above the flow threshold in four years of data.</p>
+      <p class="analysis-desc">Each cell is one week, colored by how often that week's sleep hit all quality markers simultaneously. Brighter = more nights in flow. <span style="color:var(--gold)">Amber-outlined</span> stretches are the five longest consecutive high-flow runs in four years.</p>
       <div id="flow-cal"><div class="chart-loading">Loading…</div></div>
     </div>
 
     <div style="margin-top:44px">
       <h3>The Natural Thread</h3>
       <p class="analysis-desc" style="max-width:740px">
-        During August–September 2025 — 14 consecutive free-running sessions with minimal external
-        schedule pressure — the measured tau compressed to a clean 25.357 hours. This is the
-        purest expression of the underlying biological clock recorded across the full dataset.
-        The <strong style="color:var(--gold)">natural thread</strong> anchored to this window
-        (midpoint: Aug 20, 2025) represents where the body wants to be, absent constraint.
-        The chart below shows how far each recorded night fell from that thread over four years —
-        how much earlier or later the actual wake was relative to the free-running prediction.
+        During Aug–Sep 2025, 14 consecutive free-running sessions compressed the measured tau to 25.357 hours — the clearest reading of the underlying clock in the full dataset. The <strong style="color:var(--gold)">natural thread</strong>, anchored to that window (midpoint Aug 20, 2025), represents where the body wants to be absent constraint. The chart below shows how far each night's actual wake fell from that prediction.
       </p>
       <div class="analysis-chart" id="chart-phase-gap" style="margin-top:16px"><div class="chart-loading">Loading…</div></div>
       <p class="dim" style="font-size:.81rem;margin-top:10px;line-height:1.7;max-width:740px">
-        <span style="color:rgba(74,140,74,0.9)">Green</span> dots are within 2 hours of the thread.
-        <span style="color:var(--gold)">Gold</span> dots are 2–6 hours off.
-        <span style="color:#c0392b">Red</span> dots are more than 6 hours off.
-        Positive values mean wake occurred later than the thread; negative values mean earlier.
-        Extended red periods correspond to heavily entrained or disrupted phases.
+        <span style="color:rgba(74,140,74,0.9)">Green</span> = within 2h of the thread · <span style="color:var(--gold)">Gold</span> = 2–6h off · <span style="color:#c0392b">Red</span> = more than 6h off. Positive = woke later than predicted; negative = earlier. Extended red periods = disrupted or entrained.
       </p>
     </div>
   </div>
