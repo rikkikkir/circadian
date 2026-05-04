@@ -1150,8 +1150,10 @@ function renderMiniDials(anchorMs) {
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
-    svg += addLabel(creamStartA, 'AWAKE', fmtShort(cardWakeMs));
-    svg += addLabel(creamEndA,   'REST',  fmtShort(cardSleepMs));
+    // REST label at actual clock position of sleep time (not clipped to midnight)
+    const restClockAngle = ((wAngle + AWAKE_H * D24) % 360 + 360) % 360;
+    svg += addLabel(creamStartA,    'AWAKE', fmtShort(cardWakeMs));
+    svg += addLabel(restClockAngle, 'REST',  fmtShort(cardSleepMs));
 
     return '<div class="mini-dial-item">'
       + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
