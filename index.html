@@ -110,6 +110,7 @@ hr.div{border:none;border-top:1px solid #272727}
 .conf-med{opacity:.50}
 .conf-low{opacity:.22}
 .sun-tick{position:absolute;top:0;bottom:0;width:1px;z-index:2;background:rgba(196,168,80,.35)}
+.hr-label{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:8px;color:rgba(220,210,180,0.75);font-family:'Inter',sans-serif;pointer-events:none;z-index:1;white-space:nowrap;line-height:1}
 .now-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.75);z-index:3;display:none}
 .conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;
   font-size:10.5px;color:#666;font-family:'Inter',sans-serif;align-items:center}
@@ -1080,7 +1081,7 @@ function renderForecast(anchorMs) {
         const width = ((sl1-sl0)/86400000*100).toFixed(3);
         blocks.push(`<div class="sleep-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
       }
-      // Wake (awake) blocks — gold tint to make wakefulness explicit
+      // Wake (awake) blocks with hour labels
       const w0 = anchorMs + c * TAU_MS;
       const w1 = w0 + AWAKE_MS;
       const wk0 = Math.max(w0, dayMs), wk1 = Math.min(w1, dayEnd);
@@ -1088,6 +1089,18 @@ function renderForecast(anchorMs) {
         const left  = ((wk0-dayMs)/86400000*100).toFixed(3);
         const width = ((wk1-wk0)/86400000*100).toFixed(3);
         wakeBlks.push(`<div class="wake-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
+        // Hour labels: one per whole clock hour falling inside wake window
+        for (let h = 0; h <= 23; h++) {
+          const hMs = dayMs + h * 3600000;
+          if (hMs < wk0 || hMs >= wk1) continue;
+          let lbl;
+          if (h === 0)       lbl = 'midn';
+          else if (h === 12) lbl = 'noon';
+          else if (h < 12)   lbl = h + 'A';
+          else               lbl = (h - 12) + 'P';
+          const pct = (h / 24 * 100).toFixed(3);
+          wakeBlks.push(`<div class="hr-label ${conf}" style="left:${pct}%">${lbl}</div>`);
+        }
       }
     }
 
@@ -2171,7 +2184,7 @@ function drawPieChart(anchorMs) {
 
   if (sleepLabelAngle !== null) {
     const [lx, ly] = pol(sleepLabelAngle, 90);
-    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.92)" font-size="20" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="2">Sleep</text>`;
+    svg += `<text x="${lx}" y="${ly}" fill="#c49820" font-size="26" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="2">Sleep</text>`;
   }
 
 
