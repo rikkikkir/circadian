@@ -361,7 +361,7 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
     <div class="mini-section-sub">Each circle spans 24 hours with your wake time at the top. Cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
-    <div class="mini-section-sub">The same 20 days mapped to the 24-hour calendar — midnight at top. Sky colors show how dawn and dusk fall across your day. Cream arcs show when you'll be awake; stars mark your rest window.</div>
+    <div class="mini-section-sub">The same 21 days mapped to the 24-hour calendar — midnight at top. Sky colors show how dawn and dusk fall across your day. Cream arcs show when you'll be awake; stars mark your rest window.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
@@ -948,7 +948,7 @@ function renderPersonalDials(anchorMs) {
          + ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
 
-  const items = Array.from({length: 20}, function(_, i) {
+  const items = Array.from({length: 21}, function(_, i) {
     const dayStartMs = todayMs + i * 86400000;
     const dayEndMs   = dayStartMs + 86400000;
     const dayDate    = new Date(dayStartMs);
@@ -1033,7 +1033,7 @@ function renderMiniDials(anchorMs) {
          + ' L ' + x2i + ' ' + y2i + ' A ' + ri + ' ' + ri + ' 0 ' + large + ' 0 ' + x1i + ' ' + y1i + ' Z';
   }
 
-  const items = Array.from({length: 20}, function(_, i) {
+  const items = Array.from({length: 21}, function(_, i) {
     const dayStartMs = todayMs + i * 86400000;
     const dayEndMs   = dayStartMs + 86400000;
     const dayDate    = new Date(dayStartMs);
@@ -1139,7 +1139,7 @@ function renderCards(anchorMs) {
 
   const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
 
-  const html = Array.from({length: 20}, (_, i) => {
+  const html = Array.from({length: 21}, (_, i) => {
     const dayStartMs = todayMs + i * 86400000;
     const dayDate    = new Date(dayStartMs);
     const dayLabel   = dayDate.toLocaleDateString('en-US', {
