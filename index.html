@@ -1092,8 +1092,7 @@ function renderForecast(anchorMs) {
     }
 
     const nlPart = isToday ? `<div class="now-line" id="now-line"></div>` : '';
-    // Sky gradient at moderate intensity — readable but ambient.
-    const skyBg  = `linear-gradient(to right,rgba(5,8,20,0.28),rgba(5,8,20,0.28)),${skyGradientRow(sunrise, sunset)}`;
+    const skyBg  = skyGradientRow(sunrise, sunset);
     rows.push(`<div class="grid-row ${rowClass}">
       <div class="row-lbl">${dayLabel}</div>
       <div class="row-timeline" style="background:${skyBg}">${wakeBlks.join('')}${blocks.join('')}<div class="sun-tick" style="left:${srPct}%"></div><div class="sun-tick" style="left:${ssPct}%"></div>${nlPart}</div>
