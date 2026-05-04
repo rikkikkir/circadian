@@ -73,17 +73,10 @@ hr.div{border:none;border-top:1px solid #272727}
 .chart-intro strong{color:var(--warm)}
 
 /* ── Sundial section ── */
-.sundial-layout{display:grid;grid-template-columns:420px 1fr;gap:40px;align-items:center}
-@media(max-width:700px){.sundial-layout{grid-template-columns:1fr}}
-.now-summary{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:24px 28px}
-.now-stat{margin-bottom:20px}
-.ns-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);margin-bottom:4px}
-.ns-val{font-size:2rem;font-weight:600;color:var(--warm);line-height:1.1}
-.ns-sub{font-size:.82rem;color:var(--dim);margin-top:4px}
-.now-plain{margin-top:20px;padding-top:20px;border-top:1px solid #2a2a2a;
-  font-size:.9rem;color:var(--dim);line-height:1.8}
+.sundial-layout{display:flex;flex-direction:column;align-items:center}
+.now-plain{font-size:.95rem;color:var(--dim);line-height:1.9;margin-bottom:16px;max-width:640px}
 .now-plain strong{color:var(--warm)}
-.cycle-bar-wrap{margin-top:20px}
+.cycle-bar-wrap{width:100%;max-width:540px;margin-bottom:28px}
 .cb-label{font-size:.72rem;color:var(--dim2);margin-bottom:5px}
 .cb-track{height:6px;background:#2a2a2a;border-radius:3px;overflow:hidden}
 .cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
@@ -296,7 +289,12 @@ hr.div{border:none;border-top:1px solid #272727}
       advances clockwise through the active phase into the scheduled rest window. Position updates every 15 minutes.
     </p>
     <div class="sundial-layout">
-      <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:420px;display:block;margin:0 auto">
+      <div class="now-plain" id="now-plain">—</div>
+      <div class="cycle-bar-wrap">
+        <div class="cb-label">Cycle progress · 25.40h personal day</div>
+        <div class="cb-track"><div class="cb-fill" id="cb-fill" style="width:0%"></div></div>
+      </div>
+      <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
         <defs>
           <!-- 4-pointed star: sleep symbol -->
           <pattern id="sleep-stars" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
@@ -337,13 +335,6 @@ hr.div{border:none;border-top:1px solid #272727}
         </g>
       </svg>
 
-      <div class="now-summary">
-        <div class="cycle-bar-wrap">
-          <div class="cb-label">Cycle progress · 25.40h personal day</div>
-          <div class="cb-track"><div class="cb-fill" id="cb-fill" style="width:0%"></div></div>
-        </div>
-        <div class="now-plain" id="now-plain">—</div>
-      </div>
     </div>
   </div>
 
