@@ -73,8 +73,8 @@ hr.div{border:none;border-top:1px solid #272727}
 .chart-intro strong{color:var(--warm)}
 
 /* ── Sundial section ── */
-.sundial-layout{display:flex;flex-direction:column;align-items:center}
-.now-plain{font-size:.95rem;color:var(--dim);line-height:1.9;margin-bottom:16px;max-width:640px}
+.sundial-layout{display:flex;flex-direction:column;align-items:flex-start}
+.now-plain{font-size:.95rem;color:var(--dim);line-height:1.9;margin-bottom:16px}
 .now-plain strong{color:var(--warm)}
 .cycle-bar-wrap{width:100%;max-width:540px;margin-bottom:28px}
 .cb-label{font-size:.72rem;color:var(--dim2);margin-bottom:5px}
@@ -283,11 +283,7 @@ hr.div{border:none;border-top:1px solid #272727}
 
   <!-- SECTION 1: RIGHT NOW -->
   <div class="section">
-    <h2 style="margin-bottom:6px">Right Now</h2>
-    <p class="dim" style="margin-bottom:24px;font-size:.88rem">
-      The dial maps position within a 25.40-hour biological day. Hour 0 marks wake time; the hand
-      advances clockwise through the active phase into the scheduled rest window. Position updates every 15 minutes.
-    </p>
+    <h2 style="margin-bottom:16px">Right Now</h2>
     <div class="sundial-layout">
       <div class="now-plain" id="now-plain">—</div>
       <div class="cycle-bar-wrap">
@@ -2161,7 +2157,7 @@ function drawPieChart(anchorMs) {
 
   if (sleepLabelAngle !== null) {
     const [lx, ly] = pol(sleepLabelAngle, 90);
-    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.82)" font-size="13" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="1">Sleep</text>`;
+    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.92)" font-size="20" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="2">Sleep</text>`;
   }
 
 
