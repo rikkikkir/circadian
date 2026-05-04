@@ -305,8 +305,8 @@ hr.div{border:none;border-top:1px solid #272727}
             <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.45)"/>
           </pattern>
           <!-- pie-ring sleep overlay -->
-          <pattern id="pie-sleep-stars" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M5,2 L5.5,4.5 L8,5 L5.5,5.5 L5,8 L4.5,5.5 L2,5 L4.5,4.5 Z" fill="rgba(100,110,210,0.6)"/>
+          <pattern id="pie-sleep-stars" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+            <path d="M9,2 L10.2,7.2 L15.5,9 L10.2,10.8 L9,16 L7.8,10.8 L2.5,9 L7.8,7.2 Z" fill="rgba(210,220,255,0.92)"/>
           </pattern>
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
             <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
@@ -1930,7 +1930,7 @@ function drawOuterClock(anchorMs) {
     const clockH = ((wakeHour + n + STEP / 2) % 24 + 24) % 24;
     const col = skyColorAt(clockH, sunrise, sunset);
     const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, PERSONAL.tau));
-    html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}" opacity="0.75"/>`;
+    html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}"/>`;
   }
 
   // Ring outlines over the color
@@ -2150,8 +2150,6 @@ function drawPieChart(anchorMs) {
       if (seg.type === 'sleep') {
         svg += `<path d="${dFull}" fill="url(#pie-sleep-stars)" stroke="none"/>`;
         sleepLabelAngle = (segStart + segEnd) / 2 * DEG;
-      } else if (seg.type === 'waking' || seg.type === 'winddown') {
-        svg += `<path d="${dFull}" fill="url(#pie-trans-dots)" stroke="none"/>`;
       }
       // Segment border (stroke only, no fill — sub-slices already filled)
       svg += `<path d="${dFull}" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>`;
@@ -2164,6 +2162,13 @@ function drawPieChart(anchorMs) {
     const [lx, ly] = pol(sleepLabelAngle, 90);
     svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.82)" font-size="13" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="1">Sleep</text>`;
   }
+
+  // WAKE letters stacked top→bottom along radial bisector of first waking segment (0–1h)
+  const wakeBisect = 0.5 * DEG;
+  ['W','A','K','E'].forEach((ch, i) => {
+    const [lx, ly] = pol(wakeBisect, 138 - i * 26);
+    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.88)" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${ch}</text>`;
+  });
 
   const nowAngle = h_into * DEG;
   const arcSpan  = 8;
