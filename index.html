@@ -82,6 +82,11 @@ hr.div{border:none;border-top:1px solid #272727}
 .cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
 /* ── Near-term cards ── */
+.mini-dials-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.mini-dial-item{display:flex;flex-direction:column;align-items:center}
+.mini-dial-item svg{width:100%;height:auto;display:block}
+.mini-dial-lbl{font-size:9px;color:var(--dim2);margin-top:5px;text-align:center;letter-spacing:.04em;text-transform:uppercase}
+@media(max-width:700px){.mini-dials-grid{grid-template-columns:repeat(2,1fr)}}
 .near-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
 @media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
 .near-card-co{border-color:#3a3040}
@@ -344,6 +349,7 @@ hr.div{border:none;border-top:1px solid #272727}
       with buffer on either side for natural variation. Because each cycle is 84 minutes longer than
       the calendar day, times shift later with every card.
     </div>
+    <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
     </div>
@@ -954,6 +960,92 @@ function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
   pts.sort((a,b) => a[0] - b[0]);
   const deduped = pts.filter((p,i) => i===0 || p[0] > pts[i-1][0] + 0.001);
   return `linear-gradient(to bottom,${deduped.map(([p2,c]) => `${c} ${(p2*100).toFixed(1)}%`).join(',')})`;
+}
+
+function renderMiniDials(anchorMs) {
+  const el = document.getElementById('mini-dials-grid');
+  if (!el) return;
+
+  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const TAU = PERSONAL.tau;
+  const DEG = 360 / TAU;
+  const CX = 55, CY = 55;
+  const RI = 3, RO = 43;   // pie disk inner/outer
+  const R1 = 45, R2 = 53;  // outer ring inner/outer
+  const STEP = 0.25;
+
+  function pol(deg, r) {
+    const rad = deg * Math.PI / 180;
+    return [+(CX + r * Math.sin(rad)).toFixed(2), +(CY - r * Math.cos(rad)).toFixed(2)];
+  }
+  function sector(a1, a2, ri, ro) {
+    const large = (a2 - a1) >= 180 ? 1 : 0;
+    const [x1o,y1o] = pol(a1, ro); const [x2o,y2o] = pol(a2 - 0.01, ro);
+    const [x1i,y1i] = pol(a1, ri); const [x2i,y2i] = pol(a2 - 0.01, ri);
+    return `M ${x1o} ${y1o} A ${ro} ${ro} 0 ${large} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${ri} ${ri} 0 ${large} 0 ${x1i} ${y1i} Z`;
+  }
+
+  const items = Array.from({length: 20}, (_, i) => {
+    const dayStartMs = todayMs + i * 86400000;
+    const dayEndMs   = dayStartMs + 86400000;
+    const dayDate    = new Date(dayStartMs);
+
+    // Same calendar-day logic as renderCards
+    const cycleN     = Math.floor((dayStartMs - anchorMs) / TAU_MS);
+    const wakeMs     = anchorMs + cycleN * TAU_MS;
+    const sleepMs    = wakeMs + AWAKE_MS;
+    const nextWakeMs = anchorMs + (cycleN + 1) * TAU_MS;
+    let cardWakeMs;
+    if (wakeMs >= dayStartMs) {
+      cardWakeMs = wakeMs;
+    } else if (sleepMs > dayStartMs) {
+      cardWakeMs = (nextWakeMs >= dayStartMs && nextWakeMs < dayEndMs) ? nextWakeMs : wakeMs;
+    } else {
+      cardWakeMs = nextWakeMs;
+    }
+
+    const wakeHour = nyHour(cardWakeMs);
+    const {sunrise, sunset} = sunTimes(dayDate);
+    const dayLabel = dayDate.toLocaleDateString('en-US',
+      {weekday:'short', month:'numeric', day:'numeric', timeZone:'America/New_York'});
+
+    let svg = '';
+
+    // Outer ring: sky gradient band
+    let h = 0;
+    while (h < TAU) {
+      const hNext = Math.min(h + STEP, TAU);
+      const clockH = (((h + hNext) / 2 + wakeHour) % 24 + 24) % 24;
+      svg += `<path d="${sector(h * DEG, hNext * DEG, R1, R2)}" fill="${skyColorAt(clockH, sunrise, sunset)}" stroke="none"/>`;
+      h = hNext;
+    }
+
+    // Pie disk: sky-colored sub-slices for full 25.4h
+    h = 0;
+    while (h < TAU) {
+      const hNext = Math.min(h + STEP, TAU);
+      const clockH = (((h + hNext) / 2 + wakeHour) % 24 + 24) % 24;
+      svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${skyColorAt(clockH, sunrise, sunset)}" stroke="none"/>`;
+      h = hNext;
+    }
+
+    // Star texture overlay on sleep portion
+    svg += `<path d="${sector(AWAKE_H * DEG, TAU * DEG, RI, RO)}" fill="url(#pie-sleep-stars)" stroke="none"/>`;
+
+    // Ring and disk boundaries
+    svg += `<circle cx="${CX}" cy="${CY}" r="${RO}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
+    svg += `<circle cx="${CX}" cy="${CY}" r="${R2}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
+
+    // Gold wake tick at top
+    svg += `<path d="${sector(-4, 4, R1, R2)}" fill="rgba(201,168,76,0.85)" stroke="none"/>`;
+
+    return `<div class="mini-dial-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">${svg}</svg>
+      <div class="mini-dial-lbl">${dayLabel}</div>
+    </div>`;
+  });
+
+  el.innerHTML = items.join('');
 }
 
 function renderCards(anchorMs) {
@@ -2215,6 +2307,7 @@ let _anchorMs  = FALLBACK_ANCHOR_MS;
 
 function renderAll(anchorMs) {
   _anchorMs = anchorMs;
+  renderMiniDials(anchorMs);
   renderCards(anchorMs);
   renderForecast(anchorMs);
   renderHourTable(anchorMs);
