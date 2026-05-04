@@ -307,8 +307,9 @@ hr.div{border:none;border-top:1px solid #272727}
             <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.45)"/>
           </pattern>
           <!-- pie-ring sleep overlay -->
-          <pattern id="pie-sleep-stars" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-            <path d="M9,2 L10.2,7.2 L15.5,9 L10.2,10.8 L9,16 L7.8,10.8 L2.5,9 L7.8,7.2 Z" fill="none" stroke="rgba(200,215,255,0.88)" stroke-width="0.9"/>
+          <pattern id="pie-sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.85)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.35)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
             <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
@@ -2172,12 +2173,6 @@ function drawPieChart(anchorMs) {
     svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.82)" font-size="13" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="1">Sleep</text>`;
   }
 
-  // WAKE letters stacked top→bottom along radial bisector of first waking segment (0–1h)
-  const wakeBisect = 0.5 * DEG;
-  ['W','A','K','E'].forEach((ch, i) => {
-    const [lx, ly] = pol(wakeBisect, 138 - i * 26);
-    svg += `<text x="${lx}" y="${ly}" fill="rgba(255,255,255,0.88)" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${ch}</text>`;
-  });
 
   const nowAngle = h_into * DEG;
   const arcSpan  = 8;
