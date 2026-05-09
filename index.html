@@ -1090,7 +1090,6 @@ function renderMiniDials(anchorMs) {
 
     // Wake arc: cream over sky gradient
     const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
-    const wRelH = (cardWakeMs - dayStartMs) / 3600000;
     for (let c = startN; c <= startN + 2; c++) {
       const w0 = anchorMs + c * TAU_MS;
       const w1 = w0 + AWAKE_MS;
@@ -1142,10 +1141,6 @@ function renderMiniDials(anchorMs) {
       });
     }
 
-    const wAngle      = wRelH * D24;
-    const creamStartA = Math.max(0, wAngle);
-    const creamEndA   = Math.min(360, wAngle + AWAKE_H * D24);
-
     // Boundaries
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + RO + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.8"/>';
     svg += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R2 + '" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>';
@@ -1156,8 +1151,12 @@ function renderMiniDials(anchorMs) {
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
-    svg += addLabel(creamStartA, 'AWAKE', fmtShort(cardWakeMs));
-    svg += addLabel(creamEndA,   'REST',  fmtShort(cardSleepMs));
+    // Labels point to each event's actual time on the 24h clock face,
+    // not the visual edge of the cream (which clips at midnight).
+    const wakeAngle  = nyHour(cardWakeMs)  * D24;
+    const sleepAngle = nyHour(cardSleepMs) * D24;
+    svg += addLabel(wakeAngle,  'AWAKE', fmtShort(cardWakeMs));
+    svg += addLabel(sleepAngle, 'REST',  fmtShort(cardSleepMs));
 
     return '<div class="mini-dial-item">'
       + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
