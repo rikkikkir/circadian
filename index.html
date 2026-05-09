@@ -8,23 +8,26 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#1a1a1a;--bg2:#212121;--bg3:#2a2a2a;
+  color-scheme:dark;
+  --bg:#111418;--bg2:#171b21;--bg3:#1d222a;--bg4:#202632;
   --gold:#c9a84c;--gold2:#e8c978;
-  --warm:#f0ebe3;--dim:#999;--dim2:#666;--dim3:#444;
+  --warm:#f3efe2;--dim:#a09a8e;--dim2:#6e6860;--dim3:#484440;
   --indigo:#2d3070;--indigo2:#3d42a0;
-  --cream:#f4f0e8;--cream2:#e8e2d6;
-  --r:6px;
-  --pat-sleep:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z' fill='none' stroke='rgba(140,215,200,0.85)' stroke-width='1.15' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z' fill='none' stroke='rgba(140,215,200,0.35)' stroke-width='0.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pat-dots:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1.3' fill='rgba(150,155,185,0.45)'/%3E%3C/svg%3E");
+  --cream:#efe8cf;--cream2:#d8cfad;
+  --r:8px;--r-card:20px;
+  --divider:rgba(239,232,207,0.12);
+  --pat-sleep:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z' fill='none' stroke='rgba(140,215,200,0.60)' stroke-width='1.15' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z' fill='none' stroke='rgba(140,215,200,0.22)' stroke-width='0.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --pat-dots:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1.3' fill='rgba(150,155,185,0.38)'/%3E%3C/svg%3E");
 }
-body{background:var(--bg);color:var(--warm);font-family:'Inter',sans-serif;font-size:15.5px;line-height:1.6}
-h1{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:400;color:var(--gold);letter-spacing:-.01em}
-h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;color:var(--gold);margin-bottom:14px;letter-spacing:-.01em;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18)}
-h3{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:400;color:var(--gold2);margin-bottom:8px}
-.container{max-width:1080px;margin:0 auto;padding:0 24px}
-.section{padding:56px 0}
-@media(max-width:600px){.container{padding:0 16px}.section{padding:40px 0}}
-hr.div{border:none;border-top:1px solid #2e2e2e}
+body{background:var(--bg);color:var(--warm);font-family:'Inter',sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,2.75rem);font-weight:400;color:var(--gold);letter-spacing:-.01em}
+h2{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,3vw,2rem);font-weight:400;color:var(--gold);margin-bottom:16px;letter-spacing:-.01em;padding-bottom:12px;border-bottom:1px solid rgba(201,168,76,0.18)}
+h3{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400;color:var(--gold2);margin-bottom:10px}
+.container{max-width:1120px;margin:0 auto;padding:0 28px}
+.section{padding:64px 0;border-top:1px solid var(--divider)}
+.section:first-child{border-top:none}
+@media(max-width:600px){.container{padding:0 18px}.section{padding:44px 0}}
+hr.div{border:none;border-top:1px solid var(--divider)}
 .dim{color:var(--dim)}
 .gold{color:var(--gold)}
 
@@ -63,28 +66,33 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 .tagline{color:var(--dim);font-size:0.88rem;margin-top:4px}
 
 /* ── Intro box ── */
-.intro-box{background:#1f1f1f;border:1px solid #2e2e2e;border-left:3px solid var(--gold);
-  border-radius:var(--r);padding:20px 24px;margin:20px 0;font-size:0.92rem;
-  color:var(--dim);line-height:1.75;max-width:780px}
+.intro-box{background:var(--bg2);border:1px solid var(--divider);border-left:3px solid var(--gold);
+  border-radius:var(--r);padding:22px 26px;margin:22px 0;font-size:1rem;
+  color:var(--dim);line-height:1.8;max-width:780px}
 .intro-box strong{color:var(--warm)}
 
 /* ── Section explanation ── */
-.chart-intro{font-size:.87rem;color:var(--dim);margin-bottom:16px;
-  padding:12px 16px;background:#1f1f1f;border-radius:var(--r);line-height:1.7}
+.chart-intro{font-size:.9rem;color:var(--dim);margin-bottom:18px;
+  padding:14px 18px;background:var(--bg2);border:1px solid var(--divider);border-radius:var(--r);line-height:1.75}
 .chart-intro strong{color:var(--warm)}
 
 /* ── Sundial section ── */
 .sundial-layout{display:flex;flex-direction:column;align-items:flex-start}
-.now-plain{font-size:.95rem;color:var(--dim);line-height:1.9;margin-bottom:16px}
-.now-plain strong{color:var(--warm)}
+.now-card{background:var(--bg3);border:1px solid var(--divider);border-radius:14px;
+  padding:20px 24px;margin-bottom:28px;max-width:440px}
+.nc-row{display:flex;justify-content:space-between;align-items:baseline;gap:20px;padding:5px 0}
+.nc-lbl{font-size:.82rem;color:var(--dim);white-space:nowrap}
+.nc-val{font-size:1.05rem;font-weight:500;color:var(--warm);text-align:right}
+.nc-note{font-size:.76rem;color:var(--dim2);margin-top:12px;padding-top:10px;
+  border-top:1px solid var(--divider);line-height:1.6}
 .cycle-bar-wrap{width:100%;max-width:540px;margin-bottom:28px}
 .cb-label{font-size:.72rem;color:var(--dim2);margin-bottom:5px}
 .cb-track{height:6px;background:#2a2a2a;border-radius:3px;overflow:hidden}
 .cb-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
 /* ── Near-term cards ── */
-.mini-section-lbl{font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.01em;margin-bottom:5px;margin-top:28px;font-family:Inter,sans-serif}
-.mini-section-sub{font-size:10.5px;color:var(--dim);margin-bottom:12px;line-height:1.55}
+.mini-section-lbl{font-size:15px;color:var(--gold);font-weight:600;letter-spacing:.01em;margin-bottom:6px;margin-top:40px;font-family:Inter,sans-serif}
+.mini-section-sub{font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.6;max-width:700px}
 .dial-lbl-top{font-size:9.5px;color:rgba(225,215,195,0.9);text-align:center;margin-bottom:4px;font-family:Inter,sans-serif;line-height:1.3}
 .dial-lbl-top span{display:block;font-size:8px;color:rgba(150,140,125,0.65);letter-spacing:.06em;text-transform:uppercase}
 .dial-lbl-bot{font-size:9.5px;color:rgba(170,160,140,0.75);text-align:center;margin-top:4px;font-family:Inter,sans-serif;line-height:1.3}
@@ -97,16 +105,16 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 @media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
 .near-card-co{border-color:#3a3040}
 .near-card-co .near-day{color:var(--dim)}
-.near-card{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:14px 16px}
+.near-card{background:var(--bg3);border:1px solid var(--divider);border-radius:var(--r);padding:14px 16px}
 .near-day{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim2);margin-bottom:10px}
 .near-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-.nt-lbl{font-size:.73rem;color:var(--dim);white-space:nowrap}
-.nt-val{font-size:.88rem;color:var(--warm);font-weight:500;text-align:right}
+.nt-lbl{font-size:.76rem;color:var(--dim);white-space:nowrap}
+.nt-val{font-size:.92rem;color:var(--warm);font-weight:500;text-align:right}
 
 .near-sky{height:80px;border-radius:4px;margin:9px 0 7px;width:100%}
 
 /* ── Forecast grid ── */
-.grid-wrap{background:#07091a;border-radius:var(--r);padding:18px 18px 14px;overflow-x:auto}
+.grid-wrap{background:#07091a;border:1px solid var(--divider);border-radius:var(--r);padding:20px 20px 16px;overflow-x:auto}
 .hour-axis{position:relative;height:20px;margin-left:76px;margin-bottom:3px}
 .hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#556;font-family:'Inter',sans-serif}
 .hour-anchor{color:var(--gold);font-weight:500;font-size:9px}
@@ -129,7 +137,7 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 .sleep-texture{background-color:rgba(215,195,165,0.78);background-image:var(--pat-sleep)}
 
 /* ── Hour table ── */
-.htbl-wrap{margin-top:20px;background:#07091a;border-radius:var(--r);padding:18px 18px 14px}
+.htbl-wrap{margin-top:20px;background:#07091a;border:1px solid var(--divider);border-radius:var(--r);padding:20px 20px 16px}
 .htbl-intro{font-size:.8rem;color:#556;margin-bottom:16px;line-height:1.7;max-width:640px}
 .htbl-scroll{overflow-x:auto}
 .htbl{border-collapse:collapse;font-family:'Inter',sans-serif;min-width:760px}
@@ -173,7 +181,7 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 /* ── Biology ── */
 .bio-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
 @media(max-width:600px){.bio-stats{grid-template-columns:1fr}}
-.bio-stat{background:var(--bg2);border:1px solid #2e2e2e;border-radius:var(--r);padding:16px 18px}
+.bio-stat{background:var(--bg3);border:1px solid var(--divider);border-radius:var(--r);padding:16px 18px}
 .bs-num{font-size:1.9rem;font-weight:600;color:var(--gold);line-height:1}
 .bs-unit{font-size:.73rem;color:var(--dim);margin-bottom:6px}
 .bs-desc{font-size:.81rem;color:var(--dim);line-height:1.5}
@@ -222,7 +230,7 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 .page-footer{padding:22px 0;border-top:1px solid #252525;
   text-align:center;font-size:.76rem;color:var(--dim2)}
 .about-section{padding:52px 0}
-.about-section p{color:var(--dim);font-size:.9rem;line-height:1.85;max-width:700px;margin-bottom:14px}
+.about-section p{color:var(--dim);font-size:.95rem;line-height:1.9;max-width:700px;margin-bottom:14px}
 .about-section p strong{color:var(--warm)}
 .about-section .about-cols{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px}
 @media(max-width:700px){.about-section .about-cols{grid-template-columns:1fr}}
@@ -262,7 +270,7 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 /* ── Analysis Charts ── */
 .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px}
 @media(max-width:800px){.analysis-grid{grid-template-columns:1fr}}
-.analysis-panel{background:#1e1e1e;border:1px solid #2e2e2e;border-radius:var(--r);padding:20px 22px}
+.analysis-panel{background:var(--bg2);border:1px solid var(--divider);border-radius:var(--r);padding:22px 24px}
 .analysis-panel h3{margin-bottom:6px}
 .analysis-desc{font-size:.81rem;color:var(--dim);margin-bottom:14px;line-height:1.65}
 .analysis-chart{overflow-x:auto}
@@ -290,38 +298,38 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
   <!-- HEADER -->
   <div class="page-hdr">
     <h1>Rikki's Circadian Universe</h1>
-    <div class="tagline">A non-24-hour biological clock, tracked in real time · All times Eastern</div>
+    <div class="tagline">A 25.40-hour clock, tracked in real time · All times ET</div>
     <div class="intro-box">
       Rikki's biological clock runs on a <strong>25.40-hour cycle</strong> — a condition called <strong>Non-24-Hour Sleep-Wake Disorder</strong>. Sleep drifts 84 minutes later every day, cycling through all 24 hours of the clock about every 18 days. This page tracks that drift using Oura ring data and shows where the sleep window is right now and where it's headed.
     </div>
   </div>
 
-  <!-- SECTION 1: RIGHT NOW -->
+  <!-- SECTION 1: CURRENT DAY -->
   <div class="section">
-    <h2 style="margin-bottom:16px">Right Now</h2>
+    <h2 style="margin-bottom:16px">Current Day</h2>
     <div class="sundial-layout">
-      <div class="now-plain" id="now-plain">—</div>
+      <div class="now-card" id="now-plain">—</div>
 
       <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
         <defs>
           <pattern id="sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
-            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.85)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.35)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.60)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.22)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
           <!-- soft dot: transitional/hazy symbol -->
           <pattern id="transition-dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-            <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.45)"/>
+            <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.38)"/>
           </pattern>
           <!-- pie-ring sleep overlay -->
           <pattern id="pie-sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
-            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.85)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.35)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.60)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.22)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
           <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-            <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.5)"/>
+            <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.38)"/>
           </pattern>
           <pattern id="mini-sleep-stars" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-            <path d="M3.5,0.7 L4.1,2.6 L6.2,2.7 L4.6,3.9 L5.2,5.7 L3.5,4.6 L1.8,5.7 L2.5,3.9 L0.8,2.7 L2.9,2.6 Z" fill="none" stroke="rgba(140,215,200,0.82)" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M3.5,0.7 L4.1,2.6 L6.2,2.7 L4.6,3.9 L5.2,5.7 L3.5,4.6 L1.8,5.7 L2.5,3.9 L0.8,2.7 L2.9,2.6 Z" fill="none" stroke="rgba(140,215,200,0.58)" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>
           </pattern>
         </defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
@@ -355,13 +363,13 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
   <div class="section">
     <h2>Coming Up</h2>
     <div class="chart-intro">
-      Each dial and card is one personal day. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks the opening of the sleep window. Times shift 84 minutes later with every row because each personal day is that much longer than the calendar.
+      Each dial and card shows one of Rikki's days. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks when the sleep window opens. Times shift about 84 minutes later each day as the 25.40-hour cycle advances.
     </div>
-    <div class="mini-section-lbl">Your Rhythm</div>
-    <div class="mini-section-sub">Each circle spans 24 hours with your wake time at the top. Cream shows your awake window, stars fill your rest window, and the outer ring shows the sky at each moment of your day.</div>
+    <div class="mini-section-lbl">Rikki's Rhythm</div>
+    <div class="mini-section-sub">Each circle shows one day, with Rikki's wake time placed at the top. Cream shows the awake window, stars mark the rest window, and the outer ring shows the sky across the 24-hour clock.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
-    <div class="mini-section-sub">The same 21 days mapped to the 24-hour calendar — midnight at top. Sky colors show how dawn and dusk fall across your day. Cream arcs show when you'll be awake; stars mark your rest window.</div>
+    <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest window.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
@@ -385,14 +393,14 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
     </div>
     <div class="grid-wrap">
       <div class="hour-axis">
-        <div class="hour-lbl hour-anchor" style="left:0.00%">midnight</div>
-        <div class="hour-lbl" style="left:12.50%">3A</div>
-        <div class="hour-lbl" style="left:25.00%">6A</div>
-        <div class="hour-lbl" style="left:37.50%">9A</div>
-        <div class="hour-lbl hour-anchor" style="left:50.00%">noon</div>
-        <div class="hour-lbl" style="left:62.50%">3P</div>
-        <div class="hour-lbl" style="left:75.00%">6P</div>
-        <div class="hour-lbl" style="left:87.50%">9P</div>
+        <div class="hour-lbl hour-anchor" style="left:0.00%">Midnight</div>
+        <div class="hour-lbl" style="left:12.50%">3 AM</div>
+        <div class="hour-lbl" style="left:25.00%">6 AM</div>
+        <div class="hour-lbl" style="left:37.50%">9 AM</div>
+        <div class="hour-lbl hour-anchor" style="left:50.00%">Noon</div>
+        <div class="hour-lbl" style="left:62.50%">3 PM</div>
+        <div class="hour-lbl" style="left:75.00%">6 PM</div>
+        <div class="hour-lbl" style="left:87.50%">9 PM</div>
       </div>
       <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
       <div class="conf-legend">
@@ -407,15 +415,13 @@ hr.div{border:none;border-top:1px solid #2e2e2e}
 
   <hr class="div">
 
-  <hr class="div">
-
   <!-- SECTION 4: UNDERSTANDING RIKKI'S TIME -->
   <div class="section">
     <h2>Understanding Rikki's Time</h2>
     <div class="tau-layout">
       <div>
         <div class="tau-num">25.40</div>
-        <div class="tau-unit">hours per personal day</div>
+        <div class="tau-unit">hours per day</div>
         <div class="tau-bar-row">
           <span class="tau-bar-lbl dim">24h clock</span>
           <div class="tau-bar-outer"><div class="tau-bar-inner" style="width:94.6%;background:#444"></div></div>
@@ -792,16 +798,16 @@ function fmt12(ms) {
   const parts = new Date(ms).toLocaleTimeString('en-US',{
     hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
   });
-  if (parts === '12:00 PM') return 'noon EST';
-  if (parts === '12:00 AM') return 'midnight EST';
-  return parts + ' EST';
+  if (parts === '12:00 PM') return 'Noon ET';
+  if (parts === '12:00 AM') return 'Midnight ET';
+  return parts + ' ET';
 }
 function fmtShort(ms) {
   const s = new Date(ms).toLocaleTimeString('en-US',
     {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'});
-  if (s === '12:00 PM') return 'noon';
-  if (s === '12:00 AM') return 'midn';
-  return s.replace(' AM','A').replace(' PM','P');
+  if (s === '12:00 PM') return 'Noon';
+  if (s === '12:00 AM') return 'Midnight';
+  return s;
 }
 function fmtHM(h) {
   const hh=Math.floor(h), mm=Math.round((h-hh)*60);
@@ -951,8 +957,8 @@ function renderPersonalDials(anchorMs) {
     const LR = 66;
     const [lx, ly] = pol(angleDeg, LR);
     const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="5" stroke-linejoin="round"';
-    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6).toFixed(1) + '" font-size="9.5" font-weight="700" fill="rgba(245,235,215,1)" letter-spacing="0.6">' + word + '</text>'
-         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6).toFixed(1) + '" font-size="9" fill="rgba(235,225,200,0.97)">' + timeStr + '</text>';
+    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6.5).toFixed(1) + '" font-size="8" font-weight="400" fill="rgba(160,154,142,0.88)" letter-spacing="0.8">' + word + '</text>'
+         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6.5).toFixed(1) + '" font-size="11" font-weight="600" fill="rgba(243,239,226,1)">' + timeStr + '</text>';
   }
 
   const items = Array.from({length: 21}, function(_, i) {
@@ -1044,8 +1050,8 @@ function renderMiniDials(anchorMs) {
     const LR = 66;
     const [lx, ly] = pol(angleDeg, LR);
     const base = 'font-family="Inter,sans-serif" text-anchor="middle" paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="5" stroke-linejoin="round"';
-    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6).toFixed(1) + '" font-size="9.5" font-weight="700" fill="rgba(245,235,215,1)" letter-spacing="0.6">' + word + '</text>'
-         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6).toFixed(1) + '" font-size="9" fill="rgba(235,225,200,0.97)">' + timeStr + '</text>';
+    return '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly-6.5).toFixed(1) + '" font-size="8" font-weight="400" fill="rgba(160,154,142,0.88)" letter-spacing="0.8">' + word + '</text>'
+         + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6.5).toFixed(1) + '" font-size="11" font-weight="600" fill="rgba(243,239,226,1)">' + timeStr + '</text>';
   }
 
   const items = Array.from({length: 21}, function(_, i) {
@@ -1299,8 +1305,8 @@ function renderForecast(anchorMs) {
           const hMs = dayMs + h * 3600000;
           if (hMs < wk0 || hMs >= wk1) continue;
           let lbl;
-          if (h === 0)       lbl = 'midn';
-          else if (h === 12) lbl = 'noon';
+          if (h === 0)       lbl = 'Midn';
+          else if (h === 12) lbl = 'Noon';
           else if (h < 12)   lbl = h + 'A';
           else               lbl = (h - 12) + 'P';
           const pct = (h / 24 * 100).toFixed(3);
@@ -2077,7 +2083,7 @@ function updateNow(anchorMs) {
   if (lbl) {
     lbl.setAttribute('x',(220+rOuter*dx).toFixed(1));
     lbl.setAttribute('y',(220+rOuter*dy).toFixed(1));
-    lbl.textContent = fmt12(Date.now()).replace(' EST','');
+    lbl.textContent = fmt12(Date.now()).replace(' ET','');
   }
 
   const set  = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
@@ -2087,9 +2093,19 @@ function updateNow(anchorMs) {
   if (cb) cb.style.width = (h_into/25.4*100).toFixed(1)+'%';
 
   if (asleep) {
-    html('now-plain','Rikki entered their rest window around <strong>'+fmt12(sleepMs)+'</strong> and is expected to wake around <strong>'+fmt12(nwakeMs)+'</strong>. They have been in their rest window for <strong>'+fmtHM(h_into - AWAKE_H)+'</strong> of their 25.4-hour day.');
+    html('now-plain',
+      '<div class="nc-row"><span class="nc-lbl">Rest window opened</span><span class="nc-val">'+fmt12(sleepMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Next wake</span><span class="nc-val">~'+fmt12(nwakeMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">In rest window for</span><span class="nc-val">'+fmtHM(h_into-AWAKE_H)+'</span></div>'+
+      '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
+    );
   } else {
-    html('now-plain','Rikki woke up at <strong>'+fmt12(wakeMs)+'</strong> and will be heading towards sleep around <strong>'+fmt12(sleepMs)+'</strong>. They have been awake for <strong>'+fmtHM(h_into)+'</strong> of their 25.4-hour day.');
+    html('now-plain',
+      '<div class="nc-row"><span class="nc-lbl">Awake</span><span class="nc-val">'+fmt12(wakeMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Rest window opens</span><span class="nc-val">~'+fmt12(sleepMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Cycle position</span><span class="nc-val">'+fmtHM(h_into)+' in</span></div>'+
+      '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
+    );
   }
 
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
@@ -2173,7 +2189,7 @@ function drawOuterClock(anchorMs) {
     const [time, period] = s.split(' ');
     const suf = period[0];
     const [h, m] = time.split(':');
-    if (h === '12' && m === '00') return period === 'PM' ? 'noon' : 'midn';
+    if (h === '12' && m === '00') return period === 'PM' ? 'Noon' : 'Midn';
     return m === '00' ? `${h}${suf}` : `${h}:${m}${suf}`;
   }
 
@@ -2189,9 +2205,9 @@ function drawOuterClock(anchorMs) {
       const isNoon     = Math.abs(clockH - 12) < 0.5;
       const isMidnight = clockH < 0.5 || clockH > 23.5;
       if (isNoon) {
-        label = 'noon'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+        label = 'Noon'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
       } else if (isMidnight) {
-        label = 'midn'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+        label = 'Midn'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
       } else {
         const ch = Math.round(clockH);
         const h12 = ch % 12 || 12;
@@ -2271,7 +2287,7 @@ function renderHourTable(anchorMs) {
   const REST_START = 14;  // cols 14–25 = rest window (~12h)
 
   let html = '<p class="htbl-intro">'
-    + 'Each column is one personal hour, from wake (left) through the rest window (right). '
+    + 'Each column is one hour of Rikki\'s day, from wake (left) through the rest window (right). '
     + 'Cell color = sky color for that clock hour (day blue → night navy). '
     + '<strong style="color:#8890c0">★ Starred cells</strong> = rest window. '
     + 'Reading down any column, watch the clock hours advance ~84 min per day — that drift is Non-24.'
@@ -2316,7 +2332,7 @@ function renderHourTable(anchorMs) {
       if (isRest) {
         html += `<td class="htbl-sl" style="${bLeft}background-color:${skyCol}"></td>`;
       } else {
-        const label   = hFloor === 12 ? 'noon' : hFloor === 0 ? 'midn' : hFloor;
+        const label   = hFloor === 12 ? 'Noon' : hFloor === 0 ? 'Midn' : hFloor;
         const isAnchr = hFloor === 12 || hFloor === 0;
         html += `<td class="htbl-aw${isAnchr?' htbl-anchor':''}" style="${bLeft}background-color:${skyCol}">${label}</td>`;
       }
@@ -2435,7 +2451,7 @@ function renderAll(anchorMs) {
     footAnchor.textContent = 'Last wake: ' + new Date(anchorMs).toLocaleString('en-US',{
       month:'short',day:'numeric',year:'numeric',
       hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
-    }) + ' EST';
+    }) + ' ET';
   }
 
   if (_liveTimer) clearInterval(_liveTimer);
