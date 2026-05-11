@@ -39,6 +39,8 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .api-bar.disconnected{border-left:3px solid #8b7020}
 .api-bar.loading{border-left:3px solid #555}
 .api-bar.error{border-left:3px solid #8b3020}
+.api-bar.overridden{border-left:3px solid var(--gold)}
+.api-btn.active{border-color:var(--gold);color:var(--gold)}
 .api-msg{color:var(--dim);flex:1}
 .api-bar-btns{display:flex;gap:8px;flex-shrink:0}
 .api-btn{background:transparent;border:1px solid #333;color:var(--dim);
@@ -289,7 +291,26 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 <div id="api-bar" class="api-bar loading">
   <span class="api-msg" id="api-msg">Connecting to Oura…</span>
   <div class="api-bar-btns">
+    <button class="api-btn" id="wake-override-btn" onclick="openWakeModal()">✎ Set Wake</button>
     <button class="api-btn" onclick="forceRefresh()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- Wake Override Modal -->
+<div id="wake-modal" class="modal-overlay" onclick="if(event.target===this)closeWakeModal()">
+  <div class="modal">
+    <h3>Manual Wake Override</h3>
+    <p>Override the Oura wake anchor. Enter the time you woke up in Eastern Time. All forecasts recalculate from this anchor until you clear it.</p>
+    <label for="wake-date">Date (ET)</label>
+    <input type="date" id="wake-date" style="margin-bottom:14px">
+    <label for="wake-time">Time (ET)</label>
+    <input type="time" id="wake-time">
+    <div class="modal-btns">
+      <button class="api-btn" id="wake-clear-btn" onclick="clearWakeOverride()" style="display:none">✕ Clear Override</button>
+      <button class="api-btn" onclick="closeWakeModal()">Cancel</button>
+      <button class="api-btn" onclick="applyWakeOverride()" style="border-color:var(--gold);color:var(--gold)">Save</button>
+    </div>
+    <div class="modal-note">Override is stored in your browser and persists across refreshes. Clear it to return to live Oura data.</div>
   </div>
 </div>
 
@@ -2429,6 +2450,62 @@ function drawPieChart(anchorMs) {
   g.innerHTML = svg;
 }
 
+// ── Manual wake override ───────────────────────────────────────────────────
+const WAKE_OVERRIDE_KEY = 'manual_wake_override';
+
+function getWakeOverride() {
+  const v = localStorage.getItem(WAKE_OVERRIDE_KEY);
+  return v ? parseInt(v, 10) : null;
+}
+
+function etToMs(dateStr, timeStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [h, min]  = timeStr.split(':').map(Number);
+  const offset = isInDST(new Date(y, m - 1, d)) ? 4 : 5;
+  return Date.UTC(y, m - 1, d, h + offset, min, 0);
+}
+
+function openWakeModal() {
+  const ovr   = getWakeOverride();
+  const refMs = ovr || Date.now();
+  const p     = nyParts(refMs);
+
+  document.getElementById('wake-date').value =
+    `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
+  document.getElementById('wake-time').value =
+    `${String(p.hour).padStart(2,'0')}:${String(p.minute).padStart(2,'0')}`;
+  document.getElementById('wake-clear-btn').style.display = ovr ? '' : 'none';
+  document.getElementById('wake-modal').classList.add('open');
+}
+
+function closeWakeModal() {
+  document.getElementById('wake-modal').classList.remove('open');
+}
+
+function applyWakeOverride() {
+  const dateVal = document.getElementById('wake-date').value;
+  const timeVal = document.getElementById('wake-time').value;
+  if (!dateVal || !timeVal) return;
+  const ms = etToMs(dateVal, timeVal);
+  localStorage.setItem(WAKE_OVERRIDE_KEY, String(ms));
+  closeWakeModal();
+  renderAll(ms);
+  const timeStr = new Date(ms).toLocaleString('en-US', {
+    month:'short', day:'numeric',
+    hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+  });
+  setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+  document.getElementById('wake-override-btn').classList.add('active');
+}
+
+function clearWakeOverride() {
+  localStorage.removeItem(WAKE_OVERRIDE_KEY);
+  document.getElementById('wake-override-btn').classList.remove('active');
+  closeWakeModal();
+  setStatus('loading', '↻ Refreshing from Oura…');
+  refreshFromAPI();
+}
+
 // ── Render everything ──────────────────────────────────────────────────────
 let _liveTimer = null;
 let _anchorMs  = FALLBACK_ANCHOR_MS;
@@ -2473,6 +2550,18 @@ function startHistoricalLoad() {
 }
 
 async function init() {
+  const ovr = getWakeOverride();
+  if (ovr) {
+    renderAll(ovr);
+    const timeStr = new Date(ovr).toLocaleString('en-US', {
+      month:'short', day:'numeric',
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+    });
+    setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+    document.getElementById('wake-override-btn').classList.add('active');
+    startHistoricalLoad();
+    return;
+  }
   const cached = getCached();
   if (cached) {
     renderAll(getAnchor(cached));
@@ -2489,6 +2578,7 @@ async function refreshFromAPI() {
   try {
     const sessions = await fetchSleep(90);
     setCache(sessions);
+    if (getWakeOverride()) return; // override takes precedence; data is cached for when it's cleared
     const anchor = getAnchor(sessions);
     renderAll(anchor);
     const latestStr = new Date(anchor).toLocaleString('en-US', {
@@ -2497,6 +2587,7 @@ async function refreshFromAPI() {
     });
     setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} ET`);
   } catch (e) {
+    if (getWakeOverride()) return;
     const cached = getCached();
     if (cached) {
       renderAll(getAnchor(cached));
