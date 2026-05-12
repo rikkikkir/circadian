@@ -361,17 +361,14 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         <text x="220.00" y="23.00"  fill="#c9a84c" font-size="12" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Wake</text>
         <!-- Current-time marker: same 25.4h scale as hand, label shows actual clock time -->
         <g id="outer-now">
-          <circle id="orn-dot" r="4.5" fill="rgba(255,255,255,0.9)" stroke="#1a1a1a" stroke-width="0.8"/>
-          <text id="orn-lbl" fill="rgba(255,255,255,0.85)" font-size="8.5" font-weight="500" text-anchor="middle"
+          <text id="orn-lbl" fill="#ff2d78" font-size="17" font-weight="700" text-anchor="middle"
                 dominant-baseline="middle" font-family="Inter,sans-serif"></text>
         </g>
         <!-- Center dot -->
         <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
-        <!-- Center text -->
         <!-- Hand (updated by JS) -->
         <g id="dial-hand">
-          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
-          <circle id="hand-dot" cx="220" cy="76" r="6" fill="#c9a84c"/>
+          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#ff2d78" stroke-width="2" stroke-linecap="round"/>
         </g>
       </svg>
 
@@ -2078,12 +2075,10 @@ function doICS() {
 // ── Live dial ──────────────────────────────────────────────────────────────
 function updateDial(h) {
   const deg = (h/25.4)*360, rad = (deg-90)*Math.PI/180;
-  const x   = 220 + 144*Math.cos(rad), y = 220 + 144*Math.sin(rad);
-  const col = h >= AWAKE_H ? '#3d42a0' : '#c9a84c';
+  const dx  = Math.cos(rad), dy = Math.sin(rad);
+  const x   = (220 + 190*dx).toFixed(1), y = (220 + 190*dy).toFixed(1);
   const hl  = document.getElementById('hand-line');
-  const hd  = document.getElementById('hand-dot');
-  if (hl) { hl.setAttribute('x2',x.toFixed(1)); hl.setAttribute('y2',y.toFixed(1)); hl.setAttribute('stroke',col); }
-  if (hd) { hd.setAttribute('cx',x.toFixed(1)); hd.setAttribute('cy',y.toFixed(1)); hd.setAttribute('fill',col); }
+  if (hl) { hl.setAttribute('x2', x); hl.setAttribute('y2', y); }
 }
 
 function updateNow(anchorMs) {
@@ -2091,18 +2086,14 @@ function updateNow(anchorMs) {
   updateDial(h_into);
   drawPieChart(anchorMs);
 
-  // Current-time dot on outer ring — same 25.4h scale as hand, so they stay aligned
-  const {h_into: h_now} = cyclePos(anchorMs);
-  const rAngle = (h_now / 25.4) * 360;
+  // Pink time label just outside the outer ring
+  const rAngle = (h_into / 25.4) * 360;
   const rRad   = rAngle * Math.PI / 180;
-  const rMid   = 182, rOuter = 207;
   const dx = Math.sin(rRad), dy = -Math.cos(rRad);
-  const dot = document.getElementById('orn-dot');
   const lbl = document.getElementById('orn-lbl');
-  if (dot) { dot.setAttribute('cx',(220+rMid*dx).toFixed(1)); dot.setAttribute('cy',(220+rMid*dy).toFixed(1)); }
   if (lbl) {
-    lbl.setAttribute('x',(220+rOuter*dx).toFixed(1));
-    lbl.setAttribute('y',(220+rOuter*dy).toFixed(1));
+    lbl.setAttribute('x',(220 + 207*dx).toFixed(1));
+    lbl.setAttribute('y',(220 + 207*dy).toFixed(1));
     lbl.textContent = fmt12(Date.now()).replace(' ET','');
   }
 
@@ -2452,9 +2443,6 @@ function drawPieChart(anchorMs) {
   }
 
 
-  const nowAngle = h_into * DEG;
-  const arcSpan  = 8;
-  svg += `<path d="${sector(nowAngle - arcSpan/2, nowAngle + arcSpan/2, RO - 14, RO - 2)}" fill="rgba(201,168,76,0.95)" stroke="none"/>`;
 
   g.innerHTML = svg;
 }
