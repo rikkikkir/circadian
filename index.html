@@ -116,25 +116,27 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .near-sky{height:80px;border-radius:4px;margin:9px 0 7px;width:100%}
 
 /* ── Forecast grid ── */
-.grid-wrap{background:#07091a;border:1px solid var(--divider);border-radius:var(--r);padding:20px 20px 16px;overflow-x:auto}
-.hour-axis{position:relative;height:20px;margin-left:76px;margin-bottom:3px}
-.hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#556;font-family:'Inter',sans-serif}
-.hour-anchor{color:var(--gold);font-weight:500;font-size:9px}
-.grid-row{display:flex;align-items:center;margin-bottom:1px;border-bottom:1px solid rgba(255,255,255,0.035)}
-.row-lbl{width:76px;flex-shrink:0;font-size:10.5px;color:#556;font-family:'Inter',sans-serif;
+.grid-wrap{background:#ece7db;border:1px solid rgba(0,0,0,0.1);border-radius:var(--r);padding:20px 20px 16px;overflow-x:auto}
+.hour-axis{position:relative;height:20px;margin-left:80px;margin-bottom:3px}
+.hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#9a8f7c;font-family:'Inter',sans-serif}
+.hour-anchor{color:#7a6020;font-weight:600;font-size:10px}
+.grid-row{display:flex;align-items:center}
+.grid-row:nth-child(odd)  .row-timeline{background:#e5dece}
+.grid-row:nth-child(even) .row-timeline{background:#dbd4c3}
+.row-lbl{width:80px;flex-shrink:0;font-size:10.5px;color:#9a8f7c;font-family:'Inter',sans-serif;
   text-align:right;padding-right:8px;white-space:nowrap}
-.row-timeline{flex:1;height:26px;position:relative;border-radius:2px;overflow:hidden}
-.today-row .row-lbl{color:var(--gold);font-weight:600}
-.wake-blk{position:absolute;top:0;bottom:0;border-radius:0}
-.sleep-blk{position:absolute;top:1px;bottom:1px;background-image:var(--pat-sleep);border-radius:2px;z-index:1}
-.conf-high{opacity:.88}
-.conf-med{opacity:.50}
-.conf-low{opacity:.22}
-.sun-tick{position:absolute;top:0;bottom:0;width:1px;z-index:2;background:rgba(196,168,80,.35)}
-.hr-label{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:8px;color:rgba(220,210,180,0.75);font-family:'Inter',sans-serif;pointer-events:none;z-index:1;white-space:nowrap;line-height:1}
-.now-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.75);z-index:3;display:none}
-.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;
-  font-size:10.5px;color:#666;font-family:'Inter',sans-serif;align-items:center}
+.row-timeline{flex:1;height:28px;position:relative;border-radius:2px;overflow:hidden}
+.today-row .row-lbl{color:var(--gold);font-weight:700;font-size:11px}
+.sleep-blk{position:absolute;top:2px;bottom:2px;border-radius:2px;z-index:1}
+.fc-high{background:#1d2c6e}
+.fc-med {background:#505fa0}
+.fc-low {background:#8c9bc8}
+.sun-tick{position:absolute;top:0;bottom:0;width:0;z-index:2}
+.sun-rise{border-left:1.5px dashed rgba(200,165,40,0.85)}
+.sun-set {border-left:1.5px dashed rgba(220,105,20,0.80)}
+.now-line{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed rgba(185,40,40,0.9);z-index:3;display:none}
+.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;
+  font-size:10.5px;color:#8a7e6e;font-family:'Inter',sans-serif;align-items:center}
 .csw{display:inline-block;width:18px;height:9px;border-radius:2px;vertical-align:middle;margin-right:3px}
 .sleep-texture{background-color:rgba(215,195,165,0.78);background-image:var(--pat-sleep)}
 
@@ -389,6 +391,37 @@ hr.div{border:none;border-top:1px solid var(--divider)}
     <div class="mini-section-lbl">On the Clock</div>
     <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest window.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
+
+    <h2 style="margin-top:48px">21-Day Forecast</h2>
+    <div class="chart-intro">
+      Each row is one calendar day. The blue block is when Rikki is predicted to be sleeping. No color means she is awake. The yellow tick marks sunrise and the orange tick marks sunset. Blocks fade after day 7 to show increasing uncertainty; the general direction is reliable but exact timing can vary by several hours.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
+    </div>
+    <div class="grid-wrap">
+      <div class="hour-axis">
+        <div class="hour-lbl hour-anchor" style="left:0.00%">12A</div>
+        <div class="hour-lbl" style="left:12.50%">3A</div>
+        <div class="hour-lbl" style="left:25.00%">6A</div>
+        <div class="hour-lbl" style="left:37.50%">9A</div>
+        <div class="hour-lbl hour-anchor" style="left:50.00%">12P</div>
+        <div class="hour-lbl" style="left:62.50%">3P</div>
+        <div class="hour-lbl" style="left:75.00%">6P</div>
+        <div class="hour-lbl" style="left:87.50%">9P</div>
+      </div>
+      <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
+      <div class="conf-legend">
+        <div><span class="csw" style="background:#1d2c6e"></span>Days 1–7 (higher confidence)</div>
+        <div><span class="csw" style="background:#505fa0"></span>Days 8–14</div>
+        <div><span class="csw" style="background:#8c9bc8"></span>Days 15–21 (wider uncertainty)</div>
+        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(200,165,40,.9);vertical-align:middle;margin-right:3px"></span>Sunrise</div>
+        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(220,105,20,.85);vertical-align:middle;margin-right:3px"></span>Sunset</div>
+        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(185,40,40,.9);vertical-align:middle;margin-right:3px"></span>Now</div>
+      </div>
+    </div>
+    <div class="htbl-wrap" id="hour-table-wrap"></div>
+
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
     </div>
@@ -396,39 +429,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       <button class="btn btn-outline" onclick="doShare()">⎘ Copy next 7 days as text</button>
     </div>
     <div class="share-out" id="share-out"></div>
-  </div>
-
-  <hr class="div">
-
-  <!-- SECTION 3: 21-DAY FORECAST -->
-  <div class="section">
-    <h2>21-Day Forecast</h2>
-    <div class="chart-intro">
-      Each row is one calendar day. The star-textured block is the predicted rest window; open space is the active phase. Blocks fade with distance — the trend is reliable, but day 14–21 timing is approximate.
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
-    </div>
-    <div class="grid-wrap">
-      <div class="hour-axis">
-        <div class="hour-lbl hour-anchor" style="left:0.00%">Midnight</div>
-        <div class="hour-lbl" style="left:12.50%">3 AM</div>
-        <div class="hour-lbl" style="left:25.00%">6 AM</div>
-        <div class="hour-lbl" style="left:37.50%">9 AM</div>
-        <div class="hour-lbl hour-anchor" style="left:50.00%">Noon</div>
-        <div class="hour-lbl" style="left:62.50%">3 PM</div>
-        <div class="hour-lbl" style="left:75.00%">6 PM</div>
-        <div class="hour-lbl" style="left:87.50%">9 PM</div>
-      </div>
-      <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
-      <div class="conf-legend">
-        <div><span class="csw sleep-texture" style="opacity:.88"></span>Rest window · Days 1–7</div>
-        <div><span class="csw sleep-texture" style="opacity:.55"></span>Days 8–14</div>
-        <div><span class="csw sleep-texture" style="opacity:.25"></span>Days 15–21 (wider uncertainty)</div>
-        <div><span class="csw" style="background:rgba(255,255,255,.75)"></span>Now</div>
-      </div>
-    </div>
-    <div class="htbl-wrap" id="hour-table-wrap"></div>
   </div>
 
   <hr class="div">
@@ -1289,7 +1289,7 @@ function renderForecast(anchorMs) {
     const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
       weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
     });
-    const conf     = day < 7 ? 'conf-high' : day < 14 ? 'conf-med' : 'conf-low';
+    const fcCls   = day < 7 ? 'fc-high' : day < 14 ? 'fc-med' : 'fc-low';
     const rowClass = isToday ? 'today-row' : '';
 
     const dayDate  = new Date(dayMs);
@@ -1297,46 +1297,23 @@ function renderForecast(anchorMs) {
     const srPct = (sunrise/24*100).toFixed(2);
     const ssPct = (sunset /24*100).toFixed(2);
 
-    const blocks = [], wakeBlks = [];
+    const blocks = [];
     const startN = Math.floor((dayMs - anchorMs) / TAU_MS) - 1;
     for (let c = startN; c <= startN + 3; c++) {
-      // Sleep blocks
       const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
       const s1 = s0 + TIB_MS;
       const sl0 = Math.max(s0, dayMs), sl1 = Math.min(s1, dayEnd);
       if (sl1 > sl0) {
         const left  = ((sl0-dayMs)/86400000*100).toFixed(3);
         const width = ((sl1-sl0)/86400000*100).toFixed(3);
-        blocks.push(`<div class="sleep-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
-      }
-      // Wake (awake) blocks with hour labels
-      const w0 = anchorMs + c * TAU_MS;
-      const w1 = w0 + AWAKE_MS;
-      const wk0 = Math.max(w0, dayMs), wk1 = Math.min(w1, dayEnd);
-      if (wk1 > wk0) {
-        const left  = ((wk0-dayMs)/86400000*100).toFixed(3);
-        const width = ((wk1-wk0)/86400000*100).toFixed(3);
-        wakeBlks.push(`<div class="wake-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
-        // Hour labels: one per whole clock hour falling inside wake window
-        for (let h = 0; h <= 23; h++) {
-          const hMs = dayMs + h * 3600000;
-          if (hMs < wk0 || hMs >= wk1) continue;
-          let lbl;
-          if (h === 0)       lbl = 'Midn';
-          else if (h === 12) lbl = 'Noon';
-          else if (h < 12)   lbl = h + 'A';
-          else               lbl = (h - 12) + 'P';
-          const pct = (h / 24 * 100).toFixed(3);
-          wakeBlks.push(`<div class="hr-label ${conf}" style="left:${pct}%">${lbl}</div>`);
-        }
+        blocks.push(`<div class="sleep-blk ${fcCls}" style="left:${left}%;width:${width}%"></div>`);
       }
     }
 
     const nlPart = isToday ? `<div class="now-line" id="now-line"></div>` : '';
-    const skyBg  = skyGradientRow(sunrise, sunset);
     rows.push(`<div class="grid-row ${rowClass}">
       <div class="row-lbl">${dayLabel}</div>
-      <div class="row-timeline" style="background:${skyBg}">${wakeBlks.join('')}${blocks.join('')}<div class="sun-tick" style="left:${srPct}%"></div><div class="sun-tick" style="left:${ssPct}%"></div>${nlPart}</div>
+      <div class="row-timeline">${blocks.join('')}<div class="sun-tick sun-rise" style="left:${srPct}%"></div><div class="sun-tick sun-set" style="left:${ssPct}%"></div>${nlPart}</div>
     </div>`);
   }
 
