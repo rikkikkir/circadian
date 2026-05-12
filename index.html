@@ -2258,11 +2258,12 @@ function drawOuterClock(anchorMs) {
   g.innerHTML = html;
 }
 
-// Dim an rgb(...) color string by a 0–1 factor (1 = full brightness)
-function dimRgb(rgbStr, factor) {
+// Blend an rgb(...) color toward white by a 0–1 factor (0 = original, 1 = white)
+function tintRgb(rgbStr, factor) {
   const m = rgbStr.match(/rgb\((\d+),(\d+),(\d+)\)/);
   if (!m) return rgbStr;
-  return `rgb(${Math.round(+m[1]*factor)},${Math.round(+m[2]*factor)},${Math.round(+m[3]*factor)})`;
+  const t = r => Math.round(+r + (255 - +r) * factor);
+  return `rgb(${t(m[1])},${t(m[2])},${t(m[3])})`;
 }
 
 // ── Sky color sampler (interpolates gradient stops at a given clock hour) ──
@@ -2420,7 +2421,7 @@ function drawPieChart(anchorMs) {
         const hNext  = Math.min(h + STEP, segEnd);
         const midH   = (h + hNext) / 2;
         const clockH = ((wakeHour + midH) % 24 + 24) % 24;
-        svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${dimRgb(skyColorAt(clockH, sunrise, sunset), 0.5)}" stroke="none"/>`;
+        svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${tintRgb(skyColorAt(clockH, sunrise, sunset), 0.5)}" stroke="none"/>`;
         h = hNext;
       }
       // Texture overlay on full segment shape
