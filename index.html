@@ -2421,7 +2421,7 @@ function drawPieChart(anchorMs) {
         const hNext  = Math.min(h + STEP, segEnd);
         const midH   = (h + hNext) / 2;
         const clockH = ((wakeHour + midH) % 24 + 24) % 24;
-        svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${tintRgb(skyColorAt(clockH, sunrise, sunset), 0.5)}" stroke="none"/>`;
+        svg += `<path d="${sector(h * DEG, hNext * DEG, RI, RO)}" fill="${tintRgb(skyColorAt(clockH, sunrise, sunset), 0.16)}" stroke="none"/>`;
         h = hNext;
       }
       // Texture overlay on full segment shape
