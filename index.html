@@ -2157,7 +2157,8 @@ function drawOuterClock(anchorMs) {
   const g = document.getElementById('outer-clock');
   if (!g) return;
   const OCX = 220, OCY = 220, R1 = 174, R2 = 190;
-  const wakeHour = nyHour(anchorMs);
+  const { wakeMs: cycleWakeMs } = cyclePos(anchorMs, Date.now());
+  const wakeHour = nyHour(cycleWakeMs);
   const DEG = 360 / 25.4;
 
   function nToA(n) { return n * DEG; }
@@ -2173,7 +2174,7 @@ function drawOuterClock(anchorMs) {
     return `M ${x1o} ${y1o} A ${ro} ${ro} 0 ${large} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${ri} ${ri} 0 ${large} 0 ${x1i} ${y1i} Z`;
   }
 
-  const today = new Date(anchorMs);
+  const today = new Date(cycleWakeMs);
   const { sunrise, sunset } = sunTimes(today);
 
   let html = '';
@@ -2218,7 +2219,7 @@ function drawOuterClock(anchorMs) {
     let label, fontSize, fillColor, fontWeight;
     if (n === 0) {
       // Show exact wake time at the top
-      label = ringLabel(anchorMs);
+      label = ringLabel(cycleWakeMs);
       fontSize = '8'; fillColor = '#c9a84c'; fontWeight = '600';
     } else {
       const clockH = ((wakeHour + n) % 24 + 24) % 24;
