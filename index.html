@@ -2220,20 +2220,20 @@ function drawOuterClock(anchorMs) {
     if (n === 0) {
       // Show exact wake time at the top
       label = ringLabel(cycleWakeMs);
-      fontSize = '8'; fillColor = '#c9a84c'; fontWeight = '600';
+      fontSize = '16'; fillColor = '#c9a84c'; fontWeight = '600';
     } else {
       const clockH = ((wakeHour + n) % 24 + 24) % 24;
       const isNoon     = Math.abs(clockH - 12) < 0.5;
       const isMidnight = clockH < 0.5 || clockH > 23.5;
       if (isNoon) {
-        label = 'Noon'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+        label = 'Noon'; fontSize = '15'; fillColor = '#c9a84c'; fontWeight = '600';
       } else if (isMidnight) {
-        label = 'Midn'; fontSize = '7.5'; fillColor = '#c9a84c'; fontWeight = '600';
+        label = 'Midn'; fontSize = '15'; fillColor = '#c9a84c'; fontWeight = '600';
       } else {
         const ch = Math.round(clockH);
         const h12 = ch % 12 || 12;
         const ampm = ch < 12 ? 'A' : 'P';
-        label = h12 + ampm; fontSize = '8.5'; fillColor = '#606060'; fontWeight = '400';
+        label = h12 + ampm; fontSize = '17'; fillColor = '#606060'; fontWeight = '400';
       }
     }
     const [lx,ly] = pol(nToA(n), R2 + 17);
@@ -2246,7 +2246,7 @@ function drawOuterClock(anchorMs) {
   [[nSunrise,'Sunrise'],[nSunset,'Sunset']].forEach(([n, lbl]) => {
     if (n < PERSONAL.tau) {
       const [lx, ly] = pol(nToA(n), R2 + 17);
-      html += `<text x="${lx}" y="${ly}" font-size="7" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
+      html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
     }
   });
 
