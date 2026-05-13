@@ -324,6 +324,10 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   </div>
 </div>
 
+<div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0">
+  <svg id="status-strip" viewBox="0 0 540 80" style="width:100%;display:block"></svg>
+</div>
+
 <div class="container">
 
   <!-- HEADER -->
@@ -339,9 +343,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   <div class="section">
     <h2 style="margin-bottom:16px">Current Day</h2>
     <div class="sundial-layout">
-      <div id="status-strip-wrap" style="width:100%;max-width:540px;margin-bottom:24px;border-radius:10px;overflow:hidden">
-        <svg id="status-strip" viewBox="0 0 540 80" style="width:100%;display:block"></svg>
-      </div>
       <div class="now-card" id="now-plain">—</div>
 
       <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
