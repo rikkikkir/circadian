@@ -382,10 +382,10 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       Each dial and card shows one of Rikki's days. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks when the sleep window opens. Times shift about 84 minutes later each day as the 25.40-hour cycle advances.
     </div>
     <div class="mini-section-lbl">Rikki's Rhythm</div>
-    <div class="mini-section-sub">Each circle shows one day, with Rikki's wake time placed at the top. Cream shows the awake window, stars mark the rest window, and the outer ring shows the sky across the 24-hour clock.</div>
+    <div class="mini-section-sub">Each circle shows one day, with Rikki's wake time placed at the top. Cream shows the awake window, stars mark the rest period, and the outer ring shows the sky across the 24-hour clock.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
-    <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest window.</div>
+    <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest period.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
@@ -402,7 +402,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   <div class="section">
     <h2>21-Day Forecast</h2>
     <div class="chart-intro">
-      Each row is one calendar day. The star-textured block is the predicted rest window; open space is the active phase. Blocks fade with distance — the trend is reliable, but day 14–21 timing is approximate.
+      Each row is one calendar day. The star-textured block is the predicted rest period; open space is the active phase. Blocks fade with distance — the trend is reliable, but day 14–21 timing is approximate.
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
@@ -420,7 +420,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       </div>
       <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
       <div class="conf-legend">
-        <div><span class="csw sleep-texture" style="opacity:.88"></span>Rest window · Days 1–7</div>
+        <div><span class="csw sleep-texture" style="opacity:.88"></span>Rest period · Days 1–7</div>
         <div><span class="csw sleep-texture" style="opacity:.55"></span>Days 8–14</div>
         <div><span class="csw sleep-texture" style="opacity:.25"></span>Days 15–21 (wider uncertainty)</div>
         <div><span class="csw" style="background:rgba(255,255,255,.75)"></span>Now</div>
@@ -466,7 +466,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
           <div class="bio-stat">
             <div class="bs-num">9.2h</div>
             <div class="bs-unit">actual sleep per cycle</div>
-            <div class="bs-desc">Within a ~12-hour rest window. 77% efficiency. Stable architectural parameters.</div>
+            <div class="bs-desc">Within a ~12-hour rest period. 77% efficiency. Stable architectural parameters.</div>
           </div>
           <div class="bio-stat">
             <div class="bs-num">57ms</div>
@@ -1231,7 +1231,7 @@ function renderCards(anchorMs) {
       <div class="near-day">${dayLabel}</div>
       <div class="near-row"><span class="nt-lbl">${carryOver ? 'Awake since' : 'Awake'}</span><span class="nt-val">${fmt12(cardWakeMs)}</span></div>
       <div class="near-sky" style="background:${grad}"></div>
-      <div class="near-row"><span class="nt-lbl">Rest</span><span class="nt-val">${fmt12(cardSleepMs)}</span></div>
+      <div class="near-row"><span class="nt-lbl">Resting at</span><span class="nt-val">${fmt12(cardSleepMs)}</span></div>
     </div>`;
   }).join('');
 
@@ -2110,15 +2110,15 @@ function updateNow(anchorMs) {
 
   if (asleep) {
     html('now-plain',
-      '<div class="nc-row"><span class="nc-lbl">Rest window opened</span><span class="nc-val">'+fmt12(sleepMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Resting at</span><span class="nc-val">'+fmt12(sleepMs)+'</span></div>'+
       '<div class="nc-row"><span class="nc-lbl">Next wake</span><span class="nc-val">~'+fmt12(nwakeMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">In rest window for</span><span class="nc-val">'+fmtHM(h_into-AWAKE_H)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Resting for</span><span class="nc-val">'+fmtHM(h_into-AWAKE_H)+'</span></div>'+
       '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
     );
   } else {
     html('now-plain',
       '<div class="nc-row"><span class="nc-lbl">Awake</span><span class="nc-val">'+fmt12(wakeMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">Rest window opens</span><span class="nc-val">~'+fmt12(sleepMs)+'</span></div>'+
+      '<div class="nc-row"><span class="nc-lbl">Resting at</span><span class="nc-val">~'+fmt12(sleepMs)+'</span></div>'+
       '<div class="nc-row"><span class="nc-lbl">Cycle position</span><span class="nc-val">'+fmtHM(h_into)+' in</span></div>'+
       '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
     );
@@ -2312,9 +2312,9 @@ function renderHourTable(anchorMs) {
   const REST_START = 14;  // cols 14–25 = rest window (~12h)
 
   let html = '<p class="htbl-intro">'
-    + 'Each column is one hour of Rikki\'s day, from wake (left) through the rest window (right). '
+    + 'Each column is one hour of Rikki\'s day, from wake (left) through the rest period (right). '
     + 'Cell color = sky color for that clock hour (day blue → night navy). '
-    + '<strong style="color:#8890c0">★ Starred cells</strong> = rest window. '
+    + '<strong style="color:#8890c0">★ Starred cells</strong> = rest period. '
     + 'Reading down any column, watch the clock hours advance ~84 min per day — that drift is Non-24.'
     + '</p>';
 
@@ -2323,7 +2323,7 @@ function renderHourTable(anchorMs) {
   // Phase header row
   html += '<tr><th style="border:none"></th>';
   html += `<th class="htbl-phase-hdr ph-act" colspan="${REST_START}">← Awake</th>`;
-  html += `<th class="htbl-phase-hdr ph-rest" colspan="${COLS - REST_START}">Rest Window →</th>`;
+  html += `<th class="htbl-phase-hdr ph-rest" colspan="${COLS - REST_START}">Rest →</th>`;
   html += '</tr>';
 
   // Personal hour label row (every 4 cols)
@@ -2401,10 +2401,10 @@ function renderStatusStrip(anchorMs) {
     sleepRects.push(`<rect x="${x1.toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${H}" fill="url(#sleep-stars)"/>`);
   }
 
-  // Now marker always at center (x=270); text rendered twice for legibility on any sky
+  // Two-line text at center; each line rendered twice (stroke + fill) for legibility on any sky
   const stateWord = asleep ? 'Resting' : 'Awake';
-  const textAttrs = `x="270" y="46" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="20" font-weight="400"`;
-  const tspan = `<tspan font-weight="700" fill="#c9a84c">${stateWord}</tspan>`;
+  const l1 = `x="270" y="26" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="14" font-weight="400"`;
+  const l2 = `x="270" y="56" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="26" font-weight="700"`;
 
   svg.innerHTML = `
     <defs>
@@ -2414,14 +2414,10 @@ function renderStatusStrip(anchorMs) {
     </defs>
     <rect width="${W}" height="${H}" fill="url(#strip-sky)"/>
     ${sleepRects.join('')}
-    <line x1="270" y1="0" x2="270" y2="${H}" stroke="rgba(201,168,76,0.7)" stroke-width="1.5"/>
-    <path d="M270,0 L265,8 L275,8 Z" fill="rgba(201,168,76,0.85)"/>
-    <text ${textAttrs} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="5" stroke-linejoin="round">
-      ${PERSONAL.name} is ${tspan}
-    </text>
-    <text ${textAttrs} fill="#f3efe2">
-      ${PERSONAL.name} is ${tspan}
-    </text>`;
+    <text ${l1} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="4" stroke-linejoin="round">${PERSONAL.name} is</text>
+    <text ${l1} fill="#f3efe2">${PERSONAL.name} is</text>
+    <text ${l2} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="5" stroke-linejoin="round">${stateWord}</text>
+    <text ${l2} fill="#c9a84c">${stateWord}</text>`;
 }
 
 function drawPieChart(anchorMs) {
