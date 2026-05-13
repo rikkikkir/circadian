@@ -79,13 +79,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 
 /* ── Sundial section ── */
 .sundial-layout{display:flex;flex-direction:column;align-items:flex-start}
-.now-card{background:var(--bg3);border:1px solid var(--divider);border-radius:14px;
-  padding:20px 24px;margin-bottom:28px;max-width:440px}
-.nc-row{display:flex;justify-content:space-between;align-items:baseline;gap:20px;padding:5px 0}
-.nc-lbl{font-size:.82rem;color:var(--dim);white-space:nowrap}
-.nc-val{font-size:1.05rem;font-weight:500;color:var(--warm);text-align:right}
-.nc-note{font-size:.76rem;color:var(--dim2);margin-top:12px;padding-top:10px;
-  border-top:1px solid var(--divider);line-height:1.6}
 .cycle-bar-wrap{width:100%;max-width:540px;margin-bottom:28px}
 .cb-label{font-size:.72rem;color:var(--dim2);margin-bottom:5px}
 .cb-track{height:6px;background:#2a2a2a;border-radius:3px;overflow:hidden}
@@ -346,7 +339,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         <circle cx="220" cy="220" r="170" fill="none" stroke="#333" stroke-width="1"/>
         <!-- Outer ring: 25.4h scale, clock times at each personal-hour position (populated by drawOuterClock in JS) -->
         <g id="outer-clock"></g>
-        <text x="220.00" y="23.00"  fill="#c9a84c" font-size="12" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Wake</text>
         <!-- Current-time marker: same 25.4h scale as hand, label shows actual clock time -->
         <g id="outer-now">
           <circle id="orn-dot" r="4.5" fill="rgba(255,255,255,0.9)" stroke="#1a1a1a" stroke-width="0.8"/>
@@ -362,7 +354,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         </g>
       </svg>
 
-      <div class="now-card" id="now-plain" style="margin-top:20px">—</div>
     </div>
   </div>
 
@@ -2105,21 +2096,6 @@ function updateNow(anchorMs) {
   const cb = document.getElementById('cb-fill');
   if (cb) cb.style.width = (h_into/25.4*100).toFixed(1)+'%';
 
-  if (asleep) {
-    html('now-plain',
-      '<div class="nc-row"><span class="nc-lbl">Resting at</span><span class="nc-val">'+fmt12(sleepMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">Next wake</span><span class="nc-val">~'+fmt12(nwakeMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">Resting for</span><span class="nc-val">'+fmtHM(h_into-AWAKE_H)+'</span></div>'+
-      '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
-    );
-  } else {
-    html('now-plain',
-      '<div class="nc-row"><span class="nc-lbl">Awake</span><span class="nc-val">'+fmt12(wakeMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">Resting at</span><span class="nc-val">~'+fmt12(sleepMs)+'</span></div>'+
-      '<div class="nc-row"><span class="nc-lbl">Cycle position</span><span class="nc-val">'+fmtHM(h_into)+' in</span></div>'+
-      '<div class="nc-note">Forecast based on the latest Oura wake anchor.</div>'
-    );
-  }
 
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
   const nl = document.getElementById('now-line');
@@ -2152,6 +2128,7 @@ function drawOuterClock(anchorMs) {
   const OCX = 220, OCY = 220, R1 = 174, R2 = 190;
   const { wakeMs: cycleWakeMs } = cyclePos(anchorMs, Date.now());
   const wakeHour = nyHour(cycleWakeMs);
+  const cycleSleepMs = cycleWakeMs + AWAKE_MS;
   const DEG = 360 / 25.4;
 
   function nToA(n) { return n * DEG; }
@@ -2211,9 +2188,8 @@ function drawOuterClock(anchorMs) {
   for (let n = 0; n <= 24; n += 2) {
     let label, fontSize, fillColor, fontWeight;
     if (n === 0) {
-      // Show exact wake time at the top
-      label = ringLabel(cycleWakeMs);
-      fontSize = '16'; fillColor = '#c9a84c'; fontWeight = '600';
+      label = 'Awoke at ' + ringLabel(cycleWakeMs);
+      fontSize = '13'; fillColor = '#c9a84c'; fontWeight = '600';
     } else {
       const clockH = ((wakeHour + n) % 24 + 24) % 24;
       const isNoon     = Math.abs(clockH - 12) < 0.5;
@@ -2242,6 +2218,11 @@ function drawOuterClock(anchorMs) {
       html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
     }
   });
+
+  // "Resting at [time]" label at the sleep-start boundary
+  const sleepAngle = AWAKE_H / PERSONAL.tau * 360;
+  const [rlx, rly] = pol(sleepAngle, R2 + 17);
+  html += `<text x="${rlx.toFixed(2)}" y="${rly.toFixed(2)}" font-size="13" fill="#c9a84c" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Resting at ${ringLabel(cycleSleepMs)}</text>`;
 
   // Wake tick (gold) at angle 0 = top
   const [wt1x,wt1y] = pol(0, R1 - 1);
