@@ -330,7 +330,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 
   <!-- SECTION 1: CURRENT DAY -->
   <div class="section">
-    <h2 style="margin-bottom:16px">Current Day</h2>
     <div class="sundial-layout">
       <svg id="sundial-svg" viewBox="-20 -20 480 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
         <defs></defs>
@@ -2177,13 +2176,21 @@ function drawOuterClock(anchorMs) {
     return m === '00' ? `${h}${suf}` : `${h}:${m}${suf}`;
   }
 
-  // Clock time labels every 2 personal hours
+  // Clock time labels every 2 personal hours.
+  // Clear a 2h zone around the "Awoke at" (n=0) and "Resting at" (AWAKE_H) special labels.
+  const CLEAR = 2.0;
+  function tooClose(n) {
+    const distWake  = Math.min(n, PERSONAL.tau - n);
+    const distSleep = Math.abs(n - AWAKE_H);
+    return distWake < CLEAR || distSleep < CLEAR;
+  }
   for (let n = 0; n <= 24; n += 2) {
     let label, fontSize, fillColor, fontWeight;
     if (n === 0) {
       label = 'Awoke at ' + ringLabel(cycleWakeMs);
       fontSize = '13'; fillColor = '#c9a84c'; fontWeight = '600';
     } else {
+      if (tooClose(n)) continue;
       const clockH = ((wakeHour + n) % 24 + 24) % 24;
       const isNoon     = Math.abs(clockH - 12) < 0.5;
       const isMidnight = clockH < 0.5 || clockH > 23.5;
@@ -2202,14 +2209,13 @@ function drawOuterClock(anchorMs) {
     html += `<text x="${lx}" y="${ly}" font-size="${fontSize}" fill="${fillColor}" font-weight="${fontWeight}" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${label}</text>`;
   }
 
-  // Sunrise and Sunset labels at their personal-hour positions on the ring
+  // Sunrise and Sunset labels — skip if within 2 personal hours of a special label
   const nSunrise = ((sunrise - wakeHour) % 24 + 24) % 24;
   const nSunset  = ((sunset  - wakeHour) % 24 + 24) % 24;
   [[nSunrise,'Sunrise'],[nSunset,'Sunset']].forEach(([n, lbl]) => {
-    if (n < PERSONAL.tau) {
-      const [lx, ly] = pol(nToA(n), R2 + 17);
-      html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
-    }
+    if (n >= PERSONAL.tau || tooClose(n)) return;
+    const [lx, ly] = pol(nToA(n), R2 + 17);
+    html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
   });
 
   // "Resting at [time]" label at the sleep-start boundary
