@@ -17,7 +17,6 @@
   --r:8px;--r-card:20px;
   --divider:rgba(239,232,207,0.12);
   --pat-sleep:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z' fill='none' stroke='rgba(140,215,200,0.60)' stroke-width='1.15' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z' fill='none' stroke='rgba(140,215,200,0.22)' stroke-width='0.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
-  --pat-dots:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1.3' fill='rgba(150,155,185,0.38)'/%3E%3C/svg%3E");
 }
 body{background:var(--bg);color:var(--warm);font-family:'Inter',sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,2.75rem);font-weight:400;color:var(--gold);letter-spacing:-.01em}
@@ -116,27 +115,25 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .near-sky{height:80px;border-radius:4px;margin:9px 0 7px;width:100%}
 
 /* ── Forecast grid ── */
-.grid-wrap{background:#ece7db;border:1px solid rgba(0,0,0,0.1);border-radius:var(--r);padding:20px 20px 16px;overflow-x:auto}
-.hour-axis{position:relative;height:20px;margin-left:80px;margin-bottom:3px}
-.hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#9a8f7c;font-family:'Inter',sans-serif}
-.hour-anchor{color:#7a6020;font-weight:600;font-size:10px}
-.grid-row{display:flex;align-items:center}
-.grid-row:nth-child(odd)  .row-timeline{background:#e5dece}
-.grid-row:nth-child(even) .row-timeline{background:#dbd4c3}
-.row-lbl{width:80px;flex-shrink:0;font-size:10.5px;color:#9a8f7c;font-family:'Inter',sans-serif;
+.grid-wrap{background:#07091a;border:1px solid var(--divider);border-radius:var(--r);padding:20px 20px 16px;overflow-x:auto}
+.hour-axis{position:relative;height:20px;margin-left:76px;margin-bottom:3px}
+.hour-lbl{position:absolute;transform:translateX(-50%);font-size:10px;color:#556;font-family:'Inter',sans-serif}
+.hour-anchor{color:var(--gold);font-weight:500;font-size:9px}
+.grid-row{display:flex;align-items:center;margin-bottom:1px;border-bottom:1px solid rgba(255,255,255,0.035)}
+.row-lbl{width:76px;flex-shrink:0;font-size:10.5px;color:#556;font-family:'Inter',sans-serif;
   text-align:right;padding-right:8px;white-space:nowrap}
-.row-timeline{flex:1;height:28px;position:relative;border-radius:2px;overflow:hidden}
-.today-row .row-lbl{color:var(--gold);font-weight:700;font-size:11px}
-.sleep-blk{position:absolute;top:2px;bottom:2px;border-radius:2px;z-index:1}
-.fc-high{background:#1d2c6e}
-.fc-med {background:#505fa0}
-.fc-low {background:#8c9bc8}
-.sun-tick{position:absolute;top:0;bottom:0;width:0;z-index:2}
-.sun-rise{border-left:1.5px dashed rgba(200,165,40,0.85)}
-.sun-set {border-left:1.5px dashed rgba(220,105,20,0.80)}
-.now-line{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed rgba(185,40,40,0.9);z-index:3;display:none}
-.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;
-  font-size:10.5px;color:#8a7e6e;font-family:'Inter',sans-serif;align-items:center}
+.row-timeline{flex:1;height:26px;position:relative;border-radius:2px;overflow:hidden}
+.today-row .row-lbl{color:var(--gold);font-weight:600}
+.wake-blk{position:absolute;top:0;bottom:0;border-radius:0}
+.sleep-blk{position:absolute;top:1px;bottom:1px;background-image:var(--pat-sleep);border-radius:2px;z-index:1}
+.conf-high{opacity:.88}
+.conf-med{opacity:.50}
+.conf-low{opacity:.22}
+.sun-tick{position:absolute;top:0;bottom:0;width:1px;z-index:2;background:rgba(196,168,80,.35)}
+.hr-label{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:8px;color:rgba(220,210,180,0.75);font-family:'Inter',sans-serif;pointer-events:none;z-index:1;white-space:nowrap;line-height:1}
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.75);z-index:3;display:none}
+.conf-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;
+  font-size:10.5px;color:#666;font-family:'Inter',sans-serif;align-items:center}
 .csw{display:inline-block;width:18px;height:9px;border-radius:2px;vertical-align:middle;margin-right:3px}
 .sleep-texture{background-color:rgba(215,195,165,0.78);background-image:var(--pat-sleep)}
 
@@ -288,6 +285,17 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 </style>
 </head>
 <body>
+<svg id="shared-defs" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <pattern id="sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+      <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.60)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.22)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
+    </pattern>
+    <pattern id="mini-sleep-stars" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+      <path d="M3.5,0.7 L4.1,2.6 L6.2,2.7 L4.6,3.9 L5.2,5.7 L3.5,4.6 L1.8,5.7 L2.5,3.9 L0.8,2.7 L2.9,2.6 Z" fill="none" stroke="rgba(140,215,200,0.58)" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+</svg>
 
 <!-- API Status Bar -->
 <div id="api-bar" class="api-bar loading">
@@ -331,30 +339,13 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   <div class="section">
     <h2 style="margin-bottom:16px">Current Day</h2>
     <div class="sundial-layout">
+      <div id="status-strip-wrap" style="width:100%;max-width:540px;margin-bottom:24px;border-radius:10px;overflow:hidden">
+        <svg id="status-strip" viewBox="0 0 540 80" style="width:100%;display:block"></svg>
+      </div>
       <div class="now-card" id="now-plain">—</div>
 
-      <svg id="sundial-svg" viewBox="-20 -20 480 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
-        <defs>
-          <pattern id="sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
-            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.60)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.22)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
-          </pattern>
-          <!-- soft dot: transitional/hazy symbol -->
-          <pattern id="transition-dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-            <circle cx="4" cy="4" r="1.3" fill="rgba(150,155,185,0.38)"/>
-          </pattern>
-          <!-- pie-ring sleep overlay -->
-          <pattern id="pie-sleep-stars" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
-            <path d="M11,3.7 L12.9,8.4 L17.8,8.7 L13.7,12.0 L15.2,16.9 L11,14.2 L6.7,16.7 L8.2,12.1 L4.2,8.9 L9.1,8.5 Z" fill="none" stroke="rgba(140,215,200,0.60)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M10.8,4.1 L12.7,8.7 L17.6,9.1 L13.5,12.3 L15.0,17.1 L10.8,14.5 L6.5,17.0 L8.0,12.4 L4.0,9.2 L8.9,8.8 Z" fill="none" stroke="rgba(140,215,200,0.22)" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round"/>
-          </pattern>
-          <pattern id="pie-trans-dots" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-            <circle cx="3.5" cy="3.5" r="1.1" fill="rgba(150,155,185,0.38)"/>
-          </pattern>
-          <pattern id="mini-sleep-stars" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-            <path d="M3.5,0.7 L4.1,2.6 L6.2,2.7 L4.6,3.9 L5.2,5.7 L3.5,4.6 L1.8,5.7 L2.5,3.9 L0.8,2.7 L2.9,2.6 Z" fill="none" stroke="rgba(140,215,200,0.58)" stroke-width="0.6" stroke-linejoin="round" stroke-linecap="round"/>
-          </pattern>
-        </defs>
+      <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
+        <defs></defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
         <g id="pie-ring"></g>
         <circle cx="220" cy="220" r="170" fill="none" stroke="#333" stroke-width="1"/>
@@ -363,14 +354,17 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         <text x="220.00" y="23.00"  fill="#c9a84c" font-size="12" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Wake</text>
         <!-- Current-time marker: same 25.4h scale as hand, label shows actual clock time -->
         <g id="outer-now">
-          <text id="orn-lbl" fill="#ff2d78" font-size="17" font-weight="700" text-anchor="middle"
+          <circle id="orn-dot" r="4.5" fill="rgba(255,255,255,0.9)" stroke="#1a1a1a" stroke-width="0.8"/>
+          <text id="orn-lbl" fill="rgba(255,255,255,0.85)" font-size="8.5" font-weight="500" text-anchor="middle"
                 dominant-baseline="middle" font-family="Inter,sans-serif"></text>
         </g>
         <!-- Center dot -->
         <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
+        <!-- Center text -->
         <!-- Hand (updated by JS) -->
         <g id="dial-hand">
-          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#ff2d78" stroke-width="2" stroke-linecap="round"/>
+          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
+          <circle id="hand-dot" cx="220" cy="76" r="6" fill="#c9a84c"/>
         </g>
       </svg>
 
@@ -391,37 +385,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
     <div class="mini-section-lbl">On the Clock</div>
     <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest window.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
-
-    <h2 style="margin-top:48px">21-Day Forecast</h2>
-    <div class="chart-intro">
-      Each row is one calendar day. The blue block is when Rikki is predicted to be sleeping. No color means she is awake. The yellow tick marks sunrise and the orange tick marks sunset. Blocks fade after day 7 to show increasing uncertainty; the general direction is reliable but exact timing can vary by several hours.
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
-    </div>
-    <div class="grid-wrap">
-      <div class="hour-axis">
-        <div class="hour-lbl hour-anchor" style="left:0.00%">12A</div>
-        <div class="hour-lbl" style="left:12.50%">3A</div>
-        <div class="hour-lbl" style="left:25.00%">6A</div>
-        <div class="hour-lbl" style="left:37.50%">9A</div>
-        <div class="hour-lbl hour-anchor" style="left:50.00%">12P</div>
-        <div class="hour-lbl" style="left:62.50%">3P</div>
-        <div class="hour-lbl" style="left:75.00%">6P</div>
-        <div class="hour-lbl" style="left:87.50%">9P</div>
-      </div>
-      <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
-      <div class="conf-legend">
-        <div><span class="csw" style="background:#1d2c6e"></span>Days 1–7 (higher confidence)</div>
-        <div><span class="csw" style="background:#505fa0"></span>Days 8–14</div>
-        <div><span class="csw" style="background:#8c9bc8"></span>Days 15–21 (wider uncertainty)</div>
-        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(200,165,40,.9);vertical-align:middle;margin-right:3px"></span>Sunrise</div>
-        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(220,105,20,.85);vertical-align:middle;margin-right:3px"></span>Sunset</div>
-        <div><span style="display:inline-block;width:18px;height:9px;border-left:2px dashed rgba(185,40,40,.9);vertical-align:middle;margin-right:3px"></span>Now</div>
-      </div>
-    </div>
-    <div class="htbl-wrap" id="hour-table-wrap"></div>
-
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
     </div>
@@ -429,6 +392,39 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       <button class="btn btn-outline" onclick="doShare()">⎘ Copy next 7 days as text</button>
     </div>
     <div class="share-out" id="share-out"></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- SECTION 3: 21-DAY FORECAST -->
+  <div class="section">
+    <h2>21-Day Forecast</h2>
+    <div class="chart-intro">
+      Each row is one calendar day. The star-textured block is the predicted rest window; open space is the active phase. Blocks fade with distance — the trend is reliable, but day 14–21 timing is approximate.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="doICS()">↓ Download calendar (.ics)</button>
+    </div>
+    <div class="grid-wrap">
+      <div class="hour-axis">
+        <div class="hour-lbl hour-anchor" style="left:0.00%">Midnight</div>
+        <div class="hour-lbl" style="left:12.50%">3 AM</div>
+        <div class="hour-lbl" style="left:25.00%">6 AM</div>
+        <div class="hour-lbl" style="left:37.50%">9 AM</div>
+        <div class="hour-lbl hour-anchor" style="left:50.00%">Noon</div>
+        <div class="hour-lbl" style="left:62.50%">3 PM</div>
+        <div class="hour-lbl" style="left:75.00%">6 PM</div>
+        <div class="hour-lbl" style="left:87.50%">9 PM</div>
+      </div>
+      <div id="forecast-rows"><div class="loading-placeholder" style="color:#888">Loading…</div></div>
+      <div class="conf-legend">
+        <div><span class="csw sleep-texture" style="opacity:.88"></span>Rest window · Days 1–7</div>
+        <div><span class="csw sleep-texture" style="opacity:.55"></span>Days 8–14</div>
+        <div><span class="csw sleep-texture" style="opacity:.25"></span>Days 15–21 (wider uncertainty)</div>
+        <div><span class="csw" style="background:rgba(255,255,255,.75)"></span>Now</div>
+      </div>
+    </div>
+    <div class="htbl-wrap" id="hour-table-wrap"></div>
   </div>
 
   <hr class="div">
@@ -1289,7 +1285,7 @@ function renderForecast(anchorMs) {
     const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
       weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
     });
-    const fcCls   = day < 7 ? 'fc-high' : day < 14 ? 'fc-med' : 'fc-low';
+    const conf     = day < 7 ? 'conf-high' : day < 14 ? 'conf-med' : 'conf-low';
     const rowClass = isToday ? 'today-row' : '';
 
     const dayDate  = new Date(dayMs);
@@ -1297,23 +1293,46 @@ function renderForecast(anchorMs) {
     const srPct = (sunrise/24*100).toFixed(2);
     const ssPct = (sunset /24*100).toFixed(2);
 
-    const blocks = [];
+    const blocks = [], wakeBlks = [];
     const startN = Math.floor((dayMs - anchorMs) / TAU_MS) - 1;
     for (let c = startN; c <= startN + 3; c++) {
+      // Sleep blocks
       const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
       const s1 = s0 + TIB_MS;
       const sl0 = Math.max(s0, dayMs), sl1 = Math.min(s1, dayEnd);
       if (sl1 > sl0) {
         const left  = ((sl0-dayMs)/86400000*100).toFixed(3);
         const width = ((sl1-sl0)/86400000*100).toFixed(3);
-        blocks.push(`<div class="sleep-blk ${fcCls}" style="left:${left}%;width:${width}%"></div>`);
+        blocks.push(`<div class="sleep-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
+      }
+      // Wake (awake) blocks with hour labels
+      const w0 = anchorMs + c * TAU_MS;
+      const w1 = w0 + AWAKE_MS;
+      const wk0 = Math.max(w0, dayMs), wk1 = Math.min(w1, dayEnd);
+      if (wk1 > wk0) {
+        const left  = ((wk0-dayMs)/86400000*100).toFixed(3);
+        const width = ((wk1-wk0)/86400000*100).toFixed(3);
+        wakeBlks.push(`<div class="wake-blk ${conf}" style="left:${left}%;width:${width}%"></div>`);
+        // Hour labels: one per whole clock hour falling inside wake window
+        for (let h = 0; h <= 23; h++) {
+          const hMs = dayMs + h * 3600000;
+          if (hMs < wk0 || hMs >= wk1) continue;
+          let lbl;
+          if (h === 0)       lbl = 'Midn';
+          else if (h === 12) lbl = 'Noon';
+          else if (h < 12)   lbl = h + 'A';
+          else               lbl = (h - 12) + 'P';
+          const pct = (h / 24 * 100).toFixed(3);
+          wakeBlks.push(`<div class="hr-label ${conf}" style="left:${pct}%">${lbl}</div>`);
+        }
       }
     }
 
     const nlPart = isToday ? `<div class="now-line" id="now-line"></div>` : '';
+    const skyBg  = skyGradientRow(sunrise, sunset);
     rows.push(`<div class="grid-row ${rowClass}">
       <div class="row-lbl">${dayLabel}</div>
-      <div class="row-timeline">${blocks.join('')}<div class="sun-tick sun-rise" style="left:${srPct}%"></div><div class="sun-tick sun-set" style="left:${ssPct}%"></div>${nlPart}</div>
+      <div class="row-timeline" style="background:${skyBg}">${wakeBlks.join('')}${blocks.join('')}<div class="sun-tick" style="left:${srPct}%"></div><div class="sun-tick" style="left:${ssPct}%"></div>${nlPart}</div>
     </div>`);
   }
 
@@ -2052,25 +2071,32 @@ function doICS() {
 // ── Live dial ──────────────────────────────────────────────────────────────
 function updateDial(h) {
   const deg = (h/25.4)*360, rad = (deg-90)*Math.PI/180;
-  const dx  = Math.cos(rad), dy = Math.sin(rad);
-  const x   = (220 + 205*dx).toFixed(1), y = (220 + 205*dy).toFixed(1);
+  const x   = 220 + 144*Math.cos(rad), y = 220 + 144*Math.sin(rad);
+  const col = h >= AWAKE_H ? '#3d42a0' : '#c9a84c';
   const hl  = document.getElementById('hand-line');
-  if (hl) { hl.setAttribute('x2', x); hl.setAttribute('y2', y); }
+  const hd  = document.getElementById('hand-dot');
+  if (hl) { hl.setAttribute('x2',x.toFixed(1)); hl.setAttribute('y2',y.toFixed(1)); hl.setAttribute('stroke',col); }
+  if (hd) { hd.setAttribute('cx',x.toFixed(1)); hd.setAttribute('cy',y.toFixed(1)); hd.setAttribute('fill',col); }
 }
 
 function updateNow(anchorMs) {
   const {cycleN,h_into,wakeMs,sleepMs,nwakeMs,asleep} = cyclePos(anchorMs);
   updateDial(h_into);
   drawPieChart(anchorMs);
+  renderStatusStrip(anchorMs);
 
-  // Pink time label just outside the outer ring
-  const rAngle = (h_into / 25.4) * 360;
+  // Current-time dot on outer ring — same 25.4h scale as hand, so they stay aligned
+  const {h_into: h_now} = cyclePos(anchorMs);
+  const rAngle = (h_now / 25.4) * 360;
   const rRad   = rAngle * Math.PI / 180;
+  const rMid   = 182, rOuter = 207;
   const dx = Math.sin(rRad), dy = -Math.cos(rRad);
+  const dot = document.getElementById('orn-dot');
   const lbl = document.getElementById('orn-lbl');
+  if (dot) { dot.setAttribute('cx',(220+rMid*dx).toFixed(1)); dot.setAttribute('cy',(220+rMid*dy).toFixed(1)); }
   if (lbl) {
-    lbl.setAttribute('x',(220 + 225*dx).toFixed(1));
-    lbl.setAttribute('y',(220 + 225*dy).toFixed(1));
+    lbl.setAttribute('x',(220+rOuter*dx).toFixed(1));
+    lbl.setAttribute('y',(220+rOuter*dy).toFixed(1));
     lbl.textContent = fmt12(Date.now()).replace(' ET','');
   }
 
@@ -2342,6 +2368,60 @@ function renderHourTable(anchorMs) {
 }
 
 // ── Pie chart ring (shared daily life wheel, inside the sundial) ───────────
+function renderStatusStrip(anchorMs) {
+  const svg = document.getElementById('status-strip');
+  if (!svg) return;
+
+  const W = 540, H = 80;
+  const nowMs = Date.now();
+  const leftEdgeMs = nowMs - TAU_MS / 2;
+  const { sunrise, sunset } = sunTimes(new Date(nowMs));
+  const { asleep } = cyclePos(anchorMs, nowMs);
+
+  // Sky gradient: sample skyColorAt every 0.25 personal hours across the 25.4h window
+  const STEP = 0.25;
+  const stops = [];
+  for (let n = 0; n <= PERSONAL.tau; n += STEP) {
+    const t = leftEdgeMs + (n / PERSONAL.tau) * TAU_MS;
+    const clockH = nyHour(t);
+    stops.push(`<stop offset="${(n / PERSONAL.tau * 100).toFixed(2)}%" stop-color="${skyColorAt(clockH, sunrise, sunset)}"/>`);
+  }
+
+  // Sleep region rects — find all sleep intervals overlapping the visible window
+  const c0 = Math.floor((leftEdgeMs - anchorMs) / TAU_MS) - 1;
+  const sleepRects = [];
+  for (let c = c0; c <= c0 + 3; c++) {
+    const sMs = anchorMs + c * TAU_MS + AWAKE_MS;
+    const eMs = sMs + TIB_MS;
+    if (eMs <= leftEdgeMs || sMs >= leftEdgeMs + TAU_MS) continue;
+    const x1 = Math.max(0, (sMs - leftEdgeMs) / TAU_MS * W);
+    const x2 = Math.min(W, (eMs - leftEdgeMs) / TAU_MS * W);
+    sleepRects.push(`<rect x="${x1.toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${H}" fill="url(#sleep-stars)"/>`);
+  }
+
+  // Now marker always at center (x=270); text rendered twice for legibility on any sky
+  const stateWord = asleep ? 'Resting' : 'Awake';
+  const textAttrs = `x="270" y="46" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="20" font-weight="400"`;
+  const tspan = `<tspan font-weight="700" fill="#c9a84c">${stateWord}</tspan>`;
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="strip-sky" x1="0" x2="1" y1="0" y2="0">
+        ${stops.join('')}
+      </linearGradient>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#strip-sky)"/>
+    ${sleepRects.join('')}
+    <line x1="270" y1="0" x2="270" y2="${H}" stroke="rgba(201,168,76,0.7)" stroke-width="1.5"/>
+    <path d="M270,0 L265,8 L275,8 Z" fill="rgba(201,168,76,0.85)"/>
+    <text ${textAttrs} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="5" stroke-linejoin="round">
+      ${PERSONAL.name} is ${tspan}
+    </text>
+    <text ${textAttrs} fill="#f3efe2">
+      ${PERSONAL.name} is ${tspan}
+    </text>`;
+}
+
 function drawPieChart(anchorMs) {
   const g = document.getElementById('pie-ring');
   if (!g) return;
@@ -2394,7 +2474,7 @@ function drawPieChart(anchorMs) {
       }
       // Texture overlay on full segment shape
       if (seg.type === 'sleep') {
-        svg += `<path d="${dFull}" fill="url(#pie-sleep-stars)" stroke="none"/>`;
+        svg += `<path d="${dFull}" fill="url(#sleep-stars)" stroke="none"/>`;
         sleepLabelAngle = (segStart + segEnd) / 2 * DEG;
       }
       // Segment border (stroke only, no fill — sub-slices already filled)
@@ -2420,6 +2500,9 @@ function drawPieChart(anchorMs) {
   }
 
 
+  const nowAngle = h_into * DEG;
+  const arcSpan  = 8;
+  svg += `<path d="${sector(nowAngle - arcSpan/2, nowAngle + arcSpan/2, RO - 14, RO - 2)}" fill="rgba(201,168,76,0.95)" stroke="none"/>`;
 
   g.innerHTML = svg;
 }
@@ -2494,6 +2577,7 @@ function renderAll(anchorMs) {
   buildShareICS(anchorMs);
   drawOuterClock(anchorMs);
   drawPieChart(anchorMs);
+  renderStatusStrip(anchorMs);
   updateNow(anchorMs);
 
   const footAnchor = document.getElementById('footer-anchor');
