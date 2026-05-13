@@ -325,23 +325,15 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 </div>
 
 <div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0">
-  <svg id="status-strip" viewBox="0 0 540 80" style="width:100%;display:block"></svg>
+  <svg id="status-strip" viewBox="0 0 540 54" style="width:100%;display:block"></svg>
 </div>
 
 <div class="container">
-
-  <!-- HEADER -->
-  <div class="page-hdr">
-    <h1>Rikki's Circadian Universe</h1>
-    <div class="tagline">A 25.40-hour clock, tracked in real time · All times ET</div>
-  </div>
 
   <!-- SECTION 1: CURRENT DAY -->
   <div class="section">
     <h2 style="margin-bottom:16px">Current Day</h2>
     <div class="sundial-layout">
-      <div class="now-card" id="now-plain">—</div>
-
       <svg id="sundial-svg" viewBox="0 0 440 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
         <defs></defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
@@ -358,7 +350,6 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         </g>
         <!-- Center dot -->
         <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
-        <!-- Center text -->
         <!-- Hand (updated by JS) -->
         <g id="dial-hand">
           <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
@@ -366,6 +357,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         </g>
       </svg>
 
+      <div class="now-card" id="now-plain" style="margin-top:20px">—</div>
     </div>
   </div>
 
@@ -2374,7 +2366,7 @@ function renderStatusStrip(anchorMs) {
   const svg = document.getElementById('status-strip');
   if (!svg) return;
 
-  const W = 540, H = 80;
+  const W = 540, H = 54;
   const nowMs = Date.now();
   const leftEdgeMs = nowMs - TAU_MS / 2;
   const { sunrise, sunset } = sunTimes(new Date(nowMs));
@@ -2403,8 +2395,8 @@ function renderStatusStrip(anchorMs) {
 
   // Two-line text at center; each line rendered twice (stroke + fill) for legibility on any sky
   const stateWord = asleep ? 'Resting' : 'Awake';
-  const l1 = `x="270" y="26" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="14" font-weight="400"`;
-  const l2 = `x="270" y="56" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="26" font-weight="700"`;
+  const l1 = `x="270" y="16" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="16" font-weight="400"`;
+  const l2 = `x="270" y="38" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="16" font-weight="400"`;
 
   svg.innerHTML = `
     <defs>
@@ -2416,8 +2408,8 @@ function renderStatusStrip(anchorMs) {
     ${sleepRects.join('')}
     <text ${l1} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="4" stroke-linejoin="round">${PERSONAL.name} is</text>
     <text ${l1} fill="#f3efe2">${PERSONAL.name} is</text>
-    <text ${l2} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="5" stroke-linejoin="round">${stateWord}</text>
-    <text ${l2} fill="#c9a84c">${stateWord}</text>`;
+    <text ${l2} fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="4" stroke-linejoin="round">${stateWord}</text>
+    <text ${l2} fill="#f3efe2">${stateWord}</text>`;
 }
 
 function drawPieChart(anchorMs) {
