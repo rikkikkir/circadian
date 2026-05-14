@@ -322,7 +322,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   </div>
 </div>
 
-<div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0">
+<div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0;margin-top:20px">
   <svg id="status-strip" viewBox="0 0 540 54" style="width:100%;display:block"></svg>
 </div>
 
@@ -2121,7 +2121,7 @@ function drawOuterClock(anchorMs) {
   const { wakeMs: cycleWakeMs } = cyclePos(anchorMs, Date.now());
   const wakeHour = nyHour(cycleWakeMs);
   const cycleSleepMs = cycleWakeMs + AWAKE_MS;
-  const DEG = 360 / 25.4;
+  const DEG = 360 / 24;
 
   function nToA(n) { return n * DEG; }
   function pol(deg, r) {
@@ -2144,10 +2144,10 @@ function drawOuterClock(anchorMs) {
   // Fine-grained astronomical sky coloring: sample skyColorAt() every 0.25 personal hours.
   // Covers the full 25.4h ring (including the ~1.4h overage beyond the 24h mark).
   const STEP = 0.25;
-  for (let n = 0; n < PERSONAL.tau; n += STEP) {
+  for (let n = 0; n < 24; n += STEP) {
     const clockH = ((wakeHour + n + STEP / 2) % 24 + 24) % 24;
     const col = skyColorAt(clockH, sunrise, sunset);
-    const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, PERSONAL.tau));
+    const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, 24));
     html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}"/>`;
   }
 
@@ -2156,7 +2156,7 @@ function drawOuterClock(anchorMs) {
   html += `<circle cx="${OCX}" cy="${OCY}" r="${R2}" fill="none" stroke="#333" stroke-width="0.5"/>`;
 
   // Ticks: major every 2 personal hours, minor every 1
-  for (let n = 0; n <= 25; n++) {
+  for (let n = 0; n <= 24; n++) {
     const isMaj = n % 2 === 0;
     const ang = nToA(n);
     const [x1,y1] = pol(ang, R2);
@@ -2180,7 +2180,7 @@ function drawOuterClock(anchorMs) {
   // Clear a 2h zone around the "Awoke at" (n=0) and "Resting at" (AWAKE_H) special labels.
   const CLEAR = 2.0;
   function tooClose(n) {
-    const distWake  = Math.min(n, PERSONAL.tau - n);
+    const distWake  = Math.min(n, 24 - n);
     const distSleep = Math.abs(n - AWAKE_H);
     return distWake < CLEAR || distSleep < CLEAR;
   }
@@ -2213,13 +2213,13 @@ function drawOuterClock(anchorMs) {
   const nSunrise = ((sunrise - wakeHour) % 24 + 24) % 24;
   const nSunset  = ((sunset  - wakeHour) % 24 + 24) % 24;
   [[nSunrise,'Sunrise'],[nSunset,'Sunset']].forEach(([n, lbl]) => {
-    if (n >= PERSONAL.tau || tooClose(n)) return;
+    if (n >= 24 || tooClose(n)) return;
     const [lx, ly] = pol(nToA(n), R2 + 17);
     html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
   });
 
   // "Resting at [time]" label at the sleep-start boundary
-  const sleepAngle = AWAKE_H / PERSONAL.tau * 360;
+  const sleepAngle = AWAKE_H / 24 * 360;
   const [rlx, rly] = pol(sleepAngle, R2 + 17);
   html += `<text x="${rlx.toFixed(2)}" y="${rly.toFixed(2)}" font-size="13" fill="#c9a84c" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Resting at ${ringLabel(cycleSleepMs)}</text>`;
 
