@@ -322,7 +322,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   </div>
 </div>
 
-<div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0;margin-top:20px">
+<div id="status-strip-wrap" style="width:100%;overflow:hidden;line-height:0;margin-top:70px">
   <svg id="status-strip" viewBox="0 0 540 54" style="width:100%;display:block"></svg>
 </div>
 
@@ -2057,7 +2057,7 @@ function doICS() {
 
 // ── Live dial ──────────────────────────────────────────────────────────────
 function updateDial(h) {
-  const deg = (h/25.4)*360, rad = (deg-90)*Math.PI/180;
+  const deg = (h/24)*360, rad = (deg-90)*Math.PI/180;
   const dx  = Math.cos(rad), dy = Math.sin(rad);
   const x   = (220 + 205*dx).toFixed(1), y = (220 + 205*dy).toFixed(1);
   const hl  = document.getElementById('hand-line');
@@ -2072,7 +2072,7 @@ function updateNow(anchorMs) {
 
   // Pink time label outside the outer ring — same 25.4h scale as hand
   const {h_into: h_now} = cyclePos(anchorMs);
-  const rAngle = (h_now / 25.4) * 360;
+  const rAngle = (h_now / 24) * 360;
   const rRad   = rAngle * Math.PI / 180;
   const dx = Math.sin(rRad), dy = -Math.cos(rRad);
   const lbl = document.getElementById('orn-lbl');
@@ -2086,7 +2086,7 @@ function updateNow(anchorMs) {
   const html = (id,v) => { const e=document.getElementById(id); if(e) e.innerHTML=v; };
 
   const cb = document.getElementById('cb-fill');
-  if (cb) cb.style.width = (h_into/25.4*100).toFixed(1)+'%';
+  if (cb) cb.style.width = Math.min(h_into/24*100, 100).toFixed(1)+'%';
 
 
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
@@ -2402,8 +2402,9 @@ function drawPieChart(anchorMs) {
   if (!g) return;
 
   const CX = 220, CY = 220, RI = 5, RO = 168;
-  const TAU = PERSONAL.tau;
+  const TAU = 24;
   const DEG = 360 / TAU;
+  const segScale = TAU / PERSONAL.tau; // scale 25.4h segments to fill 24h circle
 
   function pol(deg, r) {
     const rad = deg * Math.PI / 180;
@@ -2431,7 +2432,7 @@ function drawPieChart(anchorMs) {
 
   for (const seg of PERSONAL.pieChart) {
     const segStart = cumH;
-    const segEnd   = cumH + seg.hours;
+    const segEnd   = cumH + seg.hours * segScale;
     const dFull    = sector(segStart * DEG, segEnd * DEG, RI, RO);
 
     if (seg.type === 'food') {
