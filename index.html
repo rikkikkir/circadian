@@ -45,6 +45,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .api-btn{background:transparent;border:1px solid #333;color:var(--dim);
   padding:3px 10px;border-radius:4px;font-size:.74rem;cursor:pointer;font-family:'Inter',sans-serif}
 .api-btn:hover{border-color:#555;color:var(--warm)}
+#view-toggle-btn{min-width:90px;text-align:center}
 
 /* ── Settings Modal ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
@@ -299,6 +300,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 <div id="api-bar" class="api-bar loading">
   <span class="api-msg" id="api-msg">Connecting to Oura…</span>
   <div class="api-bar-btns">
+    <button class="api-btn" id="view-toggle-btn" onclick="toggleViewMode()">⬛ Simplified</button>
     <button class="api-btn" id="wake-override-btn" onclick="openWakeModal()">✎ Set Wake</button>
     <button class="api-btn" onclick="forceRefresh()">↻ Refresh</button>
   </div>
@@ -331,7 +333,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   <!-- SECTION 1: CURRENT DAY -->
   <div class="section">
     <div class="sundial-layout">
-      <svg id="sundial-svg" viewBox="-20 -20 480 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto">
+      <svg id="sundial-svg" viewBox="-20 -20 480 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:540px;display:block;margin:0 auto;overflow:visible">
         <defs></defs>
         <!-- Pie chart ring (populated by drawPieChart in JS) -->
         <g id="pie-ring"></g>
@@ -340,14 +342,14 @@ hr.div{border:none;border-top:1px solid var(--divider)}
         <g id="outer-clock"></g>
         <!-- Current-time marker: same 25.4h scale as hand, label shows actual clock time -->
         <g id="outer-now">
-          <text id="orn-lbl" fill="#ff2d78" font-size="17" font-weight="700" text-anchor="middle"
+          <text id="orn-lbl" fill="#ff2d78" font-size="14" font-weight="700" text-anchor="middle"
                 dominant-baseline="middle" font-family="Inter,sans-serif"></text>
         </g>
         <!-- Center dot -->
         <circle cx="220" cy="220" r="5" fill="#c9a84c"/>
         <!-- Hand (updated by JS) -->
         <g id="dial-hand">
-          <line id="hand-line" x1="220" y1="220" x2="220" y2="76" stroke="#ff2d78" stroke-width="2" stroke-linecap="round"/>
+          <line id="hand-line" x1="220" y1="220" x2="220" y2="-18" stroke="#ff2d78" stroke-width="2" stroke-linecap="round"/>
         </g>
       </svg>
 
@@ -863,6 +865,7 @@ function nextCycles(anchorMs, n = 7) {
 
 // ── Render: Near-term cards ─────────────────────────────────────────────────
 function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
+  if (_viewMode === 'simple') return 'rgba(18,18,28,1)';
   const wH = nyHour(wakeMs);
   let eH = nyHour(sleepMs);
   if (eH <= wH) eH += 24;
@@ -874,51 +877,51 @@ function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
   }
   function add(pts, p, c) { if (p > 0.01 && p < 0.99) pts.push([p, c]); }
 
-  // Night = deep navy. Day = calm steel blue.
-  // Yellow/gold is contained to the solar transition zones; day is tranquil blue.
   const C = {
     night:    '#040918',  // deep midnight navy
-    darkNight:'#080f26',  // pre-transition dark
-    indigo:   '#100a36',  // indigo — warm shift begins
-    dawnPurp: '#261640',  // soft purple just before sunrise
-    srAmber:  '#7a5a10',  // muted amber at the horizon
-    srGold:   '#c49820',  // golden yellow at the solar peak
-    dayEdge:  '#3a6898',  // warm blue, easing out of golden hour
+    indigo:   '#080c2a',  // deep indigo
+    bluePurp: '#200e44',  // blue-purple pre-dawn
+    rosyDawn: '#5a2048',  // rosy dawn (sunrise-specific)
+    coral:    '#af4b32',  // coral/salmon near sunrise (sunrise-specific)
+    srAmber:  '#d27319',  // warm amber at sunrise
+    srGold:   '#c49820',  // golden glow post-sunrise
+    dayEdge:  '#3a6898',  // morning blue
     day:      '#2a5690',  // calm steel blue, full daytime
-    preEve:   '#3a6898',  // same warm blue leading into evening
-    ssGold:   '#c49820',  // mirrored golden yellow
-    ssAmber:  '#7a5a10',  // mirrored horizon amber
-    duskPurp: '#261640',  // mirrored soft purple
-    lateIndig:'#100a36',  // mirrored indigo
-    lateNight:'#080f26',  // mirrored dark navy
+    preEve:   '#3a6898',  // late afternoon blue
+    ssGold:   '#c89418',  // golden hour (sunset)
+    ssOrange: '#d75014',  // deep orange-red at sunset (sunset-specific)
+    magenta:  '#912555',  // vivid magenta post-sunset (sunset-specific)
+    deepPurp: '#371240',  // deep purple dusk
+    lateNight:'#08091e',  // near-night
   };
 
   const pts = [];
   const startNight = !(wH >= sunrise && wH < sunset);
   pts.push([0, startNight ? C.night : C.day]);
 
-  // Sunrise — slow lead-in from night, golden peak, fade to blue
+  // Sunrise — blue-purple pre-dawn → rosy → coral → amber → morning blue
   const srOff = ((sunrise - wH) % 24 + 24) % 24;
   if (srOff <= span) {
     add(pts, pp(sunrise - 1.5), C.night);
-    add(pts, pp(sunrise - 1.0), C.darkNight);
-    add(pts, pp(sunrise - 0.5), C.indigo);
-    add(pts, pp(sunrise - 0.15),C.dawnPurp);
+    add(pts, pp(sunrise - 1.0), C.indigo);
+    add(pts, pp(sunrise - 0.5), C.bluePurp);
+    add(pts, pp(sunrise - 0.2), C.rosyDawn);
+    add(pts, pp(sunrise - 0.05),C.coral);
     pts.push([pp(sunrise),       C.srAmber]);
-    add(pts, pp(sunrise + 0.4), C.srGold);
+    add(pts, pp(sunrise + 0.3), C.srGold);
     add(pts, pp(sunrise + 1.2), C.dayEdge);
     add(pts, pp(sunrise + 2.2), C.day);
   }
 
-  // Sunset — blue warms to golden peak, then fades to night
+  // Sunset — golden hour → deep orange-red → magenta → deep purple → night
   const ssOff = ((sunset - wH) % 24 + 24) % 24;
   if (ssOff <= span) {
     add(pts, pp(sunset - 2.2), C.day);
     add(pts, pp(sunset - 1.2), C.preEve);
-    add(pts, pp(sunset - 0.4), C.ssGold);
-    pts.push([pp(sunset),       C.ssAmber]);
-    add(pts, pp(sunset + 0.15), C.duskPurp);
-    add(pts, pp(sunset + 0.5), C.lateIndig);
+    add(pts, pp(sunset - 0.3), C.ssGold);
+    pts.push([pp(sunset),       C.ssOrange]);
+    add(pts, pp(sunset + 0.2), C.magenta);
+    add(pts, pp(sunset + 0.5), C.deepPurp);
     add(pts, pp(sunset + 1.0), C.lateNight);
     add(pts, pp(sunset + 1.5), C.night);
   }
@@ -983,13 +986,22 @@ function renderPersonalDials(anchorMs) {
 
     let svg = '';
 
-    // Outer ring + inner disk: sky gradient across 24h, wake at top
-    for (let h = 0; h < 24; h += 0.25) {
-      const hEnd   = Math.min(h + 0.25, 24);
-      const clockH = ((h + hEnd) / 2 + wakeHour) % 24;
-      const col    = skyColorAt(clockH, sunrise, sunset);
-      svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
-      svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
+    if (_viewMode === 'simple') {
+      // Outer ring: cream awake arc, navy + stars sleep arc (matches main ring)
+      svg += '<path d="' + sector(0, AWAKE_H * D24, R1, R2) + '" fill="rgb(228,218,193)" stroke="none"/>';
+      svg += '<path d="' + sector(AWAKE_H * D24, 359.99, R1, R2) + '" fill="rgb(14,17,57)" stroke="none"/>';
+      svg += '<path d="' + sector(AWAKE_H * D24, 359.99, R1, R2) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
+      // Inner disk: uniform navy (cream and stars overlays drawn below)
+      svg += '<path d="' + sector(0, 359.99, RI, RO) + '" fill="rgb(14,17,57)" stroke="none"/>';
+    } else {
+      // Outer ring + inner disk: sky gradient across 24h, wake at top
+      for (let h = 0; h < 24; h += 0.25) {
+        const hEnd   = Math.min(h + 0.25, 24);
+        const clockH = ((h + hEnd) / 2 + wakeHour) % 24;
+        const col    = skyColorAt(clockH, sunrise, sunset);
+        svg += '<path d="' + sector(h * D24, hEnd * D24, R1, R2) + '" fill="' + col + '" stroke="none"/>';
+        svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
+      }
     }
 
     // Cream overlay on wake portion (13.4h) — fully opaque
@@ -1225,33 +1237,30 @@ function renderCards(anchorMs) {
 
 // ── Sky gradient for absolute 0–24h timeline (forecast rows) ────────────────
 function skyGradientRow(sunrise, sunset) {
-  const C = {
-    night:    '#040918', darkNight:'#080f26', indigo:'#100a36',
-    dawnPurp: '#261640', srAmber:  '#7a5a10', srGold:'#c49820',
-    dayEdge:  '#3a6898', day:      '#2a5690',
-    preEve:   '#3a6898', ssGold:   '#c49820', ssAmber:'#7a5a10',
-    duskPurp: '#261640', lateIndig:'#100a36', lateNight:'#080f26',
-  };
+  if (_viewMode === 'simple') return 'rgba(12,12,20,1)';
   const mid = (sunrise + sunset) / 2;
+  // Sunrise zone: blue-purple → rosy dawn → coral → amber → morning blue
+  // Sunset zone: golden hour → orange-red → magenta → deep purple → night
   const pts = [
-    [0,                              C.night    ],
-    [sunrise - 1.5,                  C.night    ],
-    [sunrise - 1.0,                  C.darkNight],
-    [sunrise - 0.5,                  C.indigo   ],
-    [sunrise - 0.15,                 C.dawnPurp ],
-    [sunrise,                        C.srAmber  ],
-    [sunrise + 0.4,                  C.srGold   ],
-    [sunrise + 1.2,                  C.dayEdge  ],
-    [Math.min(sunrise + 2.2, mid),   C.day      ],
-    [Math.max(sunset  - 2.2, mid),   C.day      ],
-    [sunset  - 1.2,                  C.preEve   ],
-    [sunset  - 0.4,                  C.ssGold   ],
-    [sunset,                         C.ssAmber  ],
-    [sunset  + 0.15,                 C.duskPurp ],
-    [sunset  + 0.5,                  C.lateIndig],
-    [sunset  + 1.0,                  C.lateNight],
-    [sunset  + 1.5,                  C.night    ],
-    [24,                             C.night    ],
+    [0,                              '#040918'],
+    [sunrise - 1.5,                  '#040918'],
+    [sunrise - 1.0,                  '#080c2a'],
+    [sunrise - 0.5,                  '#200e44'],
+    [sunrise - 0.2,                  '#5a2048'],  // rosy dawn
+    [sunrise - 0.05,                 '#af4b32'],  // coral (sunrise-specific)
+    [sunrise,                        '#d27319'],
+    [sunrise + 0.3,                  '#c49820'],
+    [sunrise + 1.2,                  '#3a6898'],
+    [Math.min(sunrise + 2.2, mid),   '#2a5690'],
+    [Math.max(sunset  - 2.2, mid),   '#2a5690'],
+    [sunset  - 1.2,                  '#3a6898'],
+    [sunset  - 0.3,                  '#c89418'],
+    [sunset,                         '#d75014'],  // deep orange-red (sunset-specific)
+    [sunset  + 0.2,                  '#912555'],  // magenta (sunset-specific)
+    [sunset  + 0.5,                  '#371240'],
+    [sunset  + 1.0,                  '#08091e'],
+    [sunset  + 1.5,                  '#040918'],
+    [24,                             '#040918'],
   ];
   const clamped = pts.map(([h,c]) => [Math.max(0, Math.min(24, h)), c]);
   clamped.sort((a,b) => a[0] - b[0]);
@@ -2059,7 +2068,7 @@ function doICS() {
 function updateDial(h) {
   const deg = (h/24)*360, rad = (deg-90)*Math.PI/180;
   const dx  = Math.cos(rad), dy = Math.sin(rad);
-  const x   = (220 + 205*dx).toFixed(1), y = (220 + 205*dy).toFixed(1);
+  const x   = (220 + 238*dx).toFixed(1), y = (220 + 238*dy).toFixed(1);
   const hl  = document.getElementById('hand-line');
   if (hl) { hl.setAttribute('x2', x); hl.setAttribute('y2', y); }
 }
@@ -2070,16 +2079,25 @@ function updateNow(anchorMs) {
   drawPieChart(anchorMs);
   renderStatusStrip(anchorMs);
 
-  // Pink time label outside the outer ring — same 25.4h scale as hand
+  // Pink time label — starts exactly at the hand tip (r=238), same endpoint as the hand line.
+  // text-anchor="start" so the first digit begins where the hand ends.
+  // overflow:visible on the SVG lets it render past the viewBox when near 90°/270°.
   const {h_into: h_now} = cyclePos(anchorMs);
   const rAngle = (h_now / 24) * 360;
   const rRad   = rAngle * Math.PI / 180;
   const dx = Math.sin(rRad), dy = -Math.cos(rRad);
   const lbl = document.getElementById('orn-lbl');
   if (lbl) {
-    lbl.setAttribute('x',(220 + 225*dx).toFixed(1));
-    lbl.setAttribute('y',(220 + 225*dy).toFixed(1));
-    lbl.textContent = fmt12(Date.now()).replace(' ET','');
+    lbl.setAttribute('x', (220 + 245 * dx).toFixed(1));
+    lbl.setAttribute('y', (220 + 245 * dy).toFixed(1));
+    lbl.setAttribute('text-anchor', 'start');
+    // Compact format matches ring labels: "3:44A", "12P", etc.
+    const s = new Date().toLocaleTimeString('en-US',
+      {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'});
+    const [time, period] = s.split(' ');
+    const suf = period[0];
+    const [h, m] = time.split(':');
+    lbl.textContent = m === '00' ? `${h}${suf}` : `${h}:${m}${suf}`;
   }
 
   const set  = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
@@ -2141,14 +2159,21 @@ function drawOuterClock(anchorMs) {
 
   let html = '';
 
-  // Fine-grained astronomical sky coloring: sample skyColorAt() every 0.25 personal hours.
-  // Covers the full 25.4h ring (including the ~1.4h overage beyond the 24h mark).
-  const STEP = 0.25;
-  for (let n = 0; n < 24; n += STEP) {
-    const clockH = ((wakeHour + n + STEP / 2) % 24 + 24) % 24;
-    const col = skyColorAt(clockH, sunrise, sunset);
-    const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, 24));
-    html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}"/>`;
+  if (_viewMode === 'simple') {
+    // Simplified mode: cream for awake hours, navy + stars for sleep hours
+    const AWAKE_DEG = AWAKE_H * DEG;
+    html += `<path d="${arcSegment(0, AWAKE_DEG, R1, R2)}" fill="rgb(228,218,193)"/>`;
+    html += `<path d="${arcSegment(AWAKE_DEG, 359.99, R1, R2)}" fill="rgb(14,17,57)"/>`;
+    html += `<path d="${arcSegment(AWAKE_DEG, 359.99, R1, R2)}" fill="url(#mini-sleep-stars)"/>`;
+  } else {
+    // Fine-grained astronomical sky coloring: sample skyColorAt() every 0.25 personal hours.
+    const STEP = 0.25;
+    for (let n = 0; n < 24; n += STEP) {
+      const clockH = ((wakeHour + n + STEP / 2) % 24 + 24) % 24;
+      const col = skyColorAt(clockH, sunrise, sunset);
+      const a1 = nToA(n), a2 = nToA(Math.min(n + STEP, 24));
+      html += `<path d="${arcSegment(a1, a2, R1, R2)}" fill="${col}"/>`;
+    }
   }
 
   // Ring outlines over the color
@@ -2176,51 +2201,69 @@ function drawOuterClock(anchorMs) {
     return m === '00' ? `${h}${suf}` : `${h}:${m}${suf}`;
   }
 
-  // Clock time labels every 2 personal hours.
-  // Clear a 2h zone around the "Awoke at" (n=0) and "Resting at" (AWAKE_H) special labels.
-  const CLEAR = 2.0;
+  // Label placement helpers.
+  // tooClose: 2h personal-hour clearance from anchors (for regular hour numbers).
+  // tooCloseAnchor: 0.5h clearance (for landmark words — always show).
   function tooClose(n) {
     const distWake  = Math.min(n, 24 - n);
     const distSleep = Math.abs(n - AWAKE_H);
-    return distWake < CLEAR || distSleep < CLEAR;
+    return distWake < 2.0 || distSleep < 2.0;
   }
-  for (let n = 0; n <= 24; n += 2) {
-    let label, fontSize, fillColor, fontWeight;
-    if (n === 0) {
-      label = 'Awoke at ' + ringLabel(cycleWakeMs);
-      fontSize = '13'; fillColor = '#c9a84c'; fontWeight = '600';
-    } else {
-      if (tooClose(n)) continue;
-      const clockH = ((wakeHour + n) % 24 + 24) % 24;
-      const isNoon     = Math.abs(clockH - 12) < 0.5;
-      const isMidnight = clockH < 0.5 || clockH > 23.5;
-      if (isNoon) {
-        label = 'Noon'; fontSize = '15'; fillColor = '#c9a84c'; fontWeight = '600';
-      } else if (isMidnight) {
-        label = 'Midn'; fontSize = '15'; fillColor = '#c9a84c'; fontWeight = '600';
-      } else {
-        const ch = Math.round(clockH);
-        const h12 = ch % 12 || 12;
-        const ampm = ch < 12 ? 'A' : 'P';
-        label = h12 + ampm; fontSize = '17'; fillColor = '#606060'; fontWeight = '400';
-      }
-    }
-    const [lx,ly] = pol(nToA(n), R2 + 17);
-    html += `<text x="${lx}" y="${ly}" font-size="${fontSize}" fill="${fillColor}" font-weight="${fontWeight}" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${label}</text>`;
+  function tooCloseAnchor(n) {
+    const distWake  = Math.min(n, 24 - n);
+    const distSleep = Math.abs(n - AWAKE_H);
+    return distWake < 0.5 || distSleep < 0.5;
   }
 
-  // Sunrise and Sunset labels — skip if within 2 personal hours of a special label
+  // "Awoke at" anchor — n=0, top of ring
+  {
+    const [lx,ly] = pol(0, R2 + 15);
+    html += `<text x="${lx}" y="${ly}" font-size="13" fill="#c9a84c" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Awoke at ${ringLabel(cycleWakeMs)}</text>`;
+  }
+
+  // Noon and Midnight: placed at the exact clock-hour position on the personal ring.
+  // Iterating clock hours (not personal hours) ensures accurate label placement.
+  for (const ch of [0, 12]) {
+    const n = ((ch - wakeHour) % 24 + 24) % 24;
+    if (n >= 24 || tooCloseAnchor(n)) continue;
+    const label = ch === 12 ? 'Noon' : 'Midn';
+    const [lx,ly] = pol(nToA(n), R2 + 28);
+    html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c4b0e0" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${label}</text>`;
+  }
+
+  // Even-hour labels: 2A, 4A, 6A … (skip 0/Midn and 12/Noon handled above).
+  for (let ch = 2; ch < 24; ch += 2) {
+    if (ch === 12) continue;
+    const n = ((ch - wakeHour) % 24 + 24) % 24;
+    if (n >= 24 || tooClose(n)) continue;
+    const h12 = ch % 12 || 12;
+    const ampm = ch < 12 ? 'A' : 'P';
+    const [lx,ly] = pol(nToA(n), R2 + 15);
+    html += `<text x="${lx}" y="${ly}" font-size="15" fill="#8ab4c8" font-weight="400" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${h12}${ampm}</text>`;
+  }
+
+  // Odd-hour labels: 1A, 3A, 5A … — smaller and dimmer, fill gaps between even hours.
+  for (let ch = 1; ch < 24; ch += 2) {
+    const n = ((ch - wakeHour) % 24 + 24) % 24;
+    if (n >= 24 || tooClose(n)) continue;
+    const h12 = ch % 12 || 12;
+    const ampm = ch < 12 ? 'A' : 'P';
+    const [lx,ly] = pol(nToA(n), R2 + 10);
+    html += `<text x="${lx}" y="${ly}" font-size="11" fill="#5a7d92" font-weight="400" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${h12}${ampm}</text>`;
+  }
+
+  // Sunrise/Sunset — landmark words, same outer level as Noon/Midn
   const nSunrise = ((sunrise - wakeHour) % 24 + 24) % 24;
   const nSunset  = ((sunset  - wakeHour) % 24 + 24) % 24;
   [[nSunrise,'Sunrise'],[nSunset,'Sunset']].forEach(([n, lbl]) => {
-    if (n >= 24 || tooClose(n)) return;
-    const [lx, ly] = pol(nToA(n), R2 + 17);
-    html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c49820" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
+    if (n >= 24 || tooCloseAnchor(n)) return;
+    const [lx, ly] = pol(nToA(n), R2 + 28);
+    html += `<text x="${lx}" y="${ly}" font-size="13" fill="#c4b0e0" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
   });
 
-  // "Resting at [time]" label at the sleep-start boundary
+  // "Resting at [time]" — anchor label, tight to ring (special angle, no collision risk)
   const sleepAngle = AWAKE_H / 24 * 360;
-  const [rlx, rly] = pol(sleepAngle, R2 + 17);
+  const [rlx, rly] = pol(sleepAngle, R2 + 15);
   html += `<text x="${rlx.toFixed(2)}" y="${rly.toFixed(2)}" font-size="13" fill="#c9a84c" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Resting at ${ringLabel(cycleSleepMs)}</text>`;
 
   // Wake tick (gold) at angle 0 = top
@@ -2240,32 +2283,36 @@ function tintRgb(rgbStr, factor) {
 }
 
 // ── Sky color sampler (interpolates gradient stops at a given clock hour) ──
+// Sunrise uses pink/rose/coral tones; sunset uses orange-red/magenta — distinct, not mirrors.
+// Single flat 0–24h array ensures continuous coverage (split-array approach caused daytime gaps).
 function skyColorAt(h, sunrise, sunset) {
+  if (_viewMode === 'simple') return 'rgb(14,17,57)';
   const mid = (sunrise + sunset) / 2;
   const stops = [
-    [0,                           [4,9,24]     ],
-    [sunrise - 1.5,               [4,9,24]     ],
-    [sunrise - 1.0,               [8,15,38]    ],
-    [sunrise - 0.5,               [16,10,54]   ],
-    [sunrise - 0.15,              [38,22,64]   ],
-    [sunrise,                     [122,90,16]  ],
-    [sunrise + 0.4,               [196,152,32] ],
-    [sunrise + 1.2,               [58,104,152] ],
-    [Math.min(sunrise + 2.2,mid), [42,86,144]  ],
-    [Math.max(sunset  - 2.2,mid), [42,86,144]  ],
-    [sunset  - 1.2,               [58,104,152] ],
-    [sunset  - 0.4,               [196,152,32] ],
-    [sunset,                      [122,90,16]  ],
-    [sunset  + 0.15,              [38,22,64]   ],
-    [sunset  + 0.5,               [16,10,54]   ],
-    [sunset  + 1.0,               [8,15,38]    ],
-    [sunset  + 1.5,               [4,9,24]     ],
-    [24,                          [4,9,24]     ],
+    [0,                            [4,  9,  24]],
+    [sunrise - 1.5,                [4,  9,  24]],
+    [sunrise - 1.0,                [8,  12, 42]],
+    [sunrise - 0.5,                [32, 14, 68]],
+    [sunrise - 0.2,                [90, 32, 72]],   // rosy dawn (sunrise-specific)
+    [sunrise - 0.05,               [175,75, 50]],   // coral/salmon (sunrise-specific)
+    [sunrise,                      [210,115, 25]],
+    [sunrise + 0.3,                [196,152, 32]],
+    [sunrise + 1.2,                [60, 108,155]],
+    [Math.min(sunrise + 2.2, mid), [42,  86,144]],  // daylight
+    [Math.max(sunset  - 2.2, mid), [42,  86,144]],  // daylight
+    [sunset  - 1.2,                [60, 108,155]],
+    [sunset  - 0.3,                [200,148, 30]],  // golden hour
+    [sunset,                       [215, 80, 20]],  // orange-red (sunset-specific)
+    [sunset  + 0.2,                [145, 38, 85]],  // magenta (sunset-specific)
+    [sunset  + 0.5,                [55,  18, 60]],
+    [sunset  + 1.0,                [8,   10, 38]],
+    [sunset  + 1.5,                [4,    9, 24]],
+    [24,                           [4,    9, 24]],
   ];
-  const cl = stops.map(([x,c]) => [Math.max(0,Math.min(24,x)), c]);
-  cl.sort((a,b) => a[0]-b[0]);
+  const cl = stops.map(([x,c]) => [Math.max(0, Math.min(24, x)), c]);
+  cl.sort((a,b) => a[0] - b[0]);
   const hc = Math.max(0, Math.min(23.99, h));
-  for (let i = 0; i < cl.length-1; i++) {
+  for (let i = 0; i < cl.length - 1; i++) {
     if (hc >= cl[i][0] && hc <= cl[i+1][0]) {
       const sp = cl[i+1][0] - cl[i][0];
       const t  = sp > 0 ? (hc - cl[i][0]) / sp : 0;
@@ -2330,7 +2377,9 @@ function renderHourTable(anchorMs) {
       // Sky color for this cell's clock hour — applies to both awake and sleep columns
       const clockH  = nyHour(wakeMs + col * 3600000);
       const hFloor  = Math.floor(clockH) % 24;
-      const skyCol  = skyColorAt(hFloor + 0.5, sr, ss);  // +0.5 = mid-hour sample
+      const skyCol  = _viewMode === 'simple'
+        ? (isRest ? 'rgb(14,17,57)' : 'rgb(26,26,38)')
+        : skyColorAt(hFloor + 0.5, sr, ss);  // +0.5 = mid-hour sample
       if (isRest) {
         html += `<td class="htbl-sl" style="${bLeft}background-color:${skyCol}"></td>`;
       } else {
@@ -2368,20 +2417,42 @@ function renderStatusStrip(anchorMs) {
 
   // Sleep region rects — find all sleep intervals overlapping the visible window
   const c0 = Math.floor((leftEdgeMs - anchorMs) / TAU_MS) - 1;
-  const sleepRects = [];
+  const sleepSegs = [];  // raw {x1, w} for each sleep interval
   for (let c = c0; c <= c0 + 3; c++) {
     const sMs = anchorMs + c * TAU_MS + AWAKE_MS;
     const eMs = sMs + TIB_MS;
     if (eMs <= leftEdgeMs || sMs >= leftEdgeMs + TAU_MS) continue;
     const x1 = Math.max(0, (sMs - leftEdgeMs) / TAU_MS * W);
     const x2 = Math.min(W, (eMs - leftEdgeMs) / TAU_MS * W);
-    sleepRects.push(`<rect x="${x1.toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${H}" fill="url(#sleep-stars)"/>`);
+    sleepSegs.push({ x1: x1.toFixed(1), w: (x2 - x1).toFixed(1) });
   }
 
   // Two-line text at center; each line rendered twice (stroke + fill) for legibility on any sky
   const stateWord = asleep ? 'Resting' : 'Awake';
   const l1 = `x="270" y="16" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="16" font-weight="400"`;
   const l2 = `x="270" y="38" text-anchor="middle" dominant-baseline="middle" font-family="Playfair Display,serif" font-size="16" font-weight="400"`;
+
+  if (_viewMode === 'simple') {
+    // Timeline: cream background, navy+stars over each sleep segment
+    const tFill   = asleep ? '#f3efe2' : '#1c1c3a';
+    const tStroke = asleep ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.25)';
+    const sleepHtml = sleepSegs.map(({x1, w}) =>
+      `<rect x="${x1}" width="${w}" height="${H}" fill="rgb(14,17,57)"/>` +
+      `<rect x="${x1}" width="${w}" height="${H}" fill="url(#sleep-stars)"/>`
+    ).join('');
+    svg.innerHTML = `
+      <rect width="${W}" height="${H}" fill="rgb(228,218,193)"/>
+      ${sleepHtml}
+      <text ${l1} fill="none" stroke="${tStroke}" stroke-width="4" stroke-linejoin="round">${PERSONAL.name} is</text>
+      <text ${l1} fill="${tFill}">${PERSONAL.name} is</text>
+      <text ${l2} fill="none" stroke="${tStroke}" stroke-width="4" stroke-linejoin="round">${stateWord}</text>
+      <text ${l2} fill="${tFill}">${stateWord}</text>`;
+    return;
+  }
+
+  const sleepRects = sleepSegs.map(({x1, w}) =>
+    `<rect x="${x1}" width="${w}" height="${H}" fill="url(#sleep-stars)"/>`
+  );
 
   svg.innerHTML = `
     <defs>
@@ -2438,6 +2509,13 @@ function drawPieChart(anchorMs) {
     if (seg.type === 'food') {
       svg += `<path d="${dFull}" fill="rgba(130,130,130,0.55)" stroke="#1a1a1a" stroke-width="0.5"/>`;
       foodLabelAngles.push({ angle: (segStart + segEnd) / 2 * DEG, label: FOOD_NAMES[foodIdx++] });
+    } else if (_viewMode === 'simple') {
+      // Simplified mode: flat segment colors, no sub-slicing, no star texture in center
+      const flatColor = seg.type === 'sleep' ? 'rgb(14,17,57)' : 'rgb(26,26,38)';
+      svg += `<path d="${dFull}" fill="${flatColor}" stroke="#1a1a1a" stroke-width="0.5"/>`;
+      if (seg.type === 'sleep') {
+        sleepLabelAngle = (segStart + segEnd) / 2 * DEG;
+      }
     } else {
       // Sky-colored sub-slices — each 0.25h gets its own accurate sky color
       let h = segStart;
@@ -2539,6 +2617,20 @@ function clearWakeOverride() {
 // ── Render everything ──────────────────────────────────────────────────────
 let _liveTimer = null;
 let _anchorMs  = FALLBACK_ANCHOR_MS;
+let _viewMode  = (() => { try { return localStorage.getItem('circadian_view') || 'sky'; } catch(e) { return 'sky'; } })();
+
+function toggleViewMode() {
+  _viewMode = _viewMode === 'sky' ? 'simple' : 'sky';
+  try { localStorage.setItem('circadian_view', _viewMode); } catch(e) {}
+  updateViewToggleBtn();
+  renderAll(_anchorMs);
+}
+
+function updateViewToggleBtn() {
+  const btn = document.getElementById('view-toggle-btn');
+  if (!btn) return;
+  btn.textContent = _viewMode === 'sky' ? '⬛ Simplified' : '🌅 Sky View';
+}
 
 function renderAll(anchorMs) {
   _anchorMs = anchorMs;
@@ -2581,6 +2673,7 @@ function startHistoricalLoad() {
 }
 
 async function init() {
+  updateViewToggleBtn();
   const ovr = getWakeOverride();
   if (ovr) {
     renderAll(ovr);
