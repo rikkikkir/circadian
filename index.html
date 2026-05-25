@@ -2216,14 +2216,6 @@ function drawOuterClock(anchorMs) {
   html += `<circle cx="${OCX}" cy="${OCY}" r="${R1}" fill="none" stroke="#333" stroke-width="0.5"/>`;
   html += `<circle cx="${OCX}" cy="${OCY}" r="${R2}" fill="none" stroke="#333" stroke-width="0.5"/>`;
 
-  // Ticks: major every 2 personal hours, minor every 1
-  for (let n = 0; n <= 24; n++) {
-    const isMaj = n % 2 === 0;
-    const ang = nToA(n);
-    const [x1,y1] = pol(ang, R2);
-    const [x2,y2] = pol(ang, R2 + (isMaj ? 8 : 4));
-    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isMaj?'#505050':'#333'}" stroke-width="${isMaj?1:0.5}"/>`;
-  }
 
   // Compact clock-time formatter for ring labels (e.g. "12:55A", "noon", "3P")
   function ringLabel(ms) {
