@@ -97,8 +97,9 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .mini-dial-item svg{width:100%;height:auto;display:block}
 @media(max-width:900px){.mini-dials-grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:500px){.mini-dials-grid{grid-template-columns:repeat(2,1fr)}}
-.near-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-@media(max-width:700px){.near-grid{grid-template-columns:repeat(2,1fr)}}
+.near-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;width:100vw;margin-left:calc(50% - 50vw);padding:0 16px;box-sizing:border-box}
+@media(max-width:900px){.near-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:500px){.near-grid{grid-template-columns:repeat(2,1fr)}}
 .near-card-co{border-color:#3a3040}
 .near-card-co .near-day{color:var(--dim)}
 .near-card{background:var(--bg3);border:1px solid var(--divider);border-radius:var(--r);padding:14px 16px}
@@ -1220,7 +1221,7 @@ function renderCards(anchorMs) {
 
   const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
 
-  const html = Array.from({length: 21}, (_, i) => {
+  const html = Array.from({length: 35}, (_, i) => {
     const dayStartMs = todayMs + i * 86400000;
     const dayDate    = new Date(dayStartMs);
     const dayLabel   = dayDate.toLocaleDateString('en-US', {
