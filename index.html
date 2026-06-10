@@ -690,6 +690,29 @@ const AWAKE_MS  = AWAKE_H * 3600000;
 const TIB_MS    = TIB_H   * 3600000;
 const CACHE_TTL = 30 * 60 * 1000;
 const FALLBACK_ANCHOR_MS = 1781042731000; // last known real wake: Tue Jun 9 2026, 6:05p EDT (used only when Oura is unreachable)
+// Real recent Oura sleeps — used by the rainbow section when live data isn't in cache.
+const FALLBACK_SESSIONS = [
+  {type:"long_sleep",bedtime_start:"2026-05-20T05:52:31.000-04:00",bedtime_end:"2026-05-20T19:42:31.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-21T10:21:00.000-04:00",bedtime_end:"2026-05-21T17:07:00.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-22T02:09:00.000-04:00",bedtime_end:"2026-05-22T16:10:42.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-23T04:59:01.000-04:00",bedtime_end:"2026-05-23T17:29:01.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-24T03:30:31.000-04:00",bedtime_end:"2026-05-24T16:33:31.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-25T07:00:31.000-04:00",bedtime_end:"2026-05-25T17:56:31.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-26T08:53:32.000-04:00",bedtime_end:"2026-05-26T21:12:32.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-27T07:23:02.000-04:00",bedtime_end:"2026-05-27T22:23:02.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-28T13:18:03.000-04:00",bedtime_end:"2026-05-28T23:37:58.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-29T15:08:58.000-04:00",bedtime_end:"2026-05-30T03:05:58.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-30T17:47:28.000-04:00",bedtime_end:"2026-05-31T04:47:24.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-05-31T20:50:00.000-04:00",bedtime_end:"2026-06-01T07:54:09.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-01T20:59:59.000-04:00",bedtime_end:"2026-06-02T07:53:36.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-02T20:43:29.000-04:00",bedtime_end:"2026-06-03T10:21:00.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-03T23:50:30.000-04:00",bedtime_end:"2026-06-04T11:32:06.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-05T02:04:01.000-04:00",bedtime_end:"2026-06-05T13:55:01.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-06T03:47:31.000-04:00",bedtime_end:"2026-06-06T16:11:31.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-07T06:30:32.000-04:00",bedtime_end:"2026-06-07T14:23:05.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-07T23:49:32.000-04:00",bedtime_end:"2026-06-08T14:49:32.000-04:00"},
+  {type:"long_sleep",bedtime_start:"2026-06-09T03:38:32.000-04:00",bedtime_end:"2026-06-09T18:05:31.000-04:00"}
+];
 const WORKER_URL = 'https://circadian.rikkidelaine84.workers.dev';
 
 // Natural thread anchor — Aug 20 2025 07:09:58 EDT, midpoint of cleanest free-running window
@@ -2709,6 +2732,31 @@ function updateViewToggleBtn() {
 // slept through is shaded below the horizon. Two views:
 //   forecast — today is the outer arc, days ahead nest inward (+ a live "now")
 //   month    — outer arc = the 1st, inner arcs are later days
+// Build the waking-day timeline from real Oura sessions; project only the future.
+// A waking day = [woke (bedtime_end), slept (next bedtime_start)].
+function buildWakingDays(sessions){
+  const mains=(sessions||[]).filter(s=>s.type==='long_sleep'&&s.bedtime_start&&s.bedtime_end)
+    .map(s=>({bs:+new Date(s.bedtime_start),be:+new Date(s.bedtime_end)}))
+    .filter(s=>s.be>s.bs).sort((a,b)=>a.bs-b.bs);
+  const m=[]; for(const s of mains){ if(!m.length||s.bs-m[m.length-1].bs>4*3600000) m.push(s); }
+  if(!m.length){ const a=FALLBACK_ANCHOR_MS,out=[]; for(let k=0;k<31;k++){const w=a+k*TAU_MS;out.push({wakeMs:w,sleepMs:w+AWAKE_MS,real:false});} return out; }
+  let sum=0,n=0; for(let i=0;i<m.length-1;i++){ const aw=m[i+1].bs-m[i].be; if(aw>4*3600000&&aw<22*3600000){sum+=aw;n++;} }
+  const avgAwake=n?sum/n:AWAKE_MS;
+  const days=[];
+  for(let i=0;i<m.length-1;i++){ if(m[i+1].bs>m[i].be) days.push({wakeMs:m[i].be,sleepMs:m[i+1].bs,real:true}); }
+  const lastWake=m[m.length-1].be;
+  days.push({wakeMs:lastWake,sleepMs:lastWake+avgAwake,real:'wake'});
+  for(let k=1;k<=31;k++){ const w=lastWake+k*TAU_MS; days.push({wakeMs:w,sleepMs:w+avgAwake,real:false}); }
+  return days;
+}
+function nowAngleOnDay(d, now){
+  const wlen=Math.max(1,d.sleepMs-d.wakeMs);
+  if(now<=d.wakeMs) return -90;
+  if(now<=d.sleepMs) return -90+((now-d.wakeMs)/wlen)*180;
+  const tib=Math.max(1,TAU_MS-wlen);
+  return 90+Math.min(1,(now-d.sleepMs)/tib)*180;
+}
+
 function setRainbowMode(mode) {
   _rainbowMode = mode;
   try { localStorage.setItem('circadian_rainbow', mode); } catch (e) {}
@@ -2759,96 +2807,86 @@ function renderRainbow(anchorMs) {
   const mdy = ms => new Date(ms).toLocaleDateString('en-US',
         {month:'numeric',day:'numeric',timeZone:'America/New_York'});
 
-  // Build the list of waking days for the active view
-  let days = [];
+  // Build the waking-day timeline from real Oura sessions; project only the future
+  const now = Date.now();
+  const all = buildWakingDays(getCached() || FALLBACK_SESSIONS);
+  let ci = 0; for (let i = 0; i < all.length; i++) { if (all[i].wakeMs <= now) ci = i; else break; }
+
+  let days = [], labelMode;
   if (_rainbowMode === 'month') {
-    const now = new Date();
-    const mStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const mEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
-    const k0 = Math.ceil((mStart - anchorMs) / TAU_MS);
-    for (let k = k0; anchorMs + k * TAU_MS < mEnd; k++) {
-      const wakeMs = anchorMs + k * TAU_MS;
-      days.push({ wakeMs, sleepMs: wakeMs + AWAKE_MS, lab: mdy(wakeMs) });
-    }
+    const n = new Date();
+    const mS = new Date(n.getFullYear(), n.getMonth(), 1).getTime();
+    const mE = new Date(n.getFullYear(), n.getMonth() + 1, 1).getTime();
+    days = all.filter(d => d.wakeMs >= mS && d.wakeMs < mE);
+    labelMode = 'date';
     if (subEl) subEl.textContent =
-      `Outer arc = ${now.toLocaleDateString('en-US',{month:'long'})} 1; inner arcs are later days.`;
+      `Outer arc = ${n.toLocaleDateString('en-US',{month:'long'})} 1; inner arcs later. Solid = recorded, faded = projected.`;
   } else {
-    const cyc = nextCycles(anchorMs, 7);
-    days = cyc.map((c, i) => ({
-      wakeMs: c.wakeMs, sleepMs: c.sleepMs,
-      lab: i === 0 ? 'Today' : i === 1 ? 'Tom' : '+' + i + 'd'
-    }));
+    days = all.slice(ci, ci + 7);
+    labelMode = 'rel';
     if (subEl) subEl.textContent =
-      'Outer arc = today; each arc inward is the next waking day. The blue heart is now.';
+      'Outer arc = today; each arc inward is the next day. Today is real; ahead is projected (faded). Blue heart = now.';
   }
 
   const N = days.length;
   if (!N) { svg.innerHTML = ''; return; }
   const ringStep = (RMAX - RHOLE) / N;
   const da     = _rainbowMode === 'month' ? 2.5 : 1.5;
-  const stride = _rainbowMode === 'month' ? Math.max(1, Math.ceil(N / 12)) : 1;
-  const todayStr = nyDateStr(Date.now());
+  const stride = _rainbowMode === 'month' ? Math.max(1, Math.ceil(N / 11)) : 1;
+  let nowIdx = -1; for (let i = 0; i < N; i++) { if (days[i].wakeMs <= now) nowIdx = i; else break; }
 
-  let body = '', seps = '', labels = '', marks = '';
-  let lblRow = 0;
+  let body = '', seps = '', labels = '', marks = '', lblRow = 0;
 
   days.forEach((d, i) => {
-    const ro = RMAX - i * ringStep;
-    const ri = RMAX - (i + 1) * ringStep;
-    const rMid = (ri + ro) / 2;
-    const wakeHour  = nyHour(d.wakeMs);
-    const sleepHour = nyHour(d.sleepMs);
+    const ro = RMAX - i * ringStep, ri = RMAX - (i + 1) * ringStep, rMid = (ri + ro) / 2;
+    const wakeHour = nyHour(d.wakeMs), sleepHour = nyHour(d.sleepMs);
     const { sunrise, sunset } = sunTimes(new Date(d.wakeMs));
-
+    const wlen = Math.max(0.1, (d.sleepMs - d.wakeMs) / 3600000);
+    const slen = Math.max(0.1, (TAU_MS - (d.sleepMs - d.wakeMs)) / 3600000);
+    let dome = '';
     if (sky) {
-      // waking dome (top) — the real sky of the waking hours
       for (let a = -90; a < 90; a += da) {
-        const a2 = Math.min(a + da, 90);
-        const t  = ((a + a2) / 2 + 90) / 180;
-        const clockH = ((wakeHour + t * AWAKE_H) % 24 + 24) % 24;
-        body += `<path d="${seg(a, a2, ri, ro)}" fill="${skyColorAt(clockH, sunrise, sunset)}"/>`;
+        const a2 = Math.min(a + da, 90); const t = ((a + a2) / 2 + 90) / 180;
+        const ch = ((wakeHour + t * wlen) % 24 + 24) % 24;
+        dome += `<path d="${seg(a, a2, ri, ro)}" fill="${skyColorAt(ch, sunrise, sunset)}"/>`;
       }
-      // sleep shadow (bottom) — the sky slept through, shaded down
       for (let a = 90; a < 270; a += da) {
-        const a2 = Math.min(a + da, 270);
-        const s  = ((a + a2) / 2 - 90) / 180;
-        const clockH = ((sleepHour + s * TIB_H) % 24 + 24) % 24;
-        body += `<path d="${seg(a, a2, ri, ro)}" fill="${darken(skyColorAt(clockH, sunrise, sunset), 0.62)}"/>`;
+        const a2 = Math.min(a + da, 270); const ss = ((a + a2) / 2 - 90) / 180;
+        const ch = ((sleepHour + ss * slen) % 24 + 24) % 24;
+        dome += `<path d="${seg(a, a2, ri, ro)}" fill="${darken(skyColorAt(ch, sunrise, sunset), 0.62)}"/>`;
       }
-      body += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)" opacity="0.55"/>`;
+      dome += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)" opacity="0.55"/>`;
     } else {
-      body += `<path d="${seg(-90, 90, ri, ro)}" fill="rgb(228,218,193)"/>`;
-      body += `<path d="${seg(90, 270, ri, ro)}" fill="rgb(14,17,57)"/>`;
-      body += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)"/>`;
+      dome += `<path d="${seg(-90, 90, ri, ro)}" fill="rgb(228,218,193)"/>`;
+      dome += `<path d="${seg(90, 270, ri, ro)}" fill="rgb(14,17,57)"/>`;
+      dome += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)"/>`;
     }
+    body += (d.real === false) ? `<g opacity="0.4">${dome}</g>` : dome;
 
-    if (_rainbowMode === 'month' && nyDateStr(d.wakeMs) === todayStr) {
-      marks += `<path d="${seg(-90, 90, ri, ro)}" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/>`;
-    }
+    if (i === nowIdx) marks += `<path d="${seg(-90, 90, ri, ro)}" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5"/>`;
 
-    if ((i % stride === 0) || i === N - 1) {
-      const dy = 13 + (lblRow % 2) * 16; lblRow++;
-      labels += txt(CX - rMid, CY + dy,      d.lab,               8.5, 'rgba(201,168,76,0.92)', 600);
-      labels += txt(CX - rMid, CY + dy + 10, compactT(d.wakeMs),  9.5, '#e8c978', 700);
-      labels += txt(CX + rMid, CY + dy + 5,  compactT(d.sleepMs), 9,   '#c4b0e0', 600);
+    if ((i % stride === 0) || i === N - 1 || i === nowIdx) {
+      const dy = 12 + (lblRow % 2) * 15; lblRow++;
+      const proj = (d.real === false);
+      const lab = labelMode === 'rel'
+        ? (() => { const o = i - nowIdx; return o === 0 ? 'Today' : o === 1 ? 'Tom' : o > 0 ? '+' + o + 'd' : o + 'd'; })()
+        : mdy(d.wakeMs);
+      labels += txt(CX - rMid, CY + dy,      lab,                 8.5, proj ? 'rgba(190,184,170,0.6)' : 'rgba(201,168,76,0.95)', 600);
+      labels += txt(CX - rMid, CY + dy + 10, compactT(d.wakeMs),  9.5, proj ? 'rgba(205,205,215,0.55)' : '#e8c978', 700);
+      labels += txt(CX + rMid, CY + dy + 5,  compactT(d.sleepMs), 9,   proj ? 'rgba(190,186,210,0.5)' : '#c4b0e0', 600);
     }
 
     seps += `<circle cx="${CX}" cy="${CY}" r="${ro.toFixed(1)}" fill="none" stroke="rgba(0,0,0,0.38)" stroke-width="0.7"/>`;
   });
   seps += `<circle cx="${CX}" cy="${CY}" r="${RHOLE}" fill="none" stroke="rgba(0,0,0,0.38)" stroke-width="0.7"/>`;
 
-  // Horizon line + centre labels
   let frame = `<line x1="${CX - RMAX}" y1="${CY}" x2="${CX + RMAX}" y2="${CY}" stroke="rgba(243,239,226,0.13)" stroke-width="0.8"/>`;
   frame += txt(CX, CY - 6,  '☀ awake',  11, 'rgba(232,201,120,0.9)',  600);
   frame += txt(CX, CY + 18, '☾ asleep', 10, 'rgba(160,168,210,0.85)', 500);
 
-  // "now" — Rikki's blue heart, on today's ring (both views)
-  {
-    const cp = cyclePos(anchorMs);
-    const a = cp.asleep ? 90 + ((cp.h_into - AWAKE_H) / TIB_H) * 180 : -90 + (cp.h_into / AWAKE_H) * 180;
-    let idx = days.findIndex(d => Math.abs(d.wakeMs - cp.wakeMs) < 60000); if (idx < 0) idx = 0;
-    const ro = RMAX - idx * ringStep, ri = ro - ringStep;
-    if (idx === 0) {
+  if (nowIdx >= 0) {
+    const d = days[nowIdx], ro = RMAX - nowIdx * ringStep, ri = ro - ringStep, a = nowAngleOnDay(d, now);
+    if (nowIdx === 0) {
       const [hx, hy] = pol(a, ro + 12); marks += heart(hx, hy, 12);
       const [nx, ny] = pol(a, ro + 28); marks += txt(nx, ny, 'now', 10, '#bcdcff', 600);
     } else {
