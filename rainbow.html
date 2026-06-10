@@ -93,25 +93,25 @@
   <main>
     <section class="card">
       <h2>Today, up close</h2>
-      <p class="cap">One day in full — she wakes at the left foot, arcs through the real sky overhead, and sleeps at the right; the daylight she sleeps through is shaded below. The white ▾ is now. <span id="today-readout"></span></p>
+      <p class="cap">One day in full — she wakes at the left foot, arcs through the real sky overhead, and sleeps at the right; the daylight she sleeps through is shaded below. The blue heart is now. <span id="today-readout"></span></p>
       <div class="frame"><svg id="viz-today" viewBox="150 20 600 625" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>The week ahead</h2>
-      <p class="cap">Today is the outer arc; each arc inward is the next waking day. Read the wake (gold, left) and sleep (lavender, right) times along the horizon, and watch the daylight slide around as her hours drift.</p>
+      <p class="cap">Today is the outer arc; each arc inward is the next waking day. Read the wake (gold, left) and sleep (lavender, right) times along the horizon, and watch the daylight slide around as her hours drift. The blue heart is now.</p>
       <div class="frame"><svg id="viz-week" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>This month</h2>
-      <p class="cap">The outer arc is the 1st; inner arcs are later days. Today's arc is outlined in white. Across the month her wake walks all the way around the clock — the whole sky rotates through the rings.</p>
+      <p class="cap">The outer arc is the 1st; inner arcs are later days. Today's arc is outlined in white. Across the month her wake walks all the way around the clock — the whole sky rotates through the rings. The blue heart is now.</p>
       <div class="frame"><svg id="viz-month" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>The return</h2>
-      <p class="cap">Her wake time written around a 24-hour sky clock — midnight at the top, noon at the bottom. Follow the gold marks and her wake drifts ~84 minutes later each day, sweeping every hour and coming back around in about 18 days. Today's mark is white.</p>
+      <p class="cap">Her wake time written around a 24-hour sky clock — midnight at the top, noon at the bottom. Follow the gold marks and her wake drifts ~84 minutes later each day, sweeping every hour and coming back around in about 18 days. The blue heart marks now.</p>
       <div class="frame"><svg id="viz-return" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
@@ -250,6 +250,13 @@ function TXT(x,y,s,size,fill,weight,anchor){
        + `fill="${fill}" text-anchor="${anchor||'middle'}" font-family="Inter,sans-serif" `
        + `paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="3" stroke-linejoin="round">${s}</text>`;
 }
+// Rikki's blue heart = "now"
+const HEART_BLUE = '#46a6f0';
+function heart(cx, cy, s, fill){
+  return `<path transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${s})" `
+    + `d="M0,-0.35 C0,-0.55 -0.2,-0.72 -0.42,-0.72 C-0.78,-0.72 -0.92,-0.36 -0.92,-0.16 C-0.92,0.22 -0.5,0.5 0,0.82 C0.5,0.5 0.92,0.22 0.92,-0.16 C0.92,-0.36 0.78,-0.72 0.42,-0.72 C0.2,-0.72 0,-0.55 0,-0.35 Z" `
+    + `fill="${fill||HEART_BLUE}" stroke="#ffffff" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+}
 const compactT = ms => new Date(ms).toLocaleTimeString('en-US',
       {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})
       .replace(' AM','a').replace(' PM','p').replace('12:00a','12a').replace('12:00p','12p');
@@ -291,9 +298,8 @@ function renderToday(anchor){
   s+=tick(sunrise,'sunrise')+tick(sunset,'sunset');
   // now marker
   const aN=cp.asleep?90+((cp.h_into-AWAKE_H)/TIB_H)*180:-90+(cp.h_into/AWAKE_H)*180;
-  const [ax,ay]=P(cx,cy,aN,ro+2),[b1x,b1y]=P(cx,cy,aN-2.2,ro+15),[b2x,b2y]=P(cx,cy,aN+2.2,ro+15);
-  s+=`<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} L ${b1x.toFixed(1)} ${b1y.toFixed(1)} L ${b2x.toFixed(1)} ${b2y.toFixed(1)} Z" fill="#fff"/>`;
-  const [nx,ny]=P(cx,cy,aN,ro+29); s+=TXT(nx,ny,'now',11,'#fff',700);
+  const [hx,hy]=P(cx,cy,aN,ro+15); s+=heart(hx,hy,13);
+  const [nx,ny]=P(cx,cy,aN,ro+34); s+=TXT(nx,ny,'now',11,'#bcdcff',600);
   // foot labels
   s+=TXT(cx-ro+4, cy+20, wkdmd(wakeMs), 11,'rgba(201,168,76,0.95)',600,'start');
   s+=TXT(cx-ro+4, cy+35, 'wake '+compactT(wakeMs), 12,'#e8c978',700,'start');
@@ -330,11 +336,16 @@ function renderNested(svgId, days, opts){
   frame+=TXT(cx,cy-6,'☀ awake',11,'rgba(232,201,120,0.9)',600);
   frame+=TXT(cx,cy+18,'☾ asleep',10,'rgba(160,168,210,0.85)',500);
   if(opts.nowAnchor!=null){
-    const cp=cyclePos(opts.nowAnchor), ro=RMAX;
+    const cp=cyclePos(opts.nowAnchor);
     const a=cp.asleep?90+((cp.h_into-AWAKE_H)/TIB_H)*180:-90+(cp.h_into/AWAKE_H)*180;
-    const [ax,ay]=P(cx,cy,a,ro+2),[b1x,b1y]=P(cx,cy,a-2.4,ro+14),[b2x,b2y]=P(cx,cy,a+2.4,ro+14);
-    marks+=`<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} L ${b1x.toFixed(1)} ${b1y.toFixed(1)} L ${b2x.toFixed(1)} ${b2y.toFixed(1)} Z" fill="#fff"/>`;
-    const [nx,ny]=P(cx,cy,a,ro+27); marks+=TXT(nx,ny,'now',10,'#fff',700);
+    let idx=days.findIndex(d=>Math.abs(d.wakeMs-cp.wakeMs)<60000); if(idx<0) idx=0;
+    const ro=RMAX-idx*step, ri=ro-step;
+    if(idx===0){
+      const [hx,hy]=P(cx,cy,a,ro+12); marks+=heart(hx,hy,12);
+      const [nx,ny]=P(cx,cy,a,ro+28); marks+=TXT(nx,ny,'now',10,'#bcdcff',600);
+    } else {
+      const [hx,hy]=P(cx,cy,a,(ri+ro)/2); marks+=heart(hx,hy,10);
+    }
   }
   svg.innerHTML=body+seps+frame+labels+marks;
 }
@@ -352,7 +363,7 @@ function renderMonth(anchor){
   const mE=new Date(now.getFullYear(),now.getMonth()+1,1).getTime();
   const k0=Math.ceil((mS-anchor)/TAU_MS); const days=[];
   for(let k=k0; anchor+k*TAU_MS<mE; k++){ const w=anchor+k*TAU_MS; days.push({ wakeMs:w, sleepMs:w+AWAKE_MS, lab:mdy(w) }); }
-  renderNested('viz-month', days, { da:2.5, stride:Math.max(1,Math.ceil(days.length/12)), highlightToday:true });
+  renderNested('viz-month', days, { da:2.5, stride:Math.max(1,Math.ceil(days.length/12)), highlightToday:true, nowAnchor:anchor });
 }
 
 // ── 4 · The return (24-hour sky clock, dated wakes, one loop) ───────────────
@@ -367,8 +378,7 @@ function renderReturn(anchor){
   const todayStr=nyDateStr(Date.now());
   nextCycles(anchor,18).forEach((c,i)=>{
     const a=nyHour(c.wakeMs)*15;
-    const isToday=(i===0)||nyDateStr(c.wakeMs)===todayStr;
-    const col=isToday?'#ffffff':'#e8c978';
+    const col='#e8c978';
     const [ax,ay]=P(cx,cy,a,R1-2),[b1x,b1y]=P(cx,cy,a-1.8,R1-14),[b2x,b2y]=P(cx,cy,a+1.8,R1-14);
     s+=`<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} L ${b1x.toFixed(1)} ${b1y.toFixed(1)} L ${b2x.toFixed(1)} ${b2y.toFixed(1)} Z" fill="${col}"/>`;
     const [lx,ly]=P(cx,cy,a,R2+18);
@@ -377,6 +387,9 @@ function renderReturn(anchor){
   });
   s+=TXT(cx,cy-6,'your wake',12,'rgba(232,201,120,0.9)',600);
   s+=TXT(cx,cy+12,'one loop ≈ 18 days',9.5,'rgba(160,154,142,0.85)',400);
+  // "now" = current clock time on the 24h ring
+  const nowA=nyHour(Date.now())*15;
+  const [nhx,nhy]=P(cx,cy,nowA,(R1+R2)/2); s+=heart(nhx,nhy,11);
   svg.innerHTML=s;
 }
 
@@ -399,6 +412,11 @@ function renderBloom(anchor){
   });
   s+=`<circle cx="${cx}" cy="${cy}" r="${rIn-6}" fill="rgba(6,8,15,0.92)"/>`;
   s+=TXT(cx,cy+3,'a week',10,'rgba(216,207,173,0.85)',500);
+  // "now" = blue heart on today's petal, at how far into the day she is
+  const cpB=cyclePos(anchor);
+  const tNow=cpB.asleep?0.97:Math.max(0.06,Math.min(0.97,cpB.h_into/AWAKE_H));
+  const [bhx,bhy]=P(cx,cy,0,rIn+tNow*(rOut-rIn));
+  s+=heart(bhx,bhy,11); s+=TXT(bhx,bhy-17,'now',9.5,'#bcdcff',600);
   svg.innerHTML=s;
 }
 

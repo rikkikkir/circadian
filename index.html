@@ -2744,6 +2744,12 @@ function renderRainbow(anchorMs) {
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" font-weight="${weight}" `
          + `fill="${fill}" text-anchor="middle" font-family="Inter,sans-serif" ${halo}>${s}</text>`;
   }
+  // Rikki's blue heart = "now"
+  function heart(hx, hy, hs) {
+    return `<path transform="translate(${hx.toFixed(1)} ${hy.toFixed(1)}) scale(${hs})" `
+      + `d="M0,-0.35 C0,-0.55 -0.2,-0.72 -0.42,-0.72 C-0.78,-0.72 -0.92,-0.36 -0.92,-0.16 C-0.92,0.22 -0.5,0.5 0,0.82 C0.5,0.5 0.92,0.22 0.92,-0.16 C0.92,-0.36 0.78,-0.72 0.42,-0.72 C0.2,-0.72 0,-0.55 0,-0.35 Z" `
+      + `fill="#46a6f0" stroke="#ffffff" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  }
   const compactT = ms => new Date(ms).toLocaleTimeString('en-US',
         {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})
         .replace(' AM','a').replace(' PM','p').replace('12:00a','12a').replace('12:00p','12p');
@@ -2770,7 +2776,7 @@ function renderRainbow(anchorMs) {
       lab: i === 0 ? 'Today' : i === 1 ? 'Tom' : '+' + i + 'd'
     }));
     if (subEl) subEl.textContent =
-      'Outer arc = today; each arc inward is the next waking day. The white ▾ is now.';
+      'Outer arc = today; each arc inward is the next waking day. The blue heart is now.';
   }
 
   const N = days.length;
@@ -2833,19 +2839,18 @@ function renderRainbow(anchorMs) {
   frame += txt(CX, CY - 6,  '☀ awake',  11, 'rgba(232,201,120,0.9)',  600);
   frame += txt(CX, CY + 18, '☾ asleep', 10, 'rgba(160,168,210,0.85)', 500);
 
-  // "now" — forecast only: a plain white chevron riding today's (outer) arc
-  if (_rainbowMode !== 'month') {
+  // "now" — Rikki's blue heart, on today's ring (both views)
+  {
     const cp = cyclePos(anchorMs);
-    const ro = RMAX;
-    const a = cp.asleep
-      ? 90  + ((cp.h_into - AWAKE_H) / TIB_H)  * 180
-      : -90 + (cp.h_into / AWAKE_H) * 180;
-    const [ax, ay]   = pol(a, ro + 2);
-    const [b1x, b1y] = pol(a - 2.4, ro + 14);
-    const [b2x, b2y] = pol(a + 2.4, ro + 14);
-    marks += `<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} L ${b1x.toFixed(1)} ${b1y.toFixed(1)} L ${b2x.toFixed(1)} ${b2y.toFixed(1)} Z" fill="#fff"/>`;
-    const [nx, ny] = pol(a, ro + 27);
-    marks += txt(nx, ny, 'now', 10, '#fff', 700);
+    const a = cp.asleep ? 90 + ((cp.h_into - AWAKE_H) / TIB_H) * 180 : -90 + (cp.h_into / AWAKE_H) * 180;
+    let idx = days.findIndex(d => Math.abs(d.wakeMs - cp.wakeMs) < 60000); if (idx < 0) idx = 0;
+    const ro = RMAX - idx * ringStep, ri = ro - ringStep;
+    if (idx === 0) {
+      const [hx, hy] = pol(a, ro + 12); marks += heart(hx, hy, 12);
+      const [nx, ny] = pol(a, ro + 28); marks += txt(nx, ny, 'now', 10, '#bcdcff', 600);
+    } else {
+      const [hx, hy] = pol(a, (ri + ro) / 2); marks += heart(hx, hy, 10);
+    }
   }
 
   svg.innerHTML = body + seps + frame + labels + marks;
