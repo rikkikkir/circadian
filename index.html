@@ -387,6 +387,45 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 
   <hr class="div">
 
+  <!-- SECTION: THE RAINBOW OF WAKE -->
+  <div class="section" id="section-rainbow">
+    <style>
+      #section-rainbow .rainbow-tabs{display:flex;gap:8px;margin:6px 0 14px;flex-wrap:wrap}
+      #section-rainbow .rainbow-tab{background:transparent;border:1px solid #333;color:var(--dim);
+        padding:7px 16px;border-radius:999px;font-family:'Inter',sans-serif;font-size:.84rem;cursor:pointer;transition:all .15s}
+      #section-rainbow .rainbow-tab:hover{border-color:#555;color:var(--warm)}
+      #section-rainbow .rainbow-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+      #rainbow-wrap{background:radial-gradient(ellipse at 50% 40%,#0c1020 0%,#070a14 72%);
+        border-radius:var(--r-card);padding:12px 4px 6px;margin-top:4px;border:1px solid rgba(255,255,255,0.05)}
+      #rainbow-svg{width:100%;max-width:760px;display:block;margin:0 auto;overflow:visible}
+      .rainbow-legend{display:flex;flex-wrap:wrap;gap:12px 22px;justify-content:center;margin-top:18px;font-size:.78rem;color:var(--dim)}
+      .rainbow-legend span{display:inline-flex;align-items:center;gap:7px}
+      .rainbow-legend i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,0.08)}
+      .rainbow-legend i.stars{background:#0a0f1f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='3' cy='4' r='0.7' fill='rgba(160,180,240,0.9)'/%3E%3Ccircle cx='9' cy='8' r='0.7' fill='rgba(160,180,240,0.9)'/%3E%3C/svg%3E")}
+    </style>
+    <h2>The Rainbow of Wake</h2>
+    <div class="chart-intro">
+      Each arc is one of Rikki's days, drawn in the <strong>real sky of her waking hours</strong> — it rises at wake (left foot), arcs through the daylight she's awake for, and sets at sleep (right foot). Below the horizon is the sky she sleeps through, shaded. <span id="rainbow-sub" class="dim"></span>
+    </div>
+    <div class="rainbow-tabs">
+      <button class="rainbow-tab active" data-mode="forecast" onclick="setRainbowMode('forecast')">Next 7 days</button>
+      <button class="rainbow-tab" data-mode="month" onclick="setRainbowMode('month')">This month</button>
+    </div>
+    <div id="rainbow-wrap">
+      <svg id="rainbow-svg" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="rainbow-legend">
+      <span><i style="background:#d27319"></i>sunrise · sunset</span>
+      <span><i style="background:#2a5690"></i>daylight</span>
+      <span><i style="background:#080c2a"></i>night / twilight</span>
+      <span><i class="stars"></i>shaded sleep</span>
+      <span><i style="background:#c9a84c"></i>wake + date (left foot)</span>
+      <span><i style="background:#c4b0e0"></i>sleep (right foot)</span>
+    </div>
+  </div>
+
+  <hr class="div">
+
   <!-- SECTION 3: 21-DAY FORECAST -->
   <div class="section">
     <h2>21-Day Forecast</h2>
@@ -647,7 +686,7 @@ const TIB_H     = PERSONAL.tibH;
 const AWAKE_MS  = AWAKE_H * 3600000;
 const TIB_MS    = TIB_H   * 3600000;
 const CACHE_TTL = 30 * 60 * 1000;
-const FALLBACK_ANCHOR_MS = 1745974800000;
+const FALLBACK_ANCHOR_MS = 1781042731000; // last known real wake: Tue Jun 9 2026, 6:05p EDT (used only when Oura is unreachable)
 const WORKER_URL = 'https://circadian.rikkidelaine84.workers.dev';
 
 // Natural thread anchor — Aug 20 2025 07:09:58 EDT, midpoint of cleanest free-running window
@@ -2646,6 +2685,7 @@ function clearWakeOverride() {
 let _liveTimer = null;
 let _anchorMs  = FALLBACK_ANCHOR_MS;
 let _viewMode  = (() => { try { return localStorage.getItem('circadian_view') || 'sky'; } catch(e) { return 'sky'; } })();
+let _rainbowMode = (() => { try { return localStorage.getItem('circadian_rainbow') || 'forecast'; } catch(e) { return 'forecast'; } })();
 
 function toggleViewMode() {
   _viewMode = _viewMode === 'sky' ? 'simple' : 'sky';
@@ -2660,11 +2700,163 @@ function updateViewToggleBtn() {
   btn.textContent = _viewMode === 'sky' ? '⬛ Simplified' : '🌅 Sky View';
 }
 
+// ── The Rainbow of Wake ───────────────────────────────────────────────────
+// Each waking day is an arc that rises at wake (left foot), arcs over through
+// the real sky of the waking hours, and sets at sleep (right foot). The sky
+// slept through is shaded below the horizon. Two views:
+//   forecast — today is the outer arc, days ahead nest inward (+ a live "now")
+//   month    — outer arc = the 1st, inner arcs are later days
+function setRainbowMode(mode) {
+  _rainbowMode = mode;
+  try { localStorage.setItem('circadian_rainbow', mode); } catch (e) {}
+  document.querySelectorAll('.rainbow-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === mode));
+  renderRainbow(_anchorMs);
+}
+
+function renderRainbow(anchorMs) {
+  const svg = document.getElementById('rainbow-svg');
+  if (!svg) return;
+  const subEl = document.getElementById('rainbow-sub');
+  const sky = _viewMode !== 'simple';
+
+  const CX = 450, CY = 300, RMAX = 258, RHOLE = 58;
+  const halo = 'paint-order="stroke" stroke="rgba(3,5,15,0.92)" stroke-width="3.2" stroke-linejoin="round"';
+
+  function pol(deg, r) {
+    const rad = deg * Math.PI / 180;
+    return [CX + r * Math.sin(rad), CY - r * Math.cos(rad)];
+  }
+  function seg(a1, a2, ri, ro) {
+    const large = Math.abs(a2 - a1) > 180 ? 1 : 0;
+    const [x1o, y1o] = pol(a1, ro), [x2o, y2o] = pol(a2, ro);
+    const [x1i, y1i] = pol(a1, ri), [x2i, y2i] = pol(a2, ri);
+    return `M ${x1o.toFixed(2)} ${y1o.toFixed(2)} A ${ro} ${ro} 0 ${large} 1 ${x2o.toFixed(2)} ${y2o.toFixed(2)} `
+         + `L ${x2i.toFixed(2)} ${y2i.toFixed(2)} A ${ri} ${ri} 0 ${large} 0 ${x1i.toFixed(2)} ${y1i.toFixed(2)} Z`;
+  }
+  function darken(rgb, f) {
+    const m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (!m) return rgb;
+    const d = v => Math.round(+v * (1 - f));
+    return `rgb(${d(m[1])},${d(m[2])},${d(m[3])})`;
+  }
+  function txt(x, y, s, size, fill, weight) {
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${size}" font-weight="${weight}" `
+         + `fill="${fill}" text-anchor="middle" font-family="Inter,sans-serif" ${halo}>${s}</text>`;
+  }
+  const compactT = ms => new Date(ms).toLocaleTimeString('en-US',
+        {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})
+        .replace(' AM','a').replace(' PM','p').replace('12:00a','12a').replace('12:00p','12p');
+  const mdy = ms => new Date(ms).toLocaleDateString('en-US',
+        {month:'numeric',day:'numeric',timeZone:'America/New_York'});
+
+  // Build the list of waking days for the active view
+  let days = [];
+  if (_rainbowMode === 'month') {
+    const now = new Date();
+    const mStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const mEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+    const k0 = Math.ceil((mStart - anchorMs) / TAU_MS);
+    for (let k = k0; anchorMs + k * TAU_MS < mEnd; k++) {
+      const wakeMs = anchorMs + k * TAU_MS;
+      days.push({ wakeMs, sleepMs: wakeMs + AWAKE_MS, lab: mdy(wakeMs) });
+    }
+    if (subEl) subEl.textContent =
+      `Outer arc = ${now.toLocaleDateString('en-US',{month:'long'})} 1; inner arcs are later days.`;
+  } else {
+    const cyc = nextCycles(anchorMs, 7);
+    days = cyc.map((c, i) => ({
+      wakeMs: c.wakeMs, sleepMs: c.sleepMs,
+      lab: i === 0 ? 'Today' : i === 1 ? 'Tom' : '+' + i + 'd'
+    }));
+    if (subEl) subEl.textContent =
+      'Outer arc = today; each arc inward is the next waking day. The white ▾ is now.';
+  }
+
+  const N = days.length;
+  if (!N) { svg.innerHTML = ''; return; }
+  const ringStep = (RMAX - RHOLE) / N;
+  const da     = _rainbowMode === 'month' ? 2.5 : 1.5;
+  const stride = _rainbowMode === 'month' ? Math.max(1, Math.ceil(N / 12)) : 1;
+  const todayStr = nyDateStr(Date.now());
+
+  let body = '', seps = '', labels = '', marks = '';
+  let lblRow = 0;
+
+  days.forEach((d, i) => {
+    const ro = RMAX - i * ringStep;
+    const ri = RMAX - (i + 1) * ringStep;
+    const rMid = (ri + ro) / 2;
+    const wakeHour  = nyHour(d.wakeMs);
+    const sleepHour = nyHour(d.sleepMs);
+    const { sunrise, sunset } = sunTimes(new Date(d.wakeMs));
+
+    if (sky) {
+      // waking dome (top) — the real sky of the waking hours
+      for (let a = -90; a < 90; a += da) {
+        const a2 = Math.min(a + da, 90);
+        const t  = ((a + a2) / 2 + 90) / 180;
+        const clockH = ((wakeHour + t * AWAKE_H) % 24 + 24) % 24;
+        body += `<path d="${seg(a, a2, ri, ro)}" fill="${skyColorAt(clockH, sunrise, sunset)}"/>`;
+      }
+      // sleep shadow (bottom) — the sky slept through, shaded down
+      for (let a = 90; a < 270; a += da) {
+        const a2 = Math.min(a + da, 270);
+        const s  = ((a + a2) / 2 - 90) / 180;
+        const clockH = ((sleepHour + s * TIB_H) % 24 + 24) % 24;
+        body += `<path d="${seg(a, a2, ri, ro)}" fill="${darken(skyColorAt(clockH, sunrise, sunset), 0.62)}"/>`;
+      }
+      body += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)" opacity="0.55"/>`;
+    } else {
+      body += `<path d="${seg(-90, 90, ri, ro)}" fill="rgb(228,218,193)"/>`;
+      body += `<path d="${seg(90, 270, ri, ro)}" fill="rgb(14,17,57)"/>`;
+      body += `<path d="${seg(90, 270, ri, ro)}" fill="url(#mini-sleep-stars)"/>`;
+    }
+
+    if (_rainbowMode === 'month' && nyDateStr(d.wakeMs) === todayStr) {
+      marks += `<path d="${seg(-90, 90, ri, ro)}" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/>`;
+    }
+
+    if ((i % stride === 0) || i === N - 1) {
+      const dy = 13 + (lblRow % 2) * 16; lblRow++;
+      labels += txt(CX - rMid, CY + dy,      d.lab,               8.5, 'rgba(201,168,76,0.92)', 600);
+      labels += txt(CX - rMid, CY + dy + 10, compactT(d.wakeMs),  9.5, '#e8c978', 700);
+      labels += txt(CX + rMid, CY + dy + 5,  compactT(d.sleepMs), 9,   '#c4b0e0', 600);
+    }
+
+    seps += `<circle cx="${CX}" cy="${CY}" r="${ro.toFixed(1)}" fill="none" stroke="rgba(0,0,0,0.38)" stroke-width="0.7"/>`;
+  });
+  seps += `<circle cx="${CX}" cy="${CY}" r="${RHOLE}" fill="none" stroke="rgba(0,0,0,0.38)" stroke-width="0.7"/>`;
+
+  // Horizon line + centre labels
+  let frame = `<line x1="${CX - RMAX}" y1="${CY}" x2="${CX + RMAX}" y2="${CY}" stroke="rgba(243,239,226,0.13)" stroke-width="0.8"/>`;
+  frame += txt(CX, CY - 6,  '☀ awake',  11, 'rgba(232,201,120,0.9)',  600);
+  frame += txt(CX, CY + 18, '☾ asleep', 10, 'rgba(160,168,210,0.85)', 500);
+
+  // "now" — forecast only: a plain white chevron riding today's (outer) arc
+  if (_rainbowMode !== 'month') {
+    const cp = cyclePos(anchorMs);
+    const ro = RMAX;
+    const a = cp.asleep
+      ? 90  + ((cp.h_into - AWAKE_H) / TIB_H)  * 180
+      : -90 + (cp.h_into / AWAKE_H) * 180;
+    const [ax, ay]   = pol(a, ro + 2);
+    const [b1x, b1y] = pol(a - 2.4, ro + 14);
+    const [b2x, b2y] = pol(a + 2.4, ro + 14);
+    marks += `<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} L ${b1x.toFixed(1)} ${b1y.toFixed(1)} L ${b2x.toFixed(1)} ${b2y.toFixed(1)} Z" fill="#fff"/>`;
+    const [nx, ny] = pol(a, ro + 27);
+    marks += txt(nx, ny, 'now', 10, '#fff', 700);
+  }
+
+  svg.innerHTML = body + seps + frame + labels + marks;
+}
+
 function renderAll(anchorMs) {
   _anchorMs = anchorMs;
   renderPersonalDials(anchorMs);
   renderMiniDials(anchorMs);
   renderCards(anchorMs);
+  renderRainbow(anchorMs);
   renderForecast(anchorMs);
   renderHourTable(anchorMs);
   buildShareICS(anchorMs);
