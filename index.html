@@ -93,8 +93,10 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 .dial-lbl-bot{font-size:9.5px;color:rgba(170,160,140,0.75);text-align:center;margin-top:4px;font-family:Inter,sans-serif;line-height:1.3}
 .dial-lbl-bot span{display:block;font-size:8px;color:rgba(140,130,115,0.6);letter-spacing:.06em;text-transform:uppercase}
 .mini-dials-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:4px;width:100vw;margin-left:calc(50% - 50vw);padding:0 16px;box-sizing:border-box}
-.mini-dial-item{display:flex;align-items:center;justify-content:center}
+.mini-dial-item{display:flex;align-items:center;justify-content:center;border-radius:14px;transition:opacity .2s}
 .mini-dial-item svg{width:100%;height:auto;display:block}
+.mini-dial-item.is-past{opacity:.5}
+.mini-dial-item.is-today{background:rgba(201,168,76,.08);box-shadow:0 0 0 2px var(--gold),0 0 16px 1px rgba(201,168,76,.45)}
 @media(max-width:900px){.mini-dials-grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:500px){.mini-dials-grid{grid-template-columns:repeat(2,1fr)}}
 .near-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;width:100vw;margin-left:calc(50% - 50vw);padding:0 16px;box-sizing:border-box}
@@ -371,7 +373,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       Each dial and card shows one of Rikki's days. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks when the sleep window opens. Times shift about 84 minutes later each day as the 25.40-hour cycle advances.
     </div>
     <div class="mini-section-lbl">Rikki's Rhythm</div>
-    <div class="mini-section-sub">Each circle shows one day, with Rikki's wake time placed at the top. Cream shows the awake window, stars mark the rest period, and the outer ring shows the sky across the 24-hour clock.</div>
+    <div class="mini-section-sub">Each circle is one day of the current month, with Rikki's wake time at the top. Past days (dimmed) use actual Oura data; today is highlighted and upcoming days are projected. Cream shows the awake window, stars mark the rest period, and the outer ring shows the sky across the 24-hour clock.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
     <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest period.</div>
@@ -1008,6 +1010,22 @@ function skyGradient(wakeMs, sleepMs, sunrise, sunset) {
   return `linear-gradient(to bottom,${deduped.map(([p2,c]) => `${c} ${(p2*100).toFixed(1)}%`).join(',')})`;
 }
 
+// Shared context for the month-grid sections (Rhythm / On the Clock / Coming Up):
+// current month bounds, today's local midnight, and the real recorded waking-days
+// (actual wake→sleep) keyed by the local calendar day of each wake. Past dates use
+// the real data; today and future dates fall back to the forward projection.
+function monthGridContext() {
+  const now = new Date();
+  const mYear = now.getFullYear(), mMon = now.getMonth();
+  const daysInMonth = new Date(mYear, mMon + 1, 0).getDate();
+  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const realDays = buildWakingDays(getCached() || FALLBACK_SESSIONS)
+    .filter(d => d.real === true || d.real === 'wake');
+  const realByDay = new Map();
+  realDays.forEach(d => { const k = new Date(d.wakeMs); k.setHours(0,0,0,0); realByDay.set(k.getTime(), d); });
+  return { mYear, mMon, daysInMonth, todayMs, realDays, realByDay };
+}
+
 function renderPersonalDials(anchorMs) {
   const el = document.getElementById('personal-dials-grid');
   if (!el) return;
@@ -1036,18 +1054,8 @@ function renderPersonalDials(anchorMs) {
          + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6.5).toFixed(1) + '" font-size="11" font-weight="600" fill="rgba(243,239,226,1)">' + timeStr + '</text>';
   }
 
-  // Full current month: day 1 → last day. Build dates via the date constructor
-  // (not +86400000) so each day lands on local midnight regardless of DST.
-  const mNow = new Date();
-  const mYear = mNow.getFullYear(), mMon = mNow.getMonth();
-  const daysInMonth = new Date(mYear, mMon + 1, 0).getDate();
-
-  // Real recorded waking-days (actual wake→sleep from Oura), keyed by the local
-  // calendar day of the wake. Past dates use these; future dates use projection.
-  const realByDay = new Map();
-  buildWakingDays(getCached() || FALLBACK_SESSIONS)
-    .filter(d => d.real === true || d.real === 'wake')
-    .forEach(d => { const k = new Date(d.wakeMs); k.setHours(0,0,0,0); realByDay.set(k.getTime(), d); });
+  // Full current month with real recorded data for past days (see monthGridContext).
+  const { mYear, mMon, daysInMonth, realByDay } = monthGridContext();
 
   const items = Array.from({length: daysInMonth}, function(_, i) {
     const dayDate    = new Date(mYear, mMon, 1 + i);
@@ -1159,7 +1167,17 @@ function renderMiniDials(anchorMs) {
   const el = document.getElementById('mini-dials-grid');
   if (!el) return;
 
-  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const { mYear, mMon, daysInMonth, todayMs, realDays, realByDay } = monthGridContext();
+  const monthEndMs = new Date(mYear, mMon + 1, 1).getTime();
+
+  // Waking intervals across the month: real recorded for the past, projected ahead.
+  // Asleep periods are the gaps between consecutive awake intervals.
+  const awakeIv = realDays.filter(d => d.real === true).map(d => [d.wakeMs, d.sleepMs]);
+  for (let c = 0; c <= 45; c++) { const w0 = anchorMs + c * TAU_MS; if (w0 >= monthEndMs + TAU_MS) break; awakeIv.push([w0, w0 + AWAKE_MS]); }
+  awakeIv.sort((a, b) => a[0] - b[0]);
+  const asleepIv = [];
+  for (let i = 0; i < awakeIv.length - 1; i++) if (awakeIv[i + 1][0] > awakeIv[i][1]) asleepIv.push([awakeIv[i][1], awakeIv[i + 1][0]]);
+
   const CX = 55, CY = 55;
   const RI = 15, RO = 40;  // inner disk: hole RI for center label, outer edge RO
   const R1 = 42, R2 = 52;  // outer ring
@@ -1184,14 +1202,16 @@ function renderMiniDials(anchorMs) {
          + '<text ' + base + ' x="' + lx.toFixed(1) + '" y="' + (ly+6.5).toFixed(1) + '" font-size="11" font-weight="600" fill="rgba(243,239,226,1)">' + timeStr + '</text>';
   }
 
-  const items = Array.from({length: 35}, function(_, i) {
-    const dayStartMs = todayMs + i * 86400000;
-    const dayEndMs   = dayStartMs + 86400000;
-    const dayDate    = new Date(dayStartMs);
+  const items = Array.from({length: daysInMonth}, function(_, i) {
+    const dayDate    = new Date(mYear, mMon, 1 + i);
+    const dayStartMs = dayDate.getTime();
+    const dayEndMs   = new Date(mYear, mMon, 2 + i).getTime();
     const sr = sunTimes(dayDate);
     const sunrise = sr.sunrise, sunset = sr.sunset;
+    const isToday = dayStartMs === todayMs;
+    const isPast  = dayStartMs < todayMs;
 
-    // Calendar-day wake/sleep times (same logic as renderCards)
+    // Calendar-day wake/sleep for the labels (projection; real data overrides past days below)
     const cycleN = Math.floor((dayStartMs - anchorMs) / TAU_MS);
     const wMs  = anchorMs + cycleN * TAU_MS;
     const slMs = wMs + AWAKE_MS;
@@ -1200,7 +1220,7 @@ function renderMiniDials(anchorMs) {
     if (wMs >= dayStartMs)       { cardWakeMs = wMs; }
     else if (slMs > dayStartMs)  { cardWakeMs = (nwMs >= dayStartMs && nwMs < dayEndMs) ? nwMs : wMs; }
     else                         { cardWakeMs = nwMs; }
-    const cardSleepMs = cardWakeMs + AWAKE_MS;
+    let cardSleepMs = cardWakeMs + AWAKE_MS;
 
     let svg = '';
 

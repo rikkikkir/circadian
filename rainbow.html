@@ -126,6 +126,12 @@
       <p class="cap">The outer arc is the first of last month, with each date moving inwards. Every arc is a recorded Oura day.</p>
       <div class="frame"><svg id="viz-prevmonth" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
+
+    <section class="card">
+      <h2>The month, unspooled</h2>
+      <p class="cap">The Loop, unwound into a spiral so a full month of wake times fits without overlapping. Today is the outer point; each earlier day spirals inward, and every dot is coloured by the sky at her wake time.</p>
+      <div class="frame"><svg id="viz-spiral" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </section>
   </main>
 
   <footer>
@@ -403,17 +409,18 @@ function renderReturn(daysWin, now){
   s+=`<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>`;
   s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>`;
 
-  const anchorFor=a=>{ a=((a%360)+360)%360; if(a<18||a>342||(a>162&&a<198)) return 'middle'; return a<180?'start':'end'; };
+  // inside labels read inward (toward centre), outside labels read outward (into the margin)
+  const anchorFor=(a,inside)=>{ a=((a%360)+360)%360; if(a<18||a>342||(a>162&&a<198)) return 'middle'; const right=a<180; return (right===!inside)?'start':'end'; };
   const MINGAP=20;
 
-  // Extend past data backward, but STOP before the clock loop wraps onto itself, so older weeks
-  // (e.g. May) never mix in with the recent days. ~one loop ≈ 18 days; cap the sweep well below that
-  // (≈14 days) to leave a clear gap on the dial between the oldest day shown and today.
-  const realShown=[]; let sweep=0, prevA=null;
+  // Extend past data backward to fill the dial up to ~one full loop, then STOP just before the oldest
+  // day would wrap back onto today's angle — so the dial fills in but no two days ever share a clock
+  // position (sharing a slot is what made May overlap June). Net signed sweep ≈ -21°/day going back.
+  const realShown=[]; let net=0, prevA=null;
   for(const d of daysWin.filter(x=>x.real!==false).sort((p,q)=>q.wakeMs-p.wakeMs)){ // recent → older
     const a=nyHour(d.wakeMs)*15;
-    if(prevA!==null){ let st=((prevA-a)%360+360)%360; if(st>180) st=360-st; sweep+=st; }
-    if(sweep>290) break;                           // ~14 days back; gap keeps past from overlapping recent
+    if(prevA!==null){ net += ((a-prevA+540)%360)-180; }
+    if(net <= -340) break;                         // ~one loop back; stop ~20° short of today (no wrap)
     realShown.push(d); prevA=a;
     if(realShown.length>=20) break;                // safety cap
   }
@@ -435,7 +442,7 @@ function renderReturn(daysWin, now){
       const [k1x,k1y]=P(cx,cy,a,startR), [k2x,k2y]=P(cx,cy,a,tipR);
       s+=`<line x1="${k1x.toFixed(1)}" y1="${k1y.toFixed(1)}" x2="${k2x.toFixed(1)}" y2="${k2y.toFixed(1)}" stroke="${col}" stroke-width="${isToday?3:2}" stroke-linecap="round"/>`;
       if(!g.inside){ const [e2x,e2y]=P(cx,cy,a,labR-6); s+=`<line x1="${k2x.toFixed(1)}" y1="${k2y.toFixed(1)}" x2="${e2x.toFixed(1)}" y2="${e2y.toFixed(1)}" stroke="${col}" stroke-width="0.7" opacity="0.3"/>`; }
-      const an=anchorFor(a);
+      const an=anchorFor(a, g.inside);
       const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(200,190,164,0.66)');
       s+=TXT(lx,ly+4, mdy(d.wakeMs), isToday?14.5:12.5, dCol, isToday?700:600, an);
     });
@@ -489,6 +496,34 @@ function renderBloom(days, now){
   svg.innerHTML='<defs>'+defs+'</defs>'+s;
 }
 
+// ── 6 · The month, unspooled (spiral) ──────────────────────────────────────
+// The Loop, unwound: wake time still sets the clock-angle, but each day spirals inward so a
+// whole month of days fits without any two sharing a position. Today is the outer point.
+function renderSpiral(svgId, days, now){
+  const svg=document.getElementById(svgId); if(!svg)return;
+  const cx=300, cy=300, rOuter=246, rInner=62;
+  const N=days.length; if(!N){ svg.innerHTML=''; return; }
+  const todayStr=nyDateStr(now);
+  let s='';
+  // faint hour reference: spokes every 3h + cardinal labels just outside
+  for(let h=0;h<24;h+=3){ const [x1,y1]=P(cx,cy,h*15,rInner-4),[x2,y2]=P(cx,cy,h*15,rOuter+4); s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="rgba(255,255,255,0.045)" stroke-width="0.7"/>`; }
+  [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,rOuter+20); s+=TXT(lx,ly,t,9.5,'rgba(255,255,255,0.42)',600); });
+  // points: today at the outer edge, spiralling inward back through the month
+  const M=Math.max(1,N-1);
+  const pts=days.map((d,i)=>{ const r=rInner+(i/M)*(rOuter-rInner), a=nyHour(d.wakeMs)*15; const [x,y]=P(cx,cy,a,r); return {d,x,y,a,r,i}; });
+  // the spiral itself
+  s+=`<path d="M ${pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ')}" fill="none" stroke="rgba(232,201,120,0.3)" stroke-width="1.3"/>`;
+  // one sky-coloured dot per day (colour = the sky at her wake time)
+  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr, wh=nyHour(p.d.wakeMs); const {sunrise,sunset}=sunTimes(new Date(p.d.wakeMs)); const col=skyColorAt(wh,sunrise,sunset);
+    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isToday?5:3.3}" fill="${col}" stroke="${isToday?'#fff':'rgba(255,255,255,0.55)'}" stroke-width="${isToday?1.6:0.7}"/>`; });
+  // date labels: today + ~weekly + the oldest, set just outward of the dot
+  const an=a=>{ a=((a%360)+360)%360; if(a<20||a>340||(a>160&&a<200)) return 'middle'; return a<180?'start':'end'; };
+  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr; if(!(isToday||p.i===0||p.i%5===0)) return;
+    const [lx,ly]=P(cx,cy,p.a,p.r+(isToday?16:12));
+    s+=TXT(lx,ly,mdy(p.d.wakeMs),isToday?13:9.5,isToday?'#ffffff':'rgba(216,207,173,0.85)',isToday?700:600,an(p.a)); });
+  svg.innerHTML=s;
+}
+
 // ── Orchestrate ────────────────────────────────────────────────────────────
 function renderAllViz(sessions){
   const now=Date.now();
@@ -501,6 +536,7 @@ function renderAllViz(sessions){
   renderReturn(days.slice(Math.max(0, ci-30), ci+15), now); // up to one loop of past + 14 projected ahead
   renderBloom(days.slice(ci, ci+7), now);
   renderPrevMonth(days.filter(d=>{ const n=new Date(); const pmS=new Date(n.getFullYear(),n.getMonth()-1,1).getTime(), pmE=new Date(n.getFullYear(),n.getMonth(),1).getTime(); return d.wakeMs>=pmS&&d.wakeMs<pmE; }));
+  renderSpiral('viz-spiral', days.filter(d=>d.real!==false&&d.wakeMs<=now).slice(-30), now); // past ~month as a spiral
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
