@@ -104,7 +104,9 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 @media(max-width:500px){.near-grid{grid-template-columns:repeat(2,1fr)}}
 .near-card-co{border-color:#3a3040}
 .near-card-co .near-day{color:var(--dim)}
-.near-card{background:var(--bg3);border:1px solid var(--divider);border-radius:var(--r);padding:14px 16px}
+.near-card{background:var(--bg3);border:1px solid var(--divider);border-radius:var(--r);padding:14px 16px;transition:opacity .2s}
+.near-card.is-past{opacity:.5}
+.near-card.is-today{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px 1px rgba(201,168,76,.4)}
 .near-day{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim2);margin-bottom:10px}
 .near-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
 .nt-lbl{font-size:.76rem;color:var(--dim);white-space:nowrap}
@@ -370,13 +372,13 @@ hr.div{border:none;border-top:1px solid var(--divider)}
   <div class="section">
     <h2>Coming Up</h2>
     <div class="chart-intro">
-      Each dial and card shows one of Rikki's days. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks when the sleep window opens. Times shift about 84 minutes later each day as the 25.40-hour cycle advances.
+      Each dial and card shows one day of the current month — past days (dimmed) use actual Oura data, today is highlighted, and upcoming days are projected. <strong>Awake</strong> marks the start of the active phase; <strong>Rest</strong> marks when the sleep window opens. Times shift about 84 minutes later each day as the 25.40-hour cycle advances.
     </div>
     <div class="mini-section-lbl">Rikki's Rhythm</div>
     <div class="mini-section-sub">Each circle is one day of the current month, with Rikki's wake time at the top. Past days (dimmed) use actual Oura data; today is highlighted and upcoming days are projected. Cream shows the awake window, stars mark the rest period, and the outer ring shows the sky across the 24-hour clock.</div>
     <div class="mini-dials-grid" id="personal-dials-grid"></div>
     <div class="mini-section-lbl">On the Clock</div>
-    <div class="mini-section-sub">The same days mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show when Rikki is predicted to be awake; stars mark the rest period.</div>
+    <div class="mini-section-sub">The same month mapped onto the standard 24-hour clock, with Midnight at the top. This view shows how Rikki's day moves through ordinary calendar time. Cream arcs show the awake window — actual Oura data for past days, projected ahead — and stars mark the rest period.</div>
     <div class="mini-dials-grid" id="mini-dials-grid"></div>
     <div class="near-grid" id="near-grid">
       <div class="loading-placeholder">Loading from Oura…</div>
@@ -1238,57 +1240,35 @@ function renderMiniDials(anchorMs) {
       svg += '<path d="' + sector(h * D24, hEnd * D24, RI, RO) + '" fill="' + col + '" stroke="none"/>';
     }
 
-    // Wake arc: cream over sky gradient
-    const startN = Math.floor((dayStartMs - anchorMs) / TAU_MS) - 1;
-    for (let c = startN; c <= startN + 2; c++) {
-      const w0 = anchorMs + c * TAU_MS;
-      const w1 = w0 + AWAKE_MS;
-      const wol0 = Math.max(w0, dayStartMs);
-      const wol1 = Math.min(w1, dayEndMs);
-      if (wol1 > wol0) {
-        const wa0 = (wol0 - dayStartMs) / 3600000 * D24;
-        const wa1 = (wol1 - dayStartMs) / 3600000 * D24;
-        svg += '<path d="' + sector(wa0, wa1, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
-      }
-    }
-
-    // Sleep arcs: dark dampener then stars over sky gradient
-    for (let c = startN; c <= startN + 2; c++) {
-      const s0 = anchorMs + c * TAU_MS + AWAKE_MS;
-      const s1 = s0 + TIB_MS;
-      const ol0 = Math.max(s0, dayStartMs);
-      const ol1 = Math.min(s1, dayEndMs);
-      if (ol1 > ol0) {
-        const sa0 = (ol0 - dayStartMs) / 3600000 * D24;
-        const sa1 = (ol1 - dayStartMs) / 3600000 * D24;
-        svg += '<path d="' + sector(sa0, sa1, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
-        svg += '<path d="' + sector(sa0, sa1, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
-      }
-    }
-
-    // Food dividers: multi-cycle, fixed meal positions relative to each cycle's wake.
-    // When awake window crosses midnight, meals naturally carry to the next day's dial.
-    for (let c = startN; c <= startN + 2; c++) {
-      const cw0   = anchorMs + c * TAU_MS;
-      const cw1   = cw0 + AWAKE_MS;
-      const cwol0 = Math.max(cw0, dayStartMs);
-      const cwol1 = Math.min(cw1, dayEndMs);
-      if (cwol1 <= cwol0) continue;
-      const cwAngle = (cw0   - dayStartMs) / 3600000 * D24;
-      const cFa0    = (cwol0 - dayStartMs) / 3600000 * D24;
-      const cFa1    = (cwol1 - dayStartMs) / 3600000 * D24;
-      let _cum = 0;
+    // Cream awake arcs + food dividers, clipped to this calendar day.
+    for (const [w, s] of awakeIv) {
+      if (s <= dayStartMs || w >= dayEndMs) continue;
+      const a0 = (Math.max(w, dayStartMs) - dayStartMs) / 3600000 * D24;
+      const a1 = (Math.min(s, dayEndMs)   - dayStartMs) / 3600000 * D24;
+      if (a1 > a0) svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="rgb(228,218,193)" stroke="none"/>';
+      const fs = (s - w) / AWAKE_MS; let _cum = 0;   // scale meal slots to the real awake window
       PERSONAL.pieChart.forEach(seg => {
         if (seg.type === 'food') {
-          const fa0  = cwAngle + _cum * D24;
-          const fa1  = cwAngle + (_cum + seg.hours) * D24;
-          const dfa0 = Math.max(fa0, cFa0);
-          const dfa1 = Math.min(fa1, cFa1);
-          if (dfa1 > dfa0 + 0.01)
-            svg += '<path d="' + sector(dfa0, dfa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+          const f0 = Math.max(w + _cum * 3600000 * fs, dayStartMs);
+          const f1 = Math.min(w + (_cum + seg.hours) * 3600000 * fs, dayEndMs, s);
+          if (f1 > f0 + 30000) {
+            const fa0 = (f0 - dayStartMs) / 3600000 * D24, fa1 = (f1 - dayStartMs) / 3600000 * D24;
+            svg += '<path d="' + sector(fa0, fa1, RI, RO) + '" fill="rgba(110,105,95,0.42)" stroke="none"/>';
+          }
         }
         _cum += seg.hours;
       });
+    }
+
+    // Dark dampener + stars over the sleep periods, clipped to this calendar day.
+    for (const [s, w] of asleepIv) {
+      if (w <= dayStartMs || s >= dayEndMs) continue;
+      const a0 = (Math.max(s, dayStartMs) - dayStartMs) / 3600000 * D24;
+      const a1 = (Math.min(w, dayEndMs)   - dayStartMs) / 3600000 * D24;
+      if (a1 > a0) {
+        svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="rgba(5,8,20,0.38)" stroke="none"/>';
+        svg += '<path d="' + sector(a0, a1, RI, RO) + '" fill="url(#mini-sleep-stars)" stroke="none"/>';
+      }
     }
 
     // Boundaries
@@ -1317,12 +1297,16 @@ function renderMiniDials(anchorMs) {
 
     // Labels point to each event's actual time on the 24h clock face,
     // not the visual edge of the cream (which clips at midnight).
-    const wakeAngle  = nyHour(cardWakeMs)  * D24;
-    const sleepAngle = nyHour(cardSleepMs) * D24;
-    svg += addLabel(wakeAngle,  'AWAKE', fmtShort(cardWakeMs));
-    svg += addLabel(sleepAngle, 'REST',  fmtShort(cardSleepMs));
+    // Past days: label the real recorded wake/sleep when available.
+    let labelWakeMs = cardWakeMs, labelSleepMs = cardSleepMs;
+    if (isPast) { const rd = realByDay.get(dayStartMs); if (rd) { labelWakeMs = rd.wakeMs; labelSleepMs = rd.sleepMs; } }
+    const wakeAngle  = nyHour(labelWakeMs)  * D24;
+    const sleepAngle = nyHour(labelSleepMs) * D24;
+    svg += addLabel(wakeAngle,  'AWAKE', fmtShort(labelWakeMs));
+    svg += addLabel(sleepAngle, 'REST',  fmtShort(labelSleepMs));
 
-    return '<div class="mini-dial-item">'
+    const cls = 'mini-dial-item' + (isToday ? ' is-today' : isPast ? ' is-past' : '');
+    return '<div class="' + cls + '">'
       + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -38 186 186">' + svg + '</svg>'
       + '</div>';
   });
@@ -1334,17 +1318,17 @@ function renderCards(anchorMs) {
   const el = document.getElementById('near-grid');
   if (!el) return;
 
-  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const { mYear, mMon, daysInMonth, todayMs, realByDay } = monthGridContext();
 
-  const html = Array.from({length: 35}, (_, i) => {
-    const dayStartMs = todayMs + i * 86400000;
-    const dayDate    = new Date(dayStartMs);
+  const html = Array.from({length: daysInMonth}, (_, i) => {
+    const dayDate    = new Date(mYear, mMon, 1 + i);
+    const dayStartMs = dayDate.getTime();
+    const dayEndMs   = new Date(mYear, mMon, 2 + i).getTime();
     const dayLabel   = dayDate.toLocaleDateString('en-US', {
       weekday:'short', month:'short', day:'numeric', timeZone:'America/New_York'
     });
 
-    // Find which cycle overlaps the start of this calendar day
-    const dayEndMs    = dayStartMs + 86400000;
+    // Find which cycle overlaps the start of this calendar day (projection)
     const cycleN      = Math.floor((dayStartMs - anchorMs) / TAU_MS);
     const wakeMs      = anchorMs + cycleN * TAU_MS;
     const sleepMs     = wakeMs + AWAKE_MS;
@@ -1370,12 +1354,18 @@ function renderCards(anchorMs) {
       carryOver   = false;
     }
 
+    // Past days use real recorded data when a recorded wake falls on that day.
+    const isToday = dayStartMs === todayMs;
+    const isPast  = dayStartMs < todayMs;
+    if (isPast) { const rd = realByDay.get(dayStartMs); if (rd) { cardWakeMs = rd.wakeMs; cardSleepMs = rd.sleepMs; carryOver = false; } }
+
     const {sunrise, sunset} = sunTimes(dayDate);
     // Carry-over: gradient from midnight (already awake); normal: from wake time
     const gradStartMs = carryOver ? dayStartMs : cardWakeMs;
     const grad = skyGradient(gradStartMs, cardSleepMs, sunrise, sunset);
 
-    return `<div class="near-card${carryOver ? ' near-card-co' : ''}">
+    const cls = 'near-card' + (carryOver ? ' near-card-co' : '') + (isToday ? ' is-today' : isPast ? ' is-past' : '');
+    return `<div class="${cls}">
       <div class="near-day">${dayLabel}</div>
       <div class="near-row"><span class="nt-lbl">${carryOver ? 'Awake since' : 'Awake'}</span><span class="nt-val">${fmt12(cardWakeMs)}</span></div>
       <div class="near-sky" style="background:${grad}"></div>

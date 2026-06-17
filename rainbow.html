@@ -363,7 +363,8 @@ function renderNested(svgId, days, opts){
         : mdy(d.wakeMs);
       labels+=TXT(cx-rMid,cy+dy,      lab,                8.5, proj?'rgba(190,184,170,0.6)':'rgba(201,168,76,0.95)', 600);
       labels+=TXT(cx-rMid,cy+dy+10,   compactT(d.wakeMs), 9.5, proj?'rgba(205,205,215,0.55)':'#e8c978', 700);
-      labels+=TXT(cx+rMid,cy+dy+5,    compactT(d.sleepMs),9,   proj?'rgba(190,186,210,0.5)':'#c4b0e0', 600);
+      labels+=TXT(cx+rMid,cy+dy,      lab,                8.5, proj?'rgba(190,184,170,0.6)':'rgba(201,168,76,0.95)', 600);
+      labels+=TXT(cx+rMid,cy+dy+10,   compactT(d.sleepMs),9.5, proj?'rgba(190,186,210,0.5)':'#c4b0e0', 700);
     }
     seps+=`<circle cx="${cx}" cy="${cy}" r="${ro.toFixed(1)}" fill="none" stroke="rgba(0,0,0,0.38)" stroke-width="0.7"/>`;
   });
@@ -384,7 +385,7 @@ function renderNested(svgId, days, opts){
 }
 
 // ── 2 · The week ahead ─────────────────────────────────────────────────────
-function renderWeek(days, now){ renderNested('viz-week', days, { da:1.5, stride:1, now, labelMode:'rel' }); }
+function renderWeek(days, now){ renderNested('viz-week', days, { da:1.5, stride:1, now, labelMode:'date' }); }
 
 // ── 3 · This month ─────────────────────────────────────────────────────────
 function renderMonth(days, now){
