@@ -50,7 +50,7 @@
     border-radius:var(--r);border:1px solid rgba(255,255,255,0.04);padding:10px 4px}
   .frame svg{width:100%;display:block;margin:0 auto;overflow:visible}
   #viz-today{max-width:680px}
-  #viz-week,#viz-month{max-width:720px}
+  #viz-week,#viz-month,#viz-prevmonth{max-width:720px}
   #viz-return,#viz-bloom{max-width:560px}
 
   footer{padding:30px 0 60px;text-align:center;color:var(--dim2);font-size:.8rem;line-height:1.8;border-top:1px solid var(--divider)}
@@ -110,7 +110,7 @@
     </section>
 
     <section class="card">
-      <h2>The return</h2>
+      <h2>The Loop</h2>
       <p class="cap">Over the course of about 18 days, Rikki's wake time circles around all hours. The times and dates on the outside of the circle are real wake times. The times and dates on the inside of the circle are projected wake times.</p>
       <div class="frame"><svg id="viz-return" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
@@ -119,6 +119,12 @@
       <h2>Bloom</h2>
       <p class="cap">A bloom of time. Today's sky is represented in the center petal, with the week ahead shown clockwise in the petals. Wake time is at the center, with sleep time at the tips.</p>
       <div class="frame"><svg id="viz-bloom" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </section>
+
+    <section class="card">
+      <h2>Last month</h2>
+      <p class="cap">The outer arc is the first of last month, with each date moving inwards. Every arc is a recorded Oura day.</p>
+      <div class="frame"><svg id="viz-prevmonth" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
 
@@ -378,6 +384,10 @@ function renderWeek(days, now){ renderNested('viz-week', days, { da:1.5, stride:
 function renderMonth(days, now){
   renderNested('viz-month', days, { da:2.5, stride:Math.max(1,Math.ceil(days.length/11)), now, labelMode:'date' });
 }
+// Last month — same nested wheel, all recorded data; now:0 keeps nowIdx=-1 (no white "today" ring / heart)
+function renderPrevMonth(days){
+  renderNested('viz-prevmonth', days, { da:2.5, stride:Math.max(1,Math.ceil(days.length/11)), now:0, labelMode:'date' });
+}
 
 // ── 4 · Now, on the sky clock ──────────────────────────────────────────────
 function renderReturn(daysWin, now){
@@ -406,18 +416,16 @@ function renderReturn(daysWin, now){
       const tier=Math.min(pickTier(a),3);                                  // only stack onto an extra ring where times cluster
       const col=isToday?'#ffffff':(real?'#e8c978':'rgba(214,196,150,0.5)');
       // tick: a short mark just OUTSIDE (real) or just INSIDE (projected) the ring — never crossing it
-      const [k1x,k1y]=P(cx,cy,a,g.inside?R1-2:R2+2), [k2x,k2y]=P(cx,cy,a,g.inside?R1-11:R2+11);
+      const [k1x,k1y]=P(cx,cy,a,g.inside?R1-3:R2+3), [k2x,k2y]=P(cx,cy,a,g.inside?R1-12:R2+12);
       s+=`<line x1="${k1x.toFixed(1)}" y1="${k1y.toFixed(1)}" x2="${k2x.toFixed(1)}" y2="${k2y.toFixed(1)}" stroke="${col}" stroke-width="${isToday?3:2}" stroke-linecap="round"/>`;
-      // label on its ring tier, joined to the tick by a faint leader
-      const labR=g.inside?(R1-18-tier*20):(R2+18+tier*20);
+      // date label on its ring tier — inside labels kept well clear of the band — joined by a faint leader
+      const labR=g.inside?(R1-28-tier*22):(R2+22+tier*20);
       const [lx,ly]=P(cx,cy,a,labR);
-      const [e2x,e2y]=P(cx,cy,a,g.inside?labR+13:labR-3);
+      const [e2x,e2y]=P(cx,cy,a,g.inside?labR+10:labR-6);
       s+=`<line x1="${k2x.toFixed(1)}" y1="${k2y.toFixed(1)}" x2="${e2x.toFixed(1)}" y2="${e2y.toFixed(1)}" stroke="${col}" stroke-width="0.7" opacity="0.3"/>`;
       const an=anchorFor(a);
-      const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(196,186,160,0.58)');
-      const tCol=isToday?'#ffffff':(real?'rgba(224,214,182,0.9)':'rgba(196,186,160,0.5)');
-      s+=TXT(lx,ly-2, mdy(d.wakeMs), isToday?14:12.5, dCol, isToday?700:600, an);
-      s+=TXT(lx,ly+13, compactT(d.wakeMs), isToday?12:11, tCol, isToday?700:500, an);
+      const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(200,190,164,0.66)');
+      s+=TXT(lx,ly+4, mdy(d.wakeMs), isToday?14.5:12.5, dCol, isToday?700:600, an);
     });
   });
   s+=TXT(cx,cy-6,'≈ 18-day loop',11,'rgba(184,178,160,0.7)',600);
@@ -477,6 +485,7 @@ function renderAllViz(sessions){
   renderMonth(days.filter(d=>{ const n=new Date(); const mS=new Date(n.getFullYear(),n.getMonth(),1).getTime(), mE=new Date(n.getFullYear(),n.getMonth()+1,1).getTime(); return d.wakeMs>=mS&&d.wakeMs<mE; }), now);
   renderReturn(days.slice(Math.max(0, ci-13), ci+15), now); // 14 real + 14 projected = 28 days
   renderBloom(days.slice(ci, ci+7), now);
+  renderPrevMonth(days.filter(d=>{ const n=new Date(); const pmS=new Date(n.getFullYear(),n.getMonth()-1,1).getTime(), pmE=new Date(n.getFullYear(),n.getMonth(),1).getTime(); return d.wakeMs>=pmS&&d.wakeMs<pmE; }));
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
