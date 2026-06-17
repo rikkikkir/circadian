@@ -2318,14 +2318,25 @@ function drawOuterClock(anchorMs) {
     html += `<text x="${lx}" y="${ly}" font-size="13" fill="#c9a84c" font-weight="600" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">Awoke at ${ringLabel(cycleWakeMs)}</text>`;
   }
 
+  // Landmark words (Noon/Midn/Sunrise/Sunset) live in their own outer ring beyond
+  // the hour numbers (R2+15). On the left/right flanks, radial offset alone moves a
+  // label almost horizontally, so the word would still overlap the hour number at
+  // that angle — there we anchor it outward (start/end) so it reads away from the
+  // dial into the margin. Near top/bottom it stays centered.
+  function landmarkLabel(n, lbl, size) {
+    const [lx, ly] = pol(nToA(n), R2 + 44);
+    const dx = lx - OCX;
+    const anchor = dx > 12 ? 'start' : dx < -12 ? 'end' : 'middle';
+    const px = anchor === 'start' ? lx + 4 : anchor === 'end' ? lx - 4 : lx;
+    html += `<text x="${px.toFixed(1)}" y="${ly}" font-size="${size}" fill="#c4b0e0" font-weight="500" text-anchor="${anchor}" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
+  }
+
   // Noon and Midnight: placed at the exact clock-hour position on the personal ring.
   // Iterating clock hours (not personal hours) ensures accurate label placement.
   for (const ch of [0, 12]) {
     const n = ((ch - wakeHour) % 24 + 24) % 24;
     if (n >= 24 || tooCloseAnchor(n)) continue;
-    const label = ch === 12 ? 'Noon' : 'Midn';
-    const [lx,ly] = pol(nToA(n), R2 + 28);
-    html += `<text x="${lx}" y="${ly}" font-size="14" fill="#c4b0e0" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${label}</text>`;
+    landmarkLabel(n, ch === 12 ? 'Noon' : 'Midn', 14);
   }
 
   // Even-hour labels: 2A, 4A, 6A … (skip 0/Midn and 12/Noon handled above).
@@ -2354,8 +2365,7 @@ function drawOuterClock(anchorMs) {
   const nSunset  = ((sunset  - wakeHour) % 24 + 24) % 24;
   [[nSunrise,'Sunrise'],[nSunset,'Sunset']].forEach(([n, lbl]) => {
     if (n >= 24 || tooCloseAnchor(n)) return;
-    const [lx, ly] = pol(nToA(n), R2 + 28);
-    html += `<text x="${lx}" y="${ly}" font-size="13" fill="#c4b0e0" font-weight="500" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">${lbl}</text>`;
+    landmarkLabel(n, lbl, 13);
   });
 
   // "Resting at [time]" — anchor label, tight to ring (special angle, no collision risk)
