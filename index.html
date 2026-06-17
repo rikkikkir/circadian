@@ -387,7 +387,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 
   <hr class="div">
 
-  <!-- SECTION: THE RAINBOW OF WAKE -->
+  <!-- SECTION: RIKKI'S CIRCADIAN PROJECTIONS -->
   <div class="section" id="section-rainbow">
     <style>
       #section-rainbow .rainbow-tabs{display:flex;gap:8px;margin:6px 0 14px;flex-wrap:wrap}
@@ -403,7 +403,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       .rainbow-legend i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,0.08)}
       .rainbow-legend i.stars{background:#0a0f1f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='3' cy='4' r='0.7' fill='rgba(160,180,240,0.9)'/%3E%3Ccircle cx='9' cy='8' r='0.7' fill='rgba(160,180,240,0.9)'/%3E%3C/svg%3E")}
     </style>
-    <h2>The Rainbow of Wake</h2>
+    <h2>Rikki's Circadian Projections</h2>
     <div class="chart-intro">
       Each arc is one of Rikki's days, drawn in the <strong>real sky of her waking hours</strong> — it rises at wake (left foot), arcs through the daylight she's awake for, and sets at sleep (right foot). Below the horizon is the sky she sleeps through, shaded. <span id="rainbow-sub" class="dim"></span>
     </div>
@@ -423,7 +423,7 @@ hr.div{border:none;border-top:1px solid var(--divider)}
       <span><i style="background:#c4b0e0"></i>sleep (right foot)</span>
     </div>
     <div style="text-align:center;margin-top:22px">
-      <a class="btn btn-outline" href="rainbow.html">✦ Open the full Rainbow gallery →</a>
+      <a class="btn btn-outline" href="rainbow.html">✦ Open Rikki's Circadian Projections →</a>
     </div>
   </div>
 
@@ -2663,11 +2663,15 @@ function getWakeOverride() {
   return v ? parseInt(v, 10) : null;
 }
 
-// A manual wake override holds only until Oura records a *more recent* real
-// wake. Once the ring's latest wake is later than the override, live data wins.
+// A manual wake override is held for OVERRIDE_HOLD_MS after the entered wake
+// time — during that window nothing overrides it (not Oura refining the same
+// night, not a nap). Once the hold lapses, a more recent Oura wake (i.e. the
+// next day's data) is allowed to supersede it and live data takes back over.
+const OVERRIDE_HOLD_MS = 15 * 3600000; // 15 hours ≈ one waking day
 function overrideSupersededBy(sessions) {
   const ovr = getWakeOverride();
   if (!ovr || !sessions || !sessions.length) return false;
+  if (Date.now() - ovr < OVERRIDE_HOLD_MS) return false; // still inside the 15h hold
   return getAnchor(sessions) > ovr;
 }
 
@@ -2745,7 +2749,7 @@ function updateViewToggleBtn() {
   btn.textContent = _viewMode === 'sky' ? '⬛ Simplified' : '🌅 Sky View';
 }
 
-// ── The Rainbow of Wake ───────────────────────────────────────────────────
+// ── Rikki's Circadian Projections ──────────────────────────────────────────
 // Each waking day is an arc that rises at wake (left foot), arcs over through
 // the real sky of the waking hours, and sets at sleep (right foot). The sky
 // slept through is shaded below the horizon. Two views:

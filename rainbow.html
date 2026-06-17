@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rikki's Circadian Projections</title>
-<meta name="description" content="A living rainbow of Rikki's non-24 circadian rhythm — the real sky she wakes into and sleeps through, drawn from her Oura ring.">
+<meta name="description" content="Rikki's Circadian Projections — her non-24 circadian rhythm: the real sky she wakes into and sleeps through, drawn from her Oura ring.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -382,46 +382,46 @@ function renderMonth(days, now){
 // ── 4 · Now, on the sky clock ──────────────────────────────────────────────
 function renderReturn(daysWin, now){
   const svg=document.getElementById('viz-return'); if(!svg||!daysWin||!daysWin.length)return;
-  const cx=300, cy=300, R1=150, R2=176, mid=(R1+R2)/2;
+  const cx=300, cy=300, R1=150, R2=170;
   const { sunrise, sunset }=sunTimes(new Date(now));
   const todayStr=nyDateStr(now);
   let s='';
-  // 24-hour sky ring (midnight at top, noon at bottom)
-  for(let h=0;h<24;h+=0.5){ const col=skyColorAt(h+0.25,sunrise,sunset); s+=`<path d="${SEG(cx,cy,h*15,(h+0.5)*15,R1,R2)}" fill="${col}"/>`; }
-  s+=`<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
-  // faint clock anchors for orientation
-  [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,mid); s+=TXT(lx,ly+3,t,8.5,'rgba(255,255,255,0.5)',600); });
+  // 24-hour sky ring (midnight at top, noon at bottom) — softened so the band stays a calm reference
+  let band='';
+  for(let h=0;h<24;h+=0.5){ const col=skyColorAt(h+0.25,sunrise,sunset); band+=`<path d="${SEG(cx,cy,h*15,(h+0.5)*15,R1,R2)}" fill="${col}"/>`; }
+  s+=`<g opacity="0.6">${band}</g>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>`;
 
   const anchorFor=a=>{ a=((a%360)+360)%360; if(a<18||a>342||(a>162&&a<198)) return 'middle'; return a<180?'start':'end'; };
-  const MINGAP=22;
-  // real wake → tab + dated label OUTSIDE the ring; projected → tab + dated label INSIDE
+  const MINGAP=20;
+  // real wake → tick + label OUTSIDE the ring; projected → tick + label INSIDE. Nothing sits in the band.
   [{items:daysWin.filter(d=>d.real!==false), inside:false},
    {items:daysWin.filter(d=>d.real===false), inside:true}].forEach(g=>{
     const arr=g.items.map(d=>({d, a:nyHour(d.wakeMs)*15})).sort((p,q)=>p.a-q.a);
-    const lastByTier=[-999,-999];
+    const tierLast=[];
+    const pickTier=a=>{ for(let t=0;t<tierLast.length;t++){ if(a-tierLast[t]>=MINGAP){tierLast[t]=a;return t;} } tierLast.push(a); return tierLast.length-1; };
     arr.forEach(it=>{
       const d=it.d, a=it.a, isToday=nyDateStr(d.wakeMs)===todayStr, real=!g.inside;
-      const tier=(a-lastByTier[0]>=MINGAP)?0:1; lastByTier[tier]=a;            // 2 radial tiers so labels don't stack
-      const col=isToday?'#ffffff':(real?'rgba(232,201,120,0.95)':'rgba(232,201,120,0.5)');
-      // tab: a bold mark crossing the ring, pointing at this wake time
-      const [t1x,t1y]=P(cx,cy,a,R1-(g.inside?5:0)), [t2x,t2y]=P(cx,cy,a,R2+(g.inside?0:5));
-      s+=`<line x1="${t1x.toFixed(1)}" y1="${t1y.toFixed(1)}" x2="${t2x.toFixed(1)}" y2="${t2y.toFixed(1)}" stroke="${col}" stroke-width="${isToday?3.4:2.2}" stroke-linecap="round"/>`;
-      // dated label on its radial tier, joined to the tab by a thin leader line
-      const labR=g.inside?(R1-24-tier*30):(R2+22+tier*30);
+      const tier=Math.min(pickTier(a),3);                                  // only stack onto an extra ring where times cluster
+      const col=isToday?'#ffffff':(real?'#e8c978':'rgba(214,196,150,0.5)');
+      // tick: a short mark just OUTSIDE (real) or just INSIDE (projected) the ring — never crossing it
+      const [k1x,k1y]=P(cx,cy,a,g.inside?R1-2:R2+2), [k2x,k2y]=P(cx,cy,a,g.inside?R1-11:R2+11);
+      s+=`<line x1="${k1x.toFixed(1)}" y1="${k1y.toFixed(1)}" x2="${k2x.toFixed(1)}" y2="${k2y.toFixed(1)}" stroke="${col}" stroke-width="${isToday?3:2}" stroke-linecap="round"/>`;
+      // label on its ring tier, joined to the tick by a faint leader
+      const labR=g.inside?(R1-18-tier*20):(R2+18+tier*20);
       const [lx,ly]=P(cx,cy,a,labR);
-      const [e1x,e1y]=P(cx,cy,a,g.inside?R1-6:R2+6), [e2x,e2y]=P(cx,cy,a,g.inside?labR+14:labR-4);
-      s+=`<line x1="${e1x.toFixed(1)}" y1="${e1y.toFixed(1)}" x2="${e2x.toFixed(1)}" y2="${e2y.toFixed(1)}" stroke="${col}" stroke-width="0.8" opacity="0.4"/>`;
+      const [e2x,e2y]=P(cx,cy,a,g.inside?labR+13:labR-3);
+      s+=`<line x1="${k2x.toFixed(1)}" y1="${k2y.toFixed(1)}" x2="${e2x.toFixed(1)}" y2="${e2y.toFixed(1)}" stroke="${col}" stroke-width="0.7" opacity="0.3"/>`;
       const an=anchorFor(a);
-      const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(198,188,162,0.72)');
-      const tCol=isToday?'#ffffff':(real?'rgba(224,214,182,0.92)':'rgba(198,188,162,0.6)');
+      const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(196,186,160,0.58)');
+      const tCol=isToday?'#ffffff':(real?'rgba(224,214,182,0.9)':'rgba(196,186,160,0.5)');
       s+=TXT(lx,ly-2, mdy(d.wakeMs), isToday?14:12.5, dCol, isToday?700:600, an);
-      s+=TXT(lx,ly+13, compactT(d.wakeMs), isToday?12:10.5, tCol, isToday?700:500, an);
+      s+=TXT(lx,ly+13, compactT(d.wakeMs), isToday?12:11, tCol, isToday?700:500, an);
     });
   });
-  // center label (no heart on this chart)
-  s+=TXT(cx,cy-6,'≈ 18-day loop',11.5,'rgba(184,178,160,0.85)',600);
-  s+=TXT(cx,cy+11,'14 days back · 14 ahead',9.5,'rgba(160,154,142,0.7)',400);
+  s+=TXT(cx,cy-6,'≈ 18-day loop',11,'rgba(184,178,160,0.7)',600);
+  s+=TXT(cx,cy+11,'14 days back · 14 ahead',9.5,'rgba(160,154,142,0.55)',400);
   svg.innerHTML=s;
 }
 
