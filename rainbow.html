@@ -349,13 +349,17 @@ function renderNested(svgId, days, opts){
   const N=days.length; if(!N){ svg.innerHTML=''; return; }
   const step=(RMAX-RHOLE)/N, da=opts.da, stride=opts.stride||1, now=opts.now;
   let nowIdx=-1; for(let i=0;i<N;i++){ if(days[i].wakeMs<=now) nowIdx=i; else break; }
+  // which rings get a text label: evenly every `stride`, plus today — but drop any stride label that
+  // would crowd today's (off-stride) label. Dense charts (stride 1) label every ring.
+  const minRings=Math.max(2, Math.round(36/step));
+  const labelHere=i=> i===nowIdx || (i%stride===0 && (stride<=1 || !(nowIdx>=0 && Math.abs(i-nowIdx)<minRings)));
   let body='',seps='',labels='',marks='',lblRow=0;
   days.forEach((d,i)=>{
     const ro=RMAX-i*step, ri=RMAX-(i+1)*step, rMid=(ri+ro)/2;
     const dome=domeRing(cx,cy,d.wakeMs,d.sleepMs,ri,ro,da);
     body += (d.real===false) ? `<g opacity="0.4">${dome}</g>` : dome;
     if(i===nowIdx) marks+=`<path d="${SEG(cx,cy,-90,90,ri,ro)}" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5"/>`;
-    if(i%stride===0 || i===N-1 || i===nowIdx){
+    if(labelHere(i)){
       const dy=opts.singleRow?12:(12+(lblRow%2)*24); lblRow++;
       const proj=(d.real===false);
       const lab = opts.labelMode==='rel'
