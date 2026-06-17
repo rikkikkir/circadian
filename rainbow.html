@@ -521,11 +521,17 @@ function renderSpiral(svgId, days, now){
   // one uniform dot per day (today highlighted)
   pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr;
     s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isToday?5:3.3}" fill="${isToday?'#ffffff':'#e8c978'}" stroke="${isToday?'#ffffff':'rgba(255,255,255,0.3)'}" stroke-width="${isToday?1.6:0.6}"/>`; });
-  // date labels: today + ~weekly + the oldest, set just outward of the dot
+  // date labels: pack in as many as fit without colliding — today first, then newest → oldest,
+  // skipping any whose position is within MINDIST of a label already placed
   const an=a=>{ a=((a%360)+360)%360; if(a<20||a>340||(a>160&&a<200)) return 'middle'; return a<180?'start':'end'; };
-  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr; if(!(isToday||p.i===0||p.i%5===0)) return;
-    const [lx,ly]=P(cx,cy,p.a,p.r+(isToday?16:12));
-    s+=TXT(lx,ly,mdy(p.d.wakeMs),isToday?13:9.5,isToday?'#ffffff':'rgba(216,207,173,0.85)',isToday?700:600,an(p.a)); });
+  const placed=[], MINDIST=32;
+  [...pts].sort((p,q)=>{ const tp=nyDateStr(p.d.wakeMs)===todayStr?1:0, tq=nyDateStr(q.d.wakeMs)===todayStr?1:0; return (tq-tp) || (q.i-p.i); }).forEach(p=>{
+    const isToday=nyDateStr(p.d.wakeMs)===todayStr;
+    const [lx,ly]=P(cx,cy,p.a,p.r+(isToday?16:11));
+    if(!isToday && placed.some(q=>Math.hypot(q.x-lx,q.y-ly)<MINDIST)) return;
+    placed.push({x:lx,y:ly});
+    s+=TXT(lx,ly,mdy(p.d.wakeMs),isToday?13:9,isToday?'#ffffff':'rgba(216,207,173,0.88)',isToday?700:600,an(p.a));
+  });
   svg.innerHTML=s;
 }
 
