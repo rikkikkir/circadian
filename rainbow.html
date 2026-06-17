@@ -356,7 +356,7 @@ function renderNested(svgId, days, opts){
     body += (d.real===false) ? `<g opacity="0.4">${dome}</g>` : dome;
     if(i===nowIdx) marks+=`<path d="${SEG(cx,cy,-90,90,ri,ro)}" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5"/>`;
     if(i%stride===0 || i===N-1 || i===nowIdx){
-      const dy=opts.singleRow?12:(12+(lblRow%2)*15); lblRow++;
+      const dy=opts.singleRow?12:(12+(lblRow%2)*24); lblRow++;
       const proj=(d.real===false);
       const lab = opts.labelMode==='rel'
         ? (()=>{ const o=i-nowIdx; return o===0?'Today':o===1?'Tom':o>0?'+'+o+'d':o+'d'; })()
@@ -389,7 +389,7 @@ function renderWeek(days, now){ renderNested('viz-week', days, { da:1.5, stride:
 
 // ── 3 · This month ─────────────────────────────────────────────────────────
 function renderMonth(days, now){
-  renderNested('viz-month', days, { da:2.5, stride:Math.max(1,Math.ceil(days.length/11)), now, labelMode:'date' });
+  renderNested('viz-month', days, { da:2.5, stride:Math.max(1,Math.round(days.length/5)), now, labelMode:'date', singleRow:true });
 }
 // Last month — same nested wheel, all recorded data; now:0 keeps nowIdx=-1 (no white "today" ring / heart)
 function renderPrevMonth(days){
