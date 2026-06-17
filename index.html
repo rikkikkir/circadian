@@ -897,7 +897,11 @@ function fmtICS(ms) {
 // ── Anchor from sleep data ─────────────────────────────────────────────────
 function getAnchor(sessions) {
   if (!sessions || !sessions.length) return FALLBACK_ANCHOR_MS;
-  const sorted = [...sessions].sort((a,b) =>
+  // Anchor on the main nightly sleep — a nap shouldn't reset the circadian clock
+  // (or supersede a manual override). Fall back to all sessions if none are tagged.
+  const mains = sessions.filter(s => s.type === 'long_sleep' && s.bedtime_end);
+  const pool  = mains.length ? mains : sessions;
+  const sorted = [...pool].sort((a,b) =>
     new Date(b.bedtime_end) - new Date(a.bedtime_end)
   );
   for (const s of sorted) {
@@ -2993,7 +2997,21 @@ async function refreshFromAPI() {
   try {
     const sessions = await fetchSleep(90);
     setCache(sessions);
-    if (getWakeOverride()) return; // override takes precedence; data is cached for when it's cleared
+
+    const ovr = getWakeOverride();
+    if (ovr && !overrideSupersededBy(sessions)) {
+      // Manual override is still ahead of Oura's latest wake — keep showing it,
+      // but refresh the rest of the page from the freshly-cached sessions.
+      renderAll(ovr);
+      const timeStr = new Date(ovr).toLocaleString('en-US', {
+        month:'short', day:'numeric',
+        hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+      });
+      setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+      return;
+    }
+    if (ovr) clearWakeOverrideSilently();   // Oura logged a more recent wake → live data wins
+
     const anchor = getAnchor(sessions);
     renderAll(anchor);
     const latestStr = new Date(anchor).toLocaleString('en-US', {
@@ -3022,9 +3040,10 @@ const LIVE_REFRESH_MS = 15*60*1000, MIN_REFRESH_GAP_MS = 5*60*1000;
 let _liveDataTimer = null, _liveWired = false, _refreshInFlight = false, _lastAttempt = 0;
 async function maybeRefresh(force) {
   if (_refreshInFlight) return;
-  if (getWakeOverride()) return;                                   // manual override in effect — leave it be
   if (!force && Date.now() - _lastAttempt < MIN_REFRESH_GAP_MS) return; // throttle: at most once per gap
   _refreshInFlight = true; _lastAttempt = Date.now();
+  // Keep polling even while a manual override is set, so a newer Oura wake can
+  // supersede it — the keep-vs-supersede decision lives in refreshFromAPI.
   try { await refreshFromAPI(); } finally { _refreshInFlight = false; }
 }
 function wireLiveRefresh() {

@@ -451,7 +451,7 @@ function renderBloom(days, now){
       + `C ${l1x.toFixed(1)} ${l1y.toFixed(1)} ${l2x.toFixed(1)} ${l2y.toFixed(1)} ${tx.toFixed(1)} ${ty.toFixed(1)} `
       + `C ${r1x.toFixed(1)} ${r1y.toFixed(1)} ${r2x.toFixed(1)} ${r2y.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)} Z`;
     s+=`<path d="${path}" fill="url(#${gid})" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
-    const lab=i===0?'today':i===1?'Tom':'+'+i+'d';
+    const lab=mdy(d.wakeMs);
     const labCol=i===0?'#e8c978':'rgba(216,207,173,0.85)', labW=i===0?700:500;
     // wake (day + time) near the centre — the petal base is the wake moment
     const [wx,wy]=P(cx,cy,center,rIn+30);
