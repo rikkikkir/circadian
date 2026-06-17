@@ -129,7 +129,7 @@
 
     <section class="card">
       <h2>The month, unspooled</h2>
-      <p class="cap">The Loop, unwound into a spiral so a full month of wake times fits without overlapping. Today is the outer point; each earlier day spirals inward, and every dot is coloured by the sky at her wake time.</p>
+      <p class="cap">The Loop, unwound into a spiral so a full month of wake times fits without overlapping. Today is the outer point; each earlier day spirals inward toward the centre.</p>
       <div class="frame"><svg id="viz-spiral" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
@@ -514,9 +514,9 @@ function renderSpiral(svgId, days, now){
   const pts=days.map((d,i)=>{ const r=rInner+(i/M)*(rOuter-rInner), a=nyHour(d.wakeMs)*15; const [x,y]=P(cx,cy,a,r); return {d,x,y,a,r,i}; });
   // the spiral itself
   s+=`<path d="M ${pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ')}" fill="none" stroke="rgba(232,201,120,0.3)" stroke-width="1.3"/>`;
-  // one sky-coloured dot per day (colour = the sky at her wake time)
-  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr, wh=nyHour(p.d.wakeMs); const {sunrise,sunset}=sunTimes(new Date(p.d.wakeMs)); const col=skyColorAt(wh,sunrise,sunset);
-    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isToday?5:3.3}" fill="${col}" stroke="${isToday?'#fff':'rgba(255,255,255,0.55)'}" stroke-width="${isToday?1.6:0.7}"/>`; });
+  // one uniform dot per day (today highlighted)
+  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr;
+    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isToday?5:3.3}" fill="${isToday?'#ffffff':'#e8c978'}" stroke="${isToday?'#ffffff':'rgba(255,255,255,0.3)'}" stroke-width="${isToday?1.6:0.6}"/>`; });
   // date labels: today + ~weekly + the oldest, set just outward of the dot
   const an=a=>{ a=((a%360)+360)%360; if(a<20||a>340||(a>160&&a<200)) return 'middle'; return a<180?'start':'end'; };
   pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr; if(!(isToday||p.i===0||p.i%5===0)) return;
