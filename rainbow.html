@@ -382,35 +382,46 @@ function renderMonth(days, now){
 // ── 4 · Now, on the sky clock ──────────────────────────────────────────────
 function renderReturn(daysWin, now){
   const svg=document.getElementById('viz-return'); if(!svg||!daysWin||!daysWin.length)return;
-  const cx=300, cy=300, R1=188, R2=220, mid=(R1+R2)/2;
+  const cx=300, cy=300, R1=150, R2=176, mid=(R1+R2)/2;
   const { sunrise, sunset }=sunTimes(new Date(now));
+  const todayStr=nyDateStr(now);
   let s='';
   // 24-hour sky ring (midnight at top, noon at bottom)
   for(let h=0;h<24;h+=0.5){ const col=skyColorAt(h+0.25,sunrise,sunset); s+=`<path d="${SEG(cx,cy,h*15,(h+0.5)*15,R1,R2)}" fill="${col}"/>`; }
   s+=`<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
   s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
-  // faint clock anchors inside the ring band
-  [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,mid); s+=TXT(lx,ly,t,7,'rgba(255,255,255,0.4)',500); });
-  const todayStr=nyDateStr(now);
-  // one dot per day at its wake clock-time; real wake → dated label OUTSIDE, projected → dated label INSIDE
-  daysWin.forEach(d=>{
-    const real=(d.real!==false), isToday=nyDateStr(d.wakeMs)===todayStr;
-    const a=nyHour(d.wakeMs)*15;
-    const [dx,dy]=P(cx,cy,a,mid);
-    const dotCol=isToday?'#ffffff':(real?'rgba(232,201,120,0.95)':'rgba(232,201,120,0.45)');
-    s+=`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${isToday?3.2:2.3}" fill="${dotCol}"${isToday?' stroke="#fff" stroke-width="0.8"':''}/>`;
-    const lr=real?R2+19:R1-19;
-    const [lx,ly]=P(cx,cy,a,lr);
-    const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(184,174,150,0.62)');
-    const tCol=isToday?'rgba(255,255,255,0.9)':(real?'rgba(216,207,173,0.82)':'rgba(184,174,150,0.52)');
-    s+=TXT(lx,ly-3, mdy(d.wakeMs), 8, dCol, isToday?700:600);
-    s+=TXT(lx,ly+7, compactT(d.wakeMs), 7.5, tCol, 500);
+  // faint clock anchors for orientation
+  [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,mid); s+=TXT(lx,ly+3,t,8.5,'rgba(255,255,255,0.5)',600); });
+
+  const anchorFor=a=>{ a=((a%360)+360)%360; if(a<18||a>342||(a>162&&a<198)) return 'middle'; return a<180?'start':'end'; };
+  const MINGAP=22;
+  // real wake → tab + dated label OUTSIDE the ring; projected → tab + dated label INSIDE
+  [{items:daysWin.filter(d=>d.real!==false), inside:false},
+   {items:daysWin.filter(d=>d.real===false), inside:true}].forEach(g=>{
+    const arr=g.items.map(d=>({d, a:nyHour(d.wakeMs)*15})).sort((p,q)=>p.a-q.a);
+    const lastByTier=[-999,-999];
+    arr.forEach(it=>{
+      const d=it.d, a=it.a, isToday=nyDateStr(d.wakeMs)===todayStr, real=!g.inside;
+      const tier=(a-lastByTier[0]>=MINGAP)?0:1; lastByTier[tier]=a;            // 2 radial tiers so labels don't stack
+      const col=isToday?'#ffffff':(real?'rgba(232,201,120,0.95)':'rgba(232,201,120,0.5)');
+      // tab: a bold mark crossing the ring, pointing at this wake time
+      const [t1x,t1y]=P(cx,cy,a,R1-(g.inside?5:0)), [t2x,t2y]=P(cx,cy,a,R2+(g.inside?0:5));
+      s+=`<line x1="${t1x.toFixed(1)}" y1="${t1y.toFixed(1)}" x2="${t2x.toFixed(1)}" y2="${t2y.toFixed(1)}" stroke="${col}" stroke-width="${isToday?3.4:2.2}" stroke-linecap="round"/>`;
+      // dated label on its radial tier, joined to the tab by a thin leader line
+      const labR=g.inside?(R1-24-tier*30):(R2+22+tier*30);
+      const [lx,ly]=P(cx,cy,a,labR);
+      const [e1x,e1y]=P(cx,cy,a,g.inside?R1-6:R2+6), [e2x,e2y]=P(cx,cy,a,g.inside?labR+14:labR-4);
+      s+=`<line x1="${e1x.toFixed(1)}" y1="${e1y.toFixed(1)}" x2="${e2x.toFixed(1)}" y2="${e2y.toFixed(1)}" stroke="${col}" stroke-width="0.8" opacity="0.4"/>`;
+      const an=anchorFor(a);
+      const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(198,188,162,0.72)');
+      const tCol=isToday?'#ffffff':(real?'rgba(224,214,182,0.92)':'rgba(198,188,162,0.6)');
+      s+=TXT(lx,ly-2, mdy(d.wakeMs), isToday?14:12.5, dCol, isToday?700:600, an);
+      s+=TXT(lx,ly+13, compactT(d.wakeMs), isToday?12:10.5, tCol, isToday?700:500, an);
+    });
   });
-  // "now" heart at the current clock time
-  const nowA=nyHour(now)*15; const [nhx,nhy]=P(cx,cy,nowA,mid); s+=heart(nhx,nhy,10);
-  // center legend
-  s+=TXT(cx,cy-8,'one loop ≈ 18 days',9,'rgba(160,154,142,0.85)',400);
-  s+=TXT(cx,cy+8,'outer · real    inner · projected',8,'rgba(160,154,142,0.62)',400);
+  // center label (no heart on this chart)
+  s+=TXT(cx,cy-6,'≈ 18-day loop',11.5,'rgba(184,178,160,0.85)',600);
+  s+=TXT(cx,cy+11,'14 days back · 14 ahead',9.5,'rgba(160,154,142,0.7)',400);
   svg.innerHTML=s;
 }
 
@@ -441,16 +452,17 @@ function renderBloom(days, now){
       + `C ${r1x.toFixed(1)} ${r1y.toFixed(1)} ${r2x.toFixed(1)} ${r2y.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)} Z`;
     s+=`<path d="${path}" fill="url(#${gid})" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
     const lab=i===0?'today':i===1?'Tom':'+'+i+'d';
-    const [lx,ly]=P(cx,cy,center,rOut+15);
-    s+=TXT(lx,ly,lab,9.5,i===0?'#e8c978':'rgba(216,207,173,0.85)',i===0?700:500);
-    s+=TXT(lx,ly+11,compactT(d.wakeMs),8.5,'rgba(200,194,176,0.82)',500);
+    const labCol=i===0?'#e8c978':'rgba(216,207,173,0.85)', labW=i===0?700:500;
+    // wake (day + time) near the centre — the petal base is the wake moment
+    const [wx,wy]=P(cx,cy,center,rIn+30);
+    s+=TXT(wx,wy,lab,9.5,labCol,labW);
+    s+=TXT(wx,wy+11,compactT(d.wakeMs),9,'rgba(232,201,120,0.9)',600);
+    // sleep (day + time) at the tip — the petal tip is the sleep moment
+    const [sx,sy]=P(cx,cy,center,rOut+15);
+    s+=TXT(sx,sy,lab,10,labCol,labW);
+    s+=TXT(sx,sy+11,compactT(d.sleepMs),9,'rgba(196,176,224,0.92)',600);
   });
   s+=`<circle cx="${cx}" cy="${cy}" r="${rIn-8}" fill="rgba(6,8,15,0.95)"/>`;
-  s+=TXT(cx,cy+3,'week ahead',9.5,'rgba(216,207,173,0.85)',500);
-  const d=days[0];
-  const t=now<=d.sleepMs ? Math.max(0.14,Math.min(0.9,(now-d.wakeMs)/Math.max(1,d.sleepMs-d.wakeMs))) : 0.9;
-  const [bhx,bhy]=P(cx,cy,0,rIn+t*(rOut-rIn));
-  s+=heart(bhx,bhy,11); s+=TXT(bhx,bhy-17,'now',9.5,'#bcdcff',600);
   svg.innerHTML='<defs>'+defs+'</defs>'+s;
 }
 
@@ -463,7 +475,7 @@ function renderAllViz(sessions){
   renderToday(today, now);
   renderWeek(days.slice(ci, ci+7), now);
   renderMonth(days.filter(d=>{ const n=new Date(); const mS=new Date(n.getFullYear(),n.getMonth(),1).getTime(), mE=new Date(n.getFullYear(),n.getMonth()+1,1).getTime(); return d.wakeMs>=mS&&d.wakeMs<mE; }), now);
-  renderReturn(days.slice(Math.max(0, ci-8), ci+10), now); // ~9 real + ~9 projected ≈ one 18-day loop
+  renderReturn(days.slice(Math.max(0, ci-13), ci+15), now); // 14 real + 14 projected = 28 days
   renderBloom(days.slice(ci, ci+7), now);
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
