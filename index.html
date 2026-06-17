@@ -663,7 +663,7 @@ const PERSONAL = {
   tau:    25.4,   // circadian period in hours
   awakeH: 13.4,   // hours of active waking per cycle
   tibH:   12.0,   // time in bed per cycle
-  lat:    42.97,  // Ada, MI
+  lat:    42.97,
   lng:   -85.48,
   tz:    'America/New_York',
   // Shared daily life wheel (Rikki + Luke). Types: waking, food, open, winddown, sleep
@@ -838,7 +838,7 @@ function isoDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// ── Sunrise / sunset for Ada, MI (42.97°N, 85.48°W) ──────────────────────
+// ── Sunrise / sunset ──────────────────────
 function isInDST(d) {
   const y = d.getFullYear();
   const mar = new Date(y,2,1), nov = new Date(y,10,1);
@@ -2940,6 +2940,7 @@ function startHistoricalLoad() {
 
 async function init() {
   updateViewToggleBtn();
+  wireLiveRefresh();
   const ovr = getWakeOverride();
   if (ovr) {
     renderAll(ovr);
@@ -2975,7 +2976,10 @@ async function refreshFromAPI() {
       month:'short', day:'numeric',
       hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
     });
-    setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} ET`);
+    const updatedStr = new Date().toLocaleTimeString('en-US', {
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+    });
+    setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} ET · updated ${updatedStr}`);
   } catch (e) {
     if (getWakeOverride()) return;
     const cached = getCached();
@@ -2986,6 +2990,26 @@ async function refreshFromAPI() {
       renderAll(FALLBACK_ANCHOR_MS);
       setStatus('error', `⚠ Could not reach Oura (${e.message})`);
     }
+  }
+}
+
+// ── Keep the page live: re-pull Oura periodically + on tab focus ─────────────
+const LIVE_REFRESH_MS = 15*60*1000, MIN_REFRESH_GAP_MS = 5*60*1000;
+let _liveDataTimer = null, _liveWired = false, _refreshInFlight = false, _lastAttempt = 0;
+async function maybeRefresh(force) {
+  if (_refreshInFlight) return;
+  if (getWakeOverride()) return;                                   // manual override in effect — leave it be
+  if (!force && Date.now() - _lastAttempt < MIN_REFRESH_GAP_MS) return; // throttle: at most once per gap
+  _refreshInFlight = true; _lastAttempt = Date.now();
+  try { await refreshFromAPI(); } finally { _refreshInFlight = false; }
+}
+function wireLiveRefresh() {
+  if (_liveDataTimer) clearInterval(_liveDataTimer);
+  // timer fires only while the tab is visible (no polling a hidden/background tab)
+  _liveDataTimer = setInterval(() => { if (document.visibilityState === 'visible') maybeRefresh(false); }, LIVE_REFRESH_MS);
+  if (!_liveWired) { // instant pull when returning to the tab; registered once
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') maybeRefresh(false); });
+    _liveWired = true;
   }
 }
 

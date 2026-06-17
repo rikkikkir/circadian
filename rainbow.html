@@ -81,53 +81,50 @@
   <header>
     <a class="back" href="index.html">← Rikki's Circadian Universe</a>
     <h1>The Rainbow of Wake</h1>
-    <p class="lede">When Rikki wakes, the sky outside looks like this; when she sleeps, like that. Each arc is one of her days — drawn in the <strong>real sky of her waking hours</strong>, with the sky she sleeps through shaded beneath. Built from her Oura ring.</p>
     <div id="status" class="status">…</div>
     <div class="legend">
       <span><i style="background:#d27319"></i>sunrise · sunset</span>
       <span><i style="background:#2a5690"></i>daylight</span>
       <span><i style="background:#080c2a"></i>night / twilight</span>
       <span><i class="stars"></i>shaded sleep</span>
-      <span><i class="heart"><svg width="15" height="15" viewBox="-1 -1 2 2"><path d="M0,-0.35 C0,-0.55 -0.2,-0.72 -0.42,-0.72 C-0.78,-0.72 -0.92,-0.36 -0.92,-0.16 C-0.92,0.22 -0.5,0.5 0,0.82 C0.5,0.5 0.92,0.22 0.92,-0.16 C0.92,-0.36 0.78,-0.72 0.42,-0.72 C0.2,-0.72 0,-0.55 0,-0.35 Z" fill="#46a6f0" stroke="#fff" stroke-width="0.12"/></svg></i>now (you are here)</span>
+      <span><i class="heart"><svg width="15" height="15" viewBox="-1 -1 2 2"><path d="M0,-0.35 C0,-0.55 -0.2,-0.72 -0.42,-0.72 C-0.78,-0.72 -0.92,-0.36 -0.92,-0.16 C-0.92,0.22 -0.5,0.5 0,0.82 C0.5,0.5 0.92,0.22 0.92,-0.16 C0.92,-0.36 0.78,-0.72 0.42,-0.72 C0.2,-0.72 0,-0.55 0,-0.35 Z" fill="#46a6f0" stroke="#fff" stroke-width="0.12"/></svg></i>Rikki Now</span>
     </div>
-    <p class="note">Solid arcs are recorded from Oura · faded arcs are projected ahead (no data yet).</p>
   </header>
 
   <main>
     <section class="card">
       <h2>Today, up close</h2>
-      <p class="cap">Today in full — she wakes at the left foot, arcs through the real sky overhead, and sleeps at the right; the daylight she sleeps through is shaded below. Wake is recorded; tonight's sleep is an estimate. The blue heart is now. <span id="today-readout"></span></p>
       <div class="frame"><svg id="viz-today" viewBox="150 20 600 625" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>The week ahead</h2>
-      <p class="cap">Today is the bright outer arc — your real wake. Each arc inward is the next day, projected (and faded to say so). Read wake (gold, left) and sleep (lavender, right) along the horizon, and watch the daylight slide as your hours drift. The blue heart is now.</p>
+      <p class="cap">The bright outer arc is today — Rikki's real, recorded wake. Each arc inward is one day further ahead, projected from her rhythm and faded to show it has no data yet. Wake sits at the left (gold) and sleep at the right (lavender) along the horizon; the daylight band slides later each day as her hours drift. The blue heart marks where Rikki is now.</p>
       <div class="frame"><svg id="viz-week" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>This month</h2>
-      <p class="cap">The outer arc is the 1st; inner arcs are later days. Solid arcs are your recorded Oura days; faded arcs are still ahead (projected). Today's arc is outlined in white, with the blue heart at now.</p>
+      <p class="cap">The outer arc is the first of the month, with each date moving inwards. Past dates are real data, future dates are projected times. Today's arc is outlined in white, with the blue heart representing the current time.</p>
       <div class="frame"><svg id="viz-month" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>The return</h2>
-      <p class="cap">Your wake written around a 24-hour sky clock — midnight at the top, noon at the bottom. Each gold dot is one day's wake; over about 18 days they sweep all the way around and return. The blue heart is now; only today is dated.</p>
+      <p class="cap">Over the course of about 18 days, Rikki's wake time circles around all hours. The times and dates on the outside of the circle are real wake times. The times and dates on the inside of the circle are projected wake times.</p>
       <div class="frame"><svg id="viz-return" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
     <section class="card">
       <h2>Bloom</h2>
-      <p class="cap">Your week ahead as petals opening from the centre — each one a day's waking sky, from wake at the base to sleep at the tip, with its wake time. Today is at the top with the blue heart; the days ahead spiral round. Projected from your rhythm (the future has no data yet).</p>
+      <p class="cap">A bloom of time. Today's sky is represented in the center petal, with the week ahead shown clockwise in the petals. Wake time is at the center, with sleep time at the tips.</p>
       <div class="frame"><svg id="viz-bloom" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
 
   <footer>
     <span id="foot-anchor">…</span><br>
-    sky computed for Ada, MI (42.97°N) · <a href="index.html">the full dashboard →</a>
+    <a href="index.html">the full dashboard →</a>
   </footer>
 </div>
 
@@ -383,33 +380,37 @@ function renderMonth(days, now){
 }
 
 // ── 4 · Now, on the sky clock ──────────────────────────────────────────────
-function renderReturn(realDays, now){
-  const svg=document.getElementById('viz-return'); if(!svg||!realDays||!realDays.length)return;
-  const cx=300, cy=300, R1=200, R2=236;
+function renderReturn(daysWin, now){
+  const svg=document.getElementById('viz-return'); if(!svg||!daysWin||!daysWin.length)return;
+  const cx=300, cy=300, R1=188, R2=220, mid=(R1+R2)/2;
   const { sunrise, sunset }=sunTimes(new Date(now));
   let s='';
+  // 24-hour sky ring (midnight at top, noon at bottom)
   for(let h=0;h<24;h+=0.5){ const col=skyColorAt(h+0.25,sunrise,sunset); s+=`<path d="${SEG(cx,cy,h*15,(h+0.5)*15,R1,R2)}" fill="${col}"/>`; }
   s+=`<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
   s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>`;
-  [['12a',0],['noon',180],['6a',90],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,R2+16); s+=TXT(lx,ly,t,9,'rgba(160,154,142,0.7)',400); });
-  // each day's wake = a dot around the clock (the loop); no arrows
-  const todayStr=nyDateStr(now); let todayWake=null;
-  realDays.forEach(d=>{
-    const a=nyHour(d.wakeMs)*15; const isToday=nyDateStr(d.wakeMs)===todayStr;
-    const [dx,dy]=P(cx,cy,a,R1-8);
-    s+=`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${isToday?3:2.2}" fill="${isToday?'#ffffff':'rgba(232,201,120,0.8)'}"/>`;
-    if(isToday) todayWake=d;
+  // faint clock anchors inside the ring band
+  [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,mid); s+=TXT(lx,ly,t,7,'rgba(255,255,255,0.4)',500); });
+  const todayStr=nyDateStr(now);
+  // one dot per day at its wake clock-time; real wake → dated label OUTSIDE, projected → dated label INSIDE
+  daysWin.forEach(d=>{
+    const real=(d.real!==false), isToday=nyDateStr(d.wakeMs)===todayStr;
+    const a=nyHour(d.wakeMs)*15;
+    const [dx,dy]=P(cx,cy,a,mid);
+    const dotCol=isToday?'#ffffff':(real?'rgba(232,201,120,0.95)':'rgba(232,201,120,0.45)');
+    s+=`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${isToday?3.2:2.3}" fill="${dotCol}"${isToday?' stroke="#fff" stroke-width="0.8"':''}/>`;
+    const lr=real?R2+19:R1-19;
+    const [lx,ly]=P(cx,cy,a,lr);
+    const dCol=isToday?'#ffffff':(real?'#e8c978':'rgba(184,174,150,0.62)');
+    const tCol=isToday?'rgba(255,255,255,0.9)':(real?'rgba(216,207,173,0.82)':'rgba(184,174,150,0.52)');
+    s+=TXT(lx,ly-3, mdy(d.wakeMs), 8, dCol, isToday?700:600);
+    s+=TXT(lx,ly+7, compactT(d.wakeMs), 7.5, tCol, 500);
   });
-  // only today is dated
-  if(todayWake){ const a=nyHour(todayWake.wakeMs)*15; const [lx,ly]=P(cx,cy,a,R1-26);
-    s+=TXT(lx,ly-4, wkdmd(todayWake.wakeMs), 9, '#e8c978', 700);
-    s+=TXT(lx,ly+6, 'woke '+compactT(todayWake.wakeMs), 8.5, 'rgba(216,207,173,0.9)', 600);
-  }
   // "now" heart at the current clock time
-  const nowA=nyHour(now)*15; const [nhx,nhy]=P(cx,cy,nowA,(R1+R2)/2); s+=heart(nhx,nhy,12);
-  const [nlx,nly]=P(cx,cy,nowA,R2+30); s+=TXT(nlx,nly,'now',10,'#bcdcff',600);
-  s+=TXT(cx,cy-6,'your wake',12,'rgba(232,201,120,0.9)',600);
-  s+=TXT(cx,cy+12,'one loop ≈ 18 days',9.5,'rgba(160,154,142,0.85)',400);
+  const nowA=nyHour(now)*15; const [nhx,nhy]=P(cx,cy,nowA,mid); s+=heart(nhx,nhy,10);
+  // center legend
+  s+=TXT(cx,cy-8,'one loop ≈ 18 days',9,'rgba(160,154,142,0.85)',400);
+  s+=TXT(cx,cy+8,'outer · real    inner · projected',8,'rgba(160,154,142,0.62)',400);
   svg.innerHTML=s;
 }
 
@@ -462,7 +463,7 @@ function renderAllViz(sessions){
   renderToday(today, now);
   renderWeek(days.slice(ci, ci+7), now);
   renderMonth(days.filter(d=>{ const n=new Date(); const mS=new Date(n.getFullYear(),n.getMonth(),1).getTime(), mE=new Date(n.getFullYear(),n.getMonth()+1,1).getTime(); return d.wakeMs>=mS&&d.wakeMs<mE; }), now);
-  renderReturn(days.filter(d=>d.real!==false).slice(-18), now);
+  renderReturn(days.slice(Math.max(0, ci-8), ci+10), now); // ~9 real + ~9 projected ≈ one 18-day loop
   renderBloom(days.slice(ci, ci+7), now);
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
@@ -477,19 +478,35 @@ function renderAllViz(sessions){
 
 function setStatus(cls,msg){ const el=document.getElementById('status'); if(el){ el.className='status '+cls; el.textContent=msg; } }
 
+const fa=ms=>new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})+' ET';
+const ftime=ms=>new Date(ms).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'});
+const LIVE_REFRESH_MS=15*60*1000, MIN_REFRESH_GAP_MS=5*60*1000;
+let _refreshInFlight=false, _lastAttempt=0, _hadLiveData=false;
+
+async function refresh(force){
+  if(_refreshInFlight) return;
+  if(!force && Date.now()-_lastAttempt<MIN_REFRESH_GAP_MS) return; // throttle: at most once per gap
+  _refreshInFlight=true; _lastAttempt=Date.now();
+  try{
+    const sessions=await fetchSleep(90); setCache(sessions);
+    renderAllViz(sessions); _hadLiveData=true;
+    setStatus('connected','✓ Live Oura data · last wake '+fa(getAnchor(sessions))+' · updated '+ftime(Date.now()));
+  }catch(e){
+    if(!_hadLiveData){ // only fall back if we've never had live data; otherwise keep good data on screen
+      renderAllViz(FALLBACK_SESSIONS);
+      setStatus('error','⚠ Live Oura unavailable here — showing your last synced days. Updates live on the published page.');
+    }
+  }finally{ _refreshInFlight=false; }
+}
+
 async function init(){
-  const fa=ms=>new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})+' ET';
   const cached=getCached();
   renderAllViz(cached || FALLBACK_SESSIONS);
   setStatus(cached?'connected':'', cached?'✓ Showing cached Oura data · refreshing…':'↻ Loading your Oura data…');
-  try{
-    const sessions=await fetchSleep(90); setCache(sessions);
-    renderAllViz(sessions);
-    setStatus('connected','✓ Live Oura data · last wake '+fa(getAnchor(sessions)));
-  }catch(e){
-    renderAllViz(FALLBACK_SESSIONS);
-    setStatus('error','⚠ Live Oura unavailable here — showing your last synced days. Updates live on the published page.');
-  }
+  await refresh(true);
+  // keep it live without polling a hidden tab: timer fires only when visible, plus an instant pull on return to the tab
+  setInterval(()=>{ if(document.visibilityState==='visible') refresh(false); }, LIVE_REFRESH_MS);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') refresh(false); });
 }
 init();
 </script>
