@@ -178,14 +178,14 @@ function isInDST(d){ const y=d.getFullYear(); const mar=new Date(y,2,1),nov=new 
 function sunTimes(dateObj){
   const y=dateObj.getFullYear();
   const doy=Math.round((dateObj-new Date(y,0,1))/86400000)+1;
-  const lat=42.97*Math.PI/180;
+  const lat=43*Math.PI/180;
   const B=2*Math.PI*(doy-1)/365;
   const decl=0.006918-0.399912*Math.cos(B)+0.070257*Math.sin(B)-0.006758*Math.cos(2*B)+0.000907*Math.sin(2*B);
   const ha=Math.acos(-Math.tan(lat)*Math.tan(decl));
   const haH=ha*12/Math.PI;
   const eot=229.18*(0.000075+0.001868*Math.cos(B)-0.032077*Math.sin(B)-0.014615*Math.cos(2*B)-0.04089*Math.sin(2*B));
   const utcOff=isInDST(dateObj)?-4:-5;
-  const lonCorr=(-85.48-utcOff*15)/15;
+  const lonCorr=(-85-utcOff*15)/15;
   const noon=12-lonCorr-eot/60;
   return { sunrise:noon-haH, sunset:noon+haH };
 }
