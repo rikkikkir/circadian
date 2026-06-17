@@ -404,19 +404,18 @@ function renderReturn(daysWin, now){
   s+=`<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/>`;
 
   const anchorFor=a=>{ a=((a%360)+360)%360; if(a<18||a>342||(a>162&&a<198)) return 'middle'; return a<180?'start':'end'; };
-  const angDist=(x,y)=>{ const d=((x-y)%360+360)%360; return Math.min(d,360-d); };
   const MINGAP=20;
 
-  // today's wake angle anchors the loop; extend past data backward up to ~one full loop, then stop
-  // once older days wrap back around toward today's angle (so they never overlap the recent days)
-  const todayDay=daysWin.find(d=>nyDateStr(d.wakeMs)===todayStr);
-  const aToday=(todayDay?nyHour(todayDay.wakeMs):nyHour(now))*15;
-  const realShown=[]; let maxD=0;
+  // Extend past data backward, but STOP before the clock loop wraps onto itself, so older weeks
+  // (e.g. May) never mix in with the recent days. ~one loop ≈ 18 days; cap the sweep well below that
+  // (≈14 days) to leave a clear gap on the dial between the oldest day shown and today.
+  const realShown=[]; let sweep=0, prevA=null;
   for(const d of daysWin.filter(x=>x.real!==false).sort((p,q)=>q.wakeMs-p.wakeMs)){ // recent → older
-    const dist=angDist(nyHour(d.wakeMs)*15, aToday);
-    if(maxD>150 && dist<14) break;                 // swept past the far side and looped back near today → stop
-    realShown.push(d); maxD=Math.max(maxD,dist);
-    if(realShown.length>=24) break;                // safety cap
+    const a=nyHour(d.wakeMs)*15;
+    if(prevA!==null){ let st=((prevA-a)%360+360)%360; if(st>180) st=360-st; sweep+=st; }
+    if(sweep>290) break;                           // ~14 days back; gap keeps past from overlapping recent
+    realShown.push(d); prevA=a;
+    if(realShown.length>=20) break;                // safety cap
   }
 
   // real wake → tick + label OUTSIDE the ring; projected → tick + label INSIDE. Nothing sits in the band.
@@ -441,8 +440,6 @@ function renderReturn(daysWin, now){
       s+=TXT(lx,ly+4, mdy(d.wakeMs), isToday?14.5:12.5, dCol, isToday?700:600, an);
     });
   });
-  s+=TXT(cx,cy-6,'≈ 18-day loop',11,'rgba(184,178,160,0.7)',600);
-  s+=TXT(cx,cy+11,'one loop back · 2 weeks ahead',9.5,'rgba(160,154,142,0.55)',400);
   svg.innerHTML=s;
 }
 
