@@ -142,7 +142,7 @@
 
     <section class="card">
       <h2>Wake and sleep, drifting</h2>
-      <p class="cap">Both rhythms on one timeline. Reading left to right, each day's wake time (gold) and the time Rikki fell asleep (lavender) climb together as her hours slip later — the clock runs up the side and repeats past midnight, so a steadily rising pair of lines is the drift itself. The shaded ribbon between them is how long she was awake; a dip in the lavender line is a night she fell asleep early, a step up in the gold line a morning she slept in. The most recent day is at the right.</p>
+      <p class="cap">Both rhythms on one timeline, over the last ~6 weeks. Wake (gold) and fall-asleep (lavender) times climb together as Rikki's hours slip later — the clock runs up the side and repeats past midnight, so the steady rise is the drift itself. The pale daylight bands (sunrise to sunset) stay fixed while her sleep drifts across them: when the lines ride up into the dark gaps, she's awake through the night and asleep in daylight. The dashed line is her average pace of drift; a ringed night is one that broke from it — gold where she woke unusually early or late, lavender where she turned in early or late. The most recent day is at the right.</p>
       <div class="frame"><svg id="viz-drift" viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
@@ -560,45 +560,62 @@ function renderSpiral(svgId, days, now, opt){
   svg.innerHTML=s;
 }
 
-// ── 8 · Wake & sleep, drifting (both rhythms on one unwrapped clock) ─────────
+// ── 8 · Wake & sleep, drifting (both rhythms over a fixed day/night backdrop) ─
 // Clock time runs up the side and is "unwrapped" — it repeats past midnight — so the steady
-// climb of both lines IS the drift. Wake = gold lower line, fell-asleep = lavender upper line;
-// the ribbon between them is her waking window. A lavender dip = an early night; a gold step up = a sleep-in.
+// climb of both lines IS the drift. Pale daylight bands (sunrise→sunset) stay fixed while her
+// sleep drifts across them. A dashed line marks her average drift; nights that broke from that
+// pace get a hollow ring (gold = woke unusually early/late, lavender = turned in early/late).
 function renderDrift(svgId, days){
   const svg=document.getElementById(svgId); if(!svg)return;
   const N=days.length; if(!N){ svg.innerHTML=''; return; }
   const W=820,H=470, L=58,Rm=56,T=24,Bm=34;
   const x0=L,x1=W-Rm,y0=T,y1=H-Bm;
-  // wake clock-hour, unwrapped to stay continuous; bedtime = wake + actual awake hours (so the gap = waking window)
+  // wake clock-hour, unwrapped to stay continuous; bedtime = wake + actual awake hours
   const wU=[]; let prev=null;
   days.forEach(d=>{ let v=nyHour(d.wakeMs); if(prev!==null){ while(v-prev>12)v-=24; while(v-prev<-12)v+=24; } wU.push(v); prev=v; });
   const sU=days.map((d,i)=>wU[i]+(d.sleepMs-d.wakeMs)/3600000);
-  let lo=Math.min(...wU), hi=Math.max(...sU); const pad=(hi-lo)*0.06||1; lo-=pad; hi+=pad;
+  let lo=Math.min(...wU), hi=Math.max(...sU); const pad=(hi-lo)*0.05||1; lo-=pad; hi+=pad;
   const X=i=> x0+(N===1?0.5:i/(N-1))*(x1-x0);
   const Y=v=> y1-(v-lo)/(hi-lo)*(y1-y0);                       // later time → higher on screen
   const cl=h=>{ const x=((Math.round(h)%24)+24)%24; return x===0?'12a':x===12?'12p':x<12?x+'a':(x-12)+'p'; };
   let s='';
-  // clock gridlines + labels every 6h (midnight a touch brighter)
+  // ── daylight bands: sunrise→sunset (fixed clock position), repeated every 24h ──
+  const midD=days[Math.floor(N/2)]||days[0]; const sun=sunTimes(new Date(midD.wakeMs));
+  const sunR=sun.sunrise, sunS=sun.sunset;
+  for(let k=Math.floor((lo-sunS)/24); k<=Math.ceil((hi-sunR)/24); k++){
+    const bandLo=Math.max(lo,sunR+24*k), bandHi=Math.min(hi,sunS+24*k); if(bandHi<=bandLo) continue;
+    s+=`<rect x="${x0}" y="${Y(bandHi).toFixed(1)}" width="${(x1-x0).toFixed(1)}" height="${(Y(bandLo)-Y(bandHi)).toFixed(1)}" fill="rgba(150,180,235,0.07)"/>`;
+    if(sunR+24*k>=lo&&sunR+24*k<=hi) s+=`<line x1="${x0}" y1="${Y(sunR+24*k).toFixed(1)}" x2="${x1}" y2="${Y(sunR+24*k).toFixed(1)}" stroke="rgba(232,201,120,0.18)" stroke-width="0.7"/>`;
+    if(sunS+24*k>=lo&&sunS+24*k<=hi) s+=`<line x1="${x0}" y1="${Y(sunS+24*k).toFixed(1)}" x2="${x1}" y2="${Y(sunS+24*k).toFixed(1)}" stroke="rgba(196,176,224,0.18)" stroke-width="0.7"/>`;
+  }
+  // ── clock gridlines + labels every 6h (midnight a touch brighter) ──
   for(let hh=Math.ceil(lo/6)*6; hh<=hi; hh+=6){ const yy=Y(hh), mid=(((hh%24)+24)%24)===0;
-    s+=`<line x1="${x0}" y1="${yy.toFixed(1)}" x2="${x1}" y2="${yy.toFixed(1)}" stroke="rgba(255,255,255,${mid?0.11:0.05})" stroke-width="${mid?0.9:0.6}"/>`;
+    s+=`<line x1="${x0}" y1="${yy.toFixed(1)}" x2="${x1}" y2="${yy.toFixed(1)}" stroke="rgba(255,255,255,${mid?0.10:0.04})" stroke-width="${mid?0.9:0.6}"/>`;
     s+=TXT(x0-9, yy+3.2, cl(hh), 9.5,'rgba(255,255,255,0.45)', mid?700:500,'end'); }
-  // faint guide on the most-recent column
   s+=`<line x1="${X(N-1).toFixed(1)}" y1="${y0}" x2="${X(N-1).toFixed(1)}" y2="${y1}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+  // ── least-squares drift trend on wake (dashed guide) + median night-step for event detection ──
+  let si=0,sw=0,sii=0,siw=0; for(let i=0;i<N;i++){ si+=i; sw+=wU[i]; sii+=i*i; siw+=i*wU[i]; }
+  const den=N*sii-si*si, slope=den?(N*siw-si*sw)/den:0, icpt=(sw-slope*si)/N, trendW=i=>icpt+slope*i;
+  const stepArr=[]; for(let i=1;i<N;i++) stepArr.push(wU[i]-wU[i-1]);
+  const srt=stepArr.slice().sort((a,b)=>a-b), medStep=srt.length?srt[Math.floor(srt.length/2)]:0, TH=2.0;
+  if(N>=2) s+=`<path d="M ${X(0).toFixed(1)} ${Y(trendW(0)).toFixed(1)} L ${X(N-1).toFixed(1)} ${Y(trendW(N-1)).toFixed(1)}" fill="none" stroke="rgba(255,255,255,0.26)" stroke-width="1" stroke-dasharray="5 5"/>`;
   const wake=days.map((d,i)=>[X(i),Y(wU[i])]), bed=days.map((d,i)=>[X(i),Y(sU[i])]);
-  // waking-window ribbon
-  const band='M '+bed.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')+' L '+wake.slice().reverse().map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')+' Z';
-  s+=`<path d="${band}" fill="rgba(232,201,120,0.06)" stroke="none"/>`;
-  // the two drift lines
-  s+=`<path d="M ${wake.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')}" fill="none" stroke="#e8c978" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-  s+=`<path d="M ${bed.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')}" fill="none" stroke="#c4b0e0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-  // dots + striped date labels (always keep the most recent; never crowd)
+  // ── the two drift lines ──
+  s+=`<path d="M ${wake.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')}" fill="none" stroke="#e8c978" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s+=`<path d="M ${bed.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')}" fill="none" stroke="#c4b0e0" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // ── event rings: only the most notable off-pace nights (bounded so it stays sparse) ──
+  const ev=[];
+  for(let i=1;i<N;i++){ const wd=Math.abs((wU[i]-wU[i-1])-medStep), bd=Math.abs((sU[i]-sU[i-1])-medStep);
+    if(wd>TH) ev.push({p:wake[i],c:'#e8c978',m:wd}); if(bd>TH) ev.push({p:bed[i],c:'#c4b0e0',m:bd}); }
+  ev.sort((a,b)=>b.m-a.m).slice(0,6).forEach(e=>{ s+=`<circle cx="${e.p[0].toFixed(1)}" cy="${e.p[1].toFixed(1)}" r="5.6" fill="none" stroke="${e.c}" stroke-width="1.4" opacity="0.92"/>`; });
+  // ── dots + striped date labels (always keep the most recent; never crowd) ──
   const stride=Math.max(1,Math.ceil(N/9));
   days.forEach((d,i)=>{ const last=i===N-1;
-    s+=`<circle cx="${wake[i][0].toFixed(1)}" cy="${wake[i][1].toFixed(1)}" r="${last?3.6:2.1}" fill="#e8c978" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.4:0.5}"/>`;
-    s+=`<circle cx="${bed[i][0].toFixed(1)}" cy="${bed[i][1].toFixed(1)}" r="${last?3.6:2.1}" fill="#c4b0e0" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.4:0.5}"/>`;
+    s+=`<circle cx="${wake[i][0].toFixed(1)}" cy="${wake[i][1].toFixed(1)}" r="${last?3.6:2}" fill="#e8c978" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.4:0.5}"/>`;
+    s+=`<circle cx="${bed[i][0].toFixed(1)}" cy="${bed[i][1].toFixed(1)}" r="${last?3.6:2}" fill="#c4b0e0" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.4:0.5}"/>`;
     if(last || (i%stride===0 && (N-1-i)>=stride)) s+=TXT(X(i), y1+15, mdy(d.wakeMs), last?10.5:9, last?'#ffffff':'rgba(216,207,173,0.8)', last?700:500,'middle');
   });
-  // inline colour key at the most-recent points
+  // ── inline colour key at the most-recent points ──
   s+=TXT(x1+7, bed[N-1][1]+3.2,'asleep',10,'#c4b0e0',700,'start');
   s+=TXT(x1+7, wake[N-1][1]+3.2,'wake',10,'#e8c978',700,'start');
   svg.innerHTML=s;
@@ -619,7 +636,7 @@ function renderAllViz(sessions){
   renderSpiral('viz-spiral', days.filter(d=>d.real!==false&&d.wakeMs<=now).slice(-30), now); // past ~month as a spiral
   renderSpiral('viz-spiral-sleep', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-30), now,
     { valOf:d=>d.sleepMs, labelMs:d=>d.sleepMs, accent:'#c4b0e0', spiralCol:'rgba(196,176,224,0.3)', labelCol:'rgba(206,196,224,0.88)', hiNewest:true }); // same month, by sleep time (real nights only); labelled by the date she fell asleep
-  renderDrift('viz-drift', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-30)); // wake + sleep on one unwrapped-clock timeline
+  renderDrift('viz-drift', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-45)); // wake + sleep on one unwrapped-clock timeline, ~6 weeks
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
