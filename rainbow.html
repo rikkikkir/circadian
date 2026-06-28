@@ -123,7 +123,7 @@
 
     <section class="card">
       <h2>Last month</h2>
-      <p class="cap">The outer arc is the first of last month, with each date moving inwards. Every arc is a recorded Oura day.</p>
+      <p class="cap">The outer ring is the first of last month, with each date moving inwards. Every ring is a recorded Oura day.</p>
       <div class="frame"><svg id="viz-prevmonth" viewBox="110 4 680 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
 
@@ -131,6 +131,12 @@
       <h2>The month, unspooled</h2>
       <p class="cap">The Loop, unwound into a spiral so a full month of wake times fits without overlapping. Today is the outer point; each earlier day spirals inward toward the centre.</p>
       <div class="frame"><svg id="viz-spiral" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </section>
+
+    <section class="card">
+      <h2>The month, unspooled — sleep times</h2>
+      <p class="cap">The same spiral, drawn from Rikki's sleep times instead: each point is the hour she fell asleep, and its date is the day she was awake — so any date lines up with its wake point in the chart above. Her most recent night is the outer point; each earlier night spirals inward toward the centre.</p>
+      <div class="frame"><svg id="viz-spiral-sleep" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
 
@@ -237,7 +243,10 @@ async function fetchSleep(days=90){
 }
 function getAnchor(sessions){
   if(!sessions||!sessions.length)return FALLBACK_ANCHOR_MS;
-  const sorted=[...sessions].sort((a,b)=>new Date(b.bedtime_end)-new Date(a.bedtime_end));
+  // Anchor on the main nightly sleep — a nap shouldn't be reported as the last wake.
+  const mains=sessions.filter(s=>s.type==='long_sleep'&&s.bedtime_end);
+  const pool=mains.length?mains:sessions;
+  const sorted=[...pool].sort((a,b)=>new Date(b.bedtime_end)-new Date(a.bedtime_end));
   for(const s of sorted){ const ms=new Date(s.bedtime_end).getTime(); if(Date.now()-ms<5*86400000)return ms; }
   return new Date(sorted[0].bedtime_end).getTime();
 }
@@ -504,33 +513,41 @@ function renderBloom(days, now){
 // ── 6 · The month, unspooled (spiral) ──────────────────────────────────────
 // The Loop, unwound: wake time still sets the clock-angle, but each day spirals inward so a
 // whole month of days fits without any two sharing a position. Today is the outer point.
-function renderSpiral(svgId, days, now){
+// Defaults draw the wake spiral exactly as before; pass `opt` to redraw it by sleep time instead.
+function renderSpiral(svgId, days, now, opt){
   const svg=document.getElementById(svgId); if(!svg)return;
+  opt=opt||{};
+  const valOf     = opt.valOf     || (d=>d.wakeMs);            // which time sets the clock-angle
+  const accent    = opt.accent    || '#e8c978';               // dot colour (gold = wake)
+  const spiralCol = opt.spiralCol || 'rgba(232,201,120,0.3)';
+  const labelCol  = opt.labelCol  || 'rgba(216,207,173,0.88)';
   const cx=300, cy=300, rOuter=246, rInner=62;
   const N=days.length; if(!N){ svg.innerHTML=''; return; }
   const todayStr=nyDateStr(now);
+  // wake spiral highlights today's date; sleep spiral highlights the most recent night (the outer point)
+  const isHi = opt.hiNewest ? ((d,i)=>i===N-1) : ((d,i)=>nyDateStr(d.wakeMs)===todayStr);
   let s='';
   // faint hour reference: spokes every 3h + cardinal labels just outside
   for(let h=0;h<24;h+=3){ const [x1,y1]=P(cx,cy,h*15,rInner-4),[x2,y2]=P(cx,cy,h*15,rOuter+4); s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="rgba(255,255,255,0.045)" stroke-width="0.7"/>`; }
   [['12a',0],['6a',90],['noon',180],['6p',270]].forEach(([t,ang])=>{ const [lx,ly]=P(cx,cy,ang,rOuter+20); s+=TXT(lx,ly,t,9.5,'rgba(255,255,255,0.42)',600); });
-  // points: today at the outer edge, spiralling inward back through the month
+  // points: newest at the outer edge, spiralling inward back through the month
   const M=Math.max(1,N-1);
-  const pts=days.map((d,i)=>{ const r=rInner+(i/M)*(rOuter-rInner), a=nyHour(d.wakeMs)*15; const [x,y]=P(cx,cy,a,r); return {d,x,y,a,r,i}; });
+  const pts=days.map((d,i)=>{ const r=rInner+(i/M)*(rOuter-rInner), a=nyHour(valOf(d))*15; const [x,y]=P(cx,cy,a,r); return {d,x,y,a,r,i}; });
   // the spiral itself
-  s+=`<path d="M ${pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ')}" fill="none" stroke="rgba(232,201,120,0.3)" stroke-width="1.3"/>`;
-  // one uniform dot per day (today highlighted)
-  pts.forEach(p=>{ const isToday=nyDateStr(p.d.wakeMs)===todayStr;
-    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isToday?5:3.3}" fill="${isToday?'#ffffff':'#e8c978'}" stroke="${isToday?'#ffffff':'rgba(255,255,255,0.3)'}" stroke-width="${isToday?1.6:0.6}"/>`; });
-  // date labels: pack in as many as fit without colliding — today first, then newest → oldest,
+  s+=`<path d="M ${pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L ')}" fill="none" stroke="${spiralCol}" stroke-width="1.3"/>`;
+  // one uniform dot per day (newest / today highlighted)
+  pts.forEach(p=>{ const hi=isHi(p.d,p.i);
+    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${hi?5:3.3}" fill="${hi?'#ffffff':accent}" stroke="${hi?'#ffffff':'rgba(255,255,255,0.3)'}" stroke-width="${hi?1.6:0.6}"/>`; });
+  // date labels: pack in as many as fit without colliding — highlighted first, then newest → oldest,
   // skipping any whose position is within MINDIST of a label already placed
   const an=a=>{ a=((a%360)+360)%360; if(a<20||a>340||(a>160&&a<200)) return 'middle'; return a<180?'start':'end'; };
   const placed=[], MINDIST=32;
-  [...pts].sort((p,q)=>{ const tp=nyDateStr(p.d.wakeMs)===todayStr?1:0, tq=nyDateStr(q.d.wakeMs)===todayStr?1:0; return (tq-tp) || (q.i-p.i); }).forEach(p=>{
-    const isToday=nyDateStr(p.d.wakeMs)===todayStr;
-    const [lx,ly]=P(cx,cy,p.a,p.r+(isToday?16:11));
-    if(!isToday && placed.some(q=>Math.hypot(q.x-lx,q.y-ly)<MINDIST)) return;
+  [...pts].sort((p,q)=>{ const tp=isHi(p.d,p.i)?1:0, tq=isHi(q.d,q.i)?1:0; return (tq-tp) || (q.i-p.i); }).forEach(p=>{
+    const hi=isHi(p.d,p.i);
+    const [lx,ly]=P(cx,cy,p.a,p.r+(hi?16:11));
+    if(!hi && placed.some(q=>Math.hypot(q.x-lx,q.y-ly)<MINDIST)) return;
     placed.push({x:lx,y:ly});
-    s+=TXT(lx,ly,mdy(p.d.wakeMs),isToday?13:9,isToday?'#ffffff':'rgba(216,207,173,0.88)',isToday?700:600,an(p.a));
+    s+=TXT(lx,ly,mdy(p.d.wakeMs),hi?13:9,hi?'#ffffff':labelCol,hi?700:600,an(p.a));
   });
   svg.innerHTML=s;
 }
@@ -548,6 +565,8 @@ function renderAllViz(sessions){
   renderBloom(days.slice(ci, ci+7), now);
   renderPrevMonth(days.filter(d=>{ const n=new Date(); const pmS=new Date(n.getFullYear(),n.getMonth()-1,1).getTime(), pmE=new Date(n.getFullYear(),n.getMonth(),1).getTime(); return d.wakeMs>=pmS&&d.wakeMs<pmE; }));
   renderSpiral('viz-spiral', days.filter(d=>d.real!==false&&d.wakeMs<=now).slice(-30), now); // past ~month as a spiral
+  renderSpiral('viz-spiral-sleep', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-30), now,
+    { valOf:d=>d.sleepMs, accent:'#c4b0e0', spiralCol:'rgba(196,176,224,0.3)', labelCol:'rgba(206,196,224,0.88)', hiNewest:true }); // same month, by sleep time (real nights only)
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
