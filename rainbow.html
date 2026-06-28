@@ -135,7 +135,7 @@
 
     <section class="card">
       <h2>The month, unspooled — sleep times</h2>
-      <p class="cap">The same spiral, drawn from Rikki's sleep times instead: each point is the hour she fell asleep, and its date is the day she was awake — so any date lines up with its wake point in the chart above. Her most recent night is the outer point; each earlier night spirals inward toward the centre.</p>
+      <p class="cap">The same spiral, drawn from Rikki's sleep times instead: each point sits at the hour she fell asleep, labelled with the date she fell asleep — a 2am bedtime counts as the new day, not the night before. Her most recent night is the outer point; each earlier night spirals inward toward the centre.</p>
       <div class="frame"><svg id="viz-spiral-sleep" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
@@ -518,6 +518,7 @@ function renderSpiral(svgId, days, now, opt){
   const svg=document.getElementById(svgId); if(!svg)return;
   opt=opt||{};
   const valOf     = opt.valOf     || (d=>d.wakeMs);            // which time sets the clock-angle
+  const labelMs   = opt.labelMs   || (d=>d.wakeMs);           // which date the point is labelled with
   const accent    = opt.accent    || '#e8c978';               // dot colour (gold = wake)
   const spiralCol = opt.spiralCol || 'rgba(232,201,120,0.3)';
   const labelCol  = opt.labelCol  || 'rgba(216,207,173,0.88)';
@@ -547,7 +548,7 @@ function renderSpiral(svgId, days, now, opt){
     const [lx,ly]=P(cx,cy,p.a,p.r+(hi?16:11));
     if(!hi && placed.some(q=>Math.hypot(q.x-lx,q.y-ly)<MINDIST)) return;
     placed.push({x:lx,y:ly});
-    s+=TXT(lx,ly,mdy(p.d.wakeMs),hi?13:9,hi?'#ffffff':labelCol,hi?700:600,an(p.a));
+    s+=TXT(lx,ly,mdy(labelMs(p.d)),hi?13:9,hi?'#ffffff':labelCol,hi?700:600,an(p.a));
   });
   svg.innerHTML=s;
 }
@@ -566,7 +567,7 @@ function renderAllViz(sessions){
   renderPrevMonth(days.filter(d=>{ const n=new Date(); const pmS=new Date(n.getFullYear(),n.getMonth()-1,1).getTime(), pmE=new Date(n.getFullYear(),n.getMonth(),1).getTime(); return d.wakeMs>=pmS&&d.wakeMs<pmE; }));
   renderSpiral('viz-spiral', days.filter(d=>d.real!==false&&d.wakeMs<=now).slice(-30), now); // past ~month as a spiral
   renderSpiral('viz-spiral-sleep', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-30), now,
-    { valOf:d=>d.sleepMs, accent:'#c4b0e0', spiralCol:'rgba(196,176,224,0.3)', labelCol:'rgba(206,196,224,0.88)', hiNewest:true }); // same month, by sleep time (real nights only)
+    { valOf:d=>d.sleepMs, labelMs:d=>d.sleepMs, accent:'#c4b0e0', spiralCol:'rgba(196,176,224,0.3)', labelCol:'rgba(206,196,224,0.88)', hiNewest:true }); // same month, by sleep time (real nights only); labelled by the date she fell asleep
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
