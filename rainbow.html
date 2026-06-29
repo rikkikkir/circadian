@@ -676,22 +676,36 @@ function renderArcs(svgId, days){
     const [wx,wy]=P(cx,cy,aw,r), [sx,sy]=P(cx,cy,as,r);
     s+=`<circle cx="${wx.toFixed(1)}" cy="${wy.toFixed(1)}" r="${last?3.6:2.6}" fill="${WAKE}" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.3:0.5}"/>`;
     s+=`<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${last?3.6:2.6}" fill="${SLEEP}" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.3:0.5}"/>`;
-    pts.push({d,i,last,a:aw,r});
+    pts.push({d,i,last,aw,as,r,wx,wy,sx,sy});
   });
-  // older days: short date labels just past each wake dot — packed without collisions.
-  // Seed the set with the hour labels AND the newest night's two label anchors, so nothing crowds them.
-  const placed=[...hourPos, {x:heroW[0],y:heroW[1]}, {x:heroS[0],y:heroS[1]}], MINDIST=23;
+  // ── labels ──────────────────────────────────────────────────────────────────
+  // Every day shows its wake date (warm) at the wake dot and its sleep date (cool) at the
+  // sleep dot; the newest night instead spells out Awake/Asleep with times. To stay legible
+  // when dots bunch up, each label drops into the nearest free slot — searching outward and a
+  // little sideways from its dot — with a faint leader drawn whenever it sits off the dot.
+  const boxes=[];
+  const bx=(x,y,w,h,anc)=>{ const x0=anc==='middle'?x-w/2:anc==='start'?x:x-w; return {x0,y0:y-h+2,x1:x0+w,y1:y+3}; };
+  const fits=b=> b.x0>-78 && b.x1<678 && b.y0>6 && b.y1<594 && !boxes.some(o=>!(b.x1<o.x0-2||b.x0>o.x1+2||b.y1<o.y0-2||b.y0>o.y1+2));
+  const tw=(t,fs)=>t.length*fs*0.56;
+  hourPos.forEach(h=>boxes.push(bx(h.x,h.y+3,tw('noon',10),12,'middle')));
+  // newest night: two-line hero labels, reserved first so the dates yield to them
+  const hero=(p0,a,date,line,col)=>{ const anc=an(a);
+    boxes.push(bx(p0[0],p0[1]-4.5,tw(date,9),11,anc)); boxes.push(bx(p0[0],p0[1]+9.5,tw(line,11.5),13,anc));
+    s+=TXT(p0[0],p0[1]-4.5,date,9,'rgba(225,222,232,0.82)',600,anc)+TXT(p0[0],p0[1]+9.5,line,11.5,col,700,anc); };
+  hero(heroW,lAw,wkdmd(lastD.wakeMs),'Awake at '+t24(lastD.wakeMs),WAKE);
+  hero(heroS,lAs,wkdmd(lastD.sleepMs),'Asleep at '+t24(lastD.sleepMs),SLEEP);
+  const placeDate=(txt,angle,baseR,col,dotx,doty)=>{ const fs=8.5, w=tw(txt,fs);
+    for(let ro=0;ro<=104;ro+=12){ for(const da of (ro===0?[0]:[0,-7,7,-14,14,-22,22,-30,30])){
+      const a=angle+da; const [x,y]=P(cx,cy,a,baseR+ro); const anc=an(a); const b=bx(x,y,w,fs+2,anc);
+      if(!fits(b)) continue; boxes.push(b);
+      const lead=Math.hypot(x-dotx,y-doty)>15
+        ? `<line x1="${dotx.toFixed(1)}" y1="${doty.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.16)" stroke-width="0.6"/>` : '';
+      s+=lead+TXT(x,y,txt,fs,col,600,anc); return; } } };
+  // recent days first so they win the prime spots near their dots; older ones get nudged out
   [...pts].filter(p=>!p.last).sort((p,q)=>q.i-p.i).forEach(p=>{
-    const [lx,ly]=P(cx,cy,p.a,p.r+11);
-    if(placed.some(q=>Math.hypot(q.x-lx,q.y-ly)<MINDIST)) return;
-    placed.push({x:lx,y:ly});
-    s+=TXT(lx,ly+3, mdy(p.d.wakeMs), 9, 'rgba(216,207,173,0.85)', 600, an(p.a));
+    placeDate(mdy(p.d.wakeMs),  p.aw, p.r+12, 'rgba(228,210,150,0.92)', p.wx, p.wy);
+    placeDate(mdy(p.d.sleepMs), p.as, p.r+12, 'rgba(150,190,235,0.92)', p.sx, p.sy);
   });
-  // most-recent night: spelled-out Awake / Asleep with 24-hour times (date above, dimmed)
-  s+=TXT(heroW[0], heroW[1]-4.5, wkdmd(lastD.wakeMs),      9,   'rgba(216,207,173,0.9)', 600, an(lAw));
-  s+=TXT(heroW[0], heroW[1]+9.5, 'Awake at '+t24(lastD.wakeMs),  11.5, WAKE,  700, an(lAw));
-  s+=TXT(heroS[0], heroS[1]-4.5, wkdmd(lastD.sleepMs),     9,   'rgba(206,210,224,0.9)', 600, an(lAs));
-  s+=TXT(heroS[0], heroS[1]+9.5, 'Asleep at '+t24(lastD.sleepMs), 11.5, SLEEP, 700, an(lAs));
   svg.innerHTML=s;
 }
 
