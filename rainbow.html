@@ -53,6 +53,7 @@
   #viz-week,#viz-month,#viz-prevmonth{max-width:720px}
   #viz-return,#viz-bloom{max-width:560px}
   #viz-drift{max-width:820px}
+  #viz-arcs{max-width:820px}
 
   footer{padding:30px 0 60px;text-align:center;color:var(--dim2);font-size:.8rem;line-height:1.8;border-top:1px solid var(--divider)}
   @media(max-width:600px){.card{padding:22px 14px 18px}h1{font-size:2rem}.wrap{padding:0 14px}}
@@ -144,6 +145,12 @@
       <h2>Wake and sleep, drifting</h2>
       <p class="cap">Both rhythms on one timeline, over the last ~6 weeks. Wake (gold) and fall-asleep (lavender) times climb together as Rikki's hours slip later — the clock runs up the side and repeats past midnight, so the steady rise is the drift itself. The pale daylight bands (sunrise to sunset) stay fixed while her sleep drifts across them: when the lines ride up into the dark gaps, she's awake through the night and asleep in daylight. The dashed line is her average pace of drift; a ringed night is one that broke from it — gold where she woke unusually early or late, lavender where she turned in early or late. The most recent day is at the right.</p>
       <div class="frame"><svg id="viz-drift" viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </section>
+
+    <section class="card">
+      <h2>Two weeks, in arcs</h2>
+      <p class="cap">The plainest view. Each of the last two weeks is one arc spanning the hours Rikki was awake — wake (gold dot) at one end, sleep (lavender dot) at the other — laid on a single 24-hour clock. No sky, no colour by time of day; just the shape of each day. Read down the page and watch the arcs slide later and wrap past midnight as her rhythm drifts. The brightest arc at the bottom is her most recent day.</p>
+      <div class="frame"><svg id="viz-arcs" viewBox="0 0 820 500" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </section>
   </main>
 
@@ -621,6 +628,51 @@ function renderDrift(svgId, days){
   svg.innerHTML=s;
 }
 
+// ── 9 · Two weeks, in arcs ──────────────────────────────────────────────────
+// The simplest possible read: one gentle, time-correct arc per day spanning the hours
+// she was awake, on a single 24-hour clock — no sky colour, no shading. Wake (gold) and
+// sleep (lavender) sit at the arc's ends; arcs march later each day and split cleanly
+// where they cross midnight, so the drift is the only thing the eye follows.
+function renderArcs(svgId, days){
+  const svg=document.getElementById(svgId); if(!svg)return;
+  const N=days.length; if(!N){ svg.innerHTML=''; return; }
+  const W=820, L=92, Rm=30, T=30, Bm=50, rowH=30;
+  const H=T+N*rowH+Bm;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const x0=L, x1=W-Rm, plotW=x1-x0;
+  const xOf=h=> x0+(((h%24)+24)%24)/24*plotW;
+  const cl=h=>{ const x=((h%24)+24)%24; return x===0?'12a':x===12?'noon':x<12?x+'a':(x-12)+'p'; };
+  let s='';
+  // 24-hour clock grid every 6h, labelled top & bottom (midnight a touch brighter)
+  for(let h=0;h<=24;h+=6){ const x=x0+h/24*plotW, mid=(h%24)===0;
+    s+=`<line x1="${x.toFixed(1)}" y1="${T}" x2="${x.toFixed(1)}" y2="${(H-Bm).toFixed(1)}" stroke="rgba(255,255,255,${mid?0.10:0.05})" stroke-width="${mid?0.9:0.6}"/>`;
+    s+=TXT(x, T-11, cl(h), 9.5,'rgba(255,255,255,0.45)', mid?700:500);
+    s+=TXT(x, H-Bm+17, cl(h), 9.5,'rgba(255,255,255,0.45)', mid?700:500);
+  }
+  // one arc per day — oldest at the top, newest (brightest) at the bottom
+  days.forEach((d,i)=>{
+    const last=i===N-1;
+    const by=T+(i+1)*rowH-8, arcH=15;                       // row baseline; bow rises arcH above it
+    const wakeH=nyHour(d.wakeMs), sleepH=nyHour(d.sleepMs);
+    const span=(((sleepH-wakeH)%24)+24)%24 || 24;            // awake hours, the short way round the clock
+    // sample the bow in clock-hour space; break the path wherever it wraps past midnight
+    const segs=[[]]; let prevx=null; const STEPS=48;
+    for(let k=0;k<=STEPS;k++){ const t=k/STEPS, x=xOf(wakeH+t*span), y=by-arcH*Math.sin(Math.PI*t);
+      if(prevx!==null && Math.abs(x-prevx)>plotW*0.6) segs.push([]);
+      segs[segs.length-1].push([x,y]); prevx=x;
+    }
+    const col=last?'#f0d68a':'rgba(232,201,120,0.78)', sw=last?2.6:1.8;
+    segs.forEach(pl=>{ if(pl.length<2) return;
+      s+=`<path d="M ${pl.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ')}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    });
+    const wx=xOf(wakeH), sx=xOf(sleepH);
+    s+=`<circle cx="${wx.toFixed(1)}" cy="${by.toFixed(1)}" r="${last?3.4:2.6}" fill="#e8c978" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.2:0.5}"/>`;
+    s+=`<circle cx="${sx.toFixed(1)}" cy="${by.toFixed(1)}" r="${last?3.4:2.6}" fill="#c4b0e0" stroke="${last?'#fff':'rgba(0,0,0,0.4)'}" stroke-width="${last?1.2:0.5}"/>`;
+    s+=TXT(L-10, by+0.5, wkdmd(d.wakeMs), last?10.5:9, last?'#ffffff':'rgba(216,207,173,0.82)', last?700:600,'end');
+  });
+  svg.innerHTML=s;
+}
+
 // ── Orchestrate ────────────────────────────────────────────────────────────
 function renderAllViz(sessions){
   const now=Date.now();
@@ -637,6 +689,7 @@ function renderAllViz(sessions){
   renderSpiral('viz-spiral-sleep', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-30), now,
     { valOf:d=>d.sleepMs, labelMs:d=>d.sleepMs, accent:'#c4b0e0', spiralCol:'rgba(196,176,224,0.3)', labelCol:'rgba(206,196,224,0.88)', hiNewest:true }); // same month, by sleep time (real nights only); labelled by the date she fell asleep
   renderDrift('viz-drift', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-45)); // wake + sleep on one unwrapped-clock timeline, ~6 weeks
+  renderArcs('viz-arcs', days.filter(d=>d.real===true&&d.sleepMs<=now).slice(-14)); // last ~2 weeks, one plain time-correct arc per day
   // today readout (daylight caught vs slept-through, from real wake window)
   const wakeHour=nyHour(today.wakeMs); const { sunrise, sunset }=sunTimes(new Date(today.wakeMs));
   const wlen=(today.sleepMs-today.wakeMs)/3600000;
