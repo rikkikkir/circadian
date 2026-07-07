@@ -198,7 +198,7 @@ const FALLBACK_SESSIONS = [
 
 // ── NY time + solar helpers ────────────────────────────────────────────────
 const _nyFmt = new Intl.DateTimeFormat('en-US', {
-  timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit',
+  timeZone:'America/Denver', year:'numeric', month:'2-digit', day:'2-digit',
   hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
 });
 function nyParts(ms){ const p={}; _nyFmt.formatToParts(new Date(ms)).forEach(({type,value})=>{ if(type!=='literal')p[type]=+value; }); if(p.hour===24)p.hour=0; return p; }
@@ -210,14 +210,14 @@ function isInDST(d){ const y=d.getFullYear(); const mar=new Date(y,2,1),nov=new 
 function sunTimes(dateObj){
   const y=dateObj.getFullYear();
   const doy=Math.round((dateObj-new Date(y,0,1))/86400000)+1;
-  const lat=43*Math.PI/180;
+  const lat=46*Math.PI/180;
   const B=2*Math.PI*(doy-1)/365;
   const decl=0.006918-0.399912*Math.cos(B)+0.070257*Math.sin(B)-0.006758*Math.cos(2*B)+0.000907*Math.sin(2*B);
   const ha=Math.acos(-Math.tan(lat)*Math.tan(decl));
   const haH=ha*12/Math.PI;
   const eot=229.18*(0.000075+0.001868*Math.cos(B)-0.032077*Math.sin(B)-0.014615*Math.cos(2*B)-0.04089*Math.sin(2*B));
-  const utcOff=isInDST(dateObj)?-4:-5;
-  const lonCorr=(-85-utcOff*15)/15;
+  const utcOff=isInDST(dateObj)?-6:-7;
+  const lonCorr=(-111-utcOff*15)/15;
   const noon=12-lonCorr-eot/60;
   return { sunrise:noon-haH, sunset:noon+haH };
 }
@@ -316,11 +316,11 @@ function heart(cx, cy, s){
     + `fill="#46a6f0" stroke="#ffffff" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
 }
 const compactT = ms => new Date(ms).toLocaleTimeString('en-US',
-      {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})
+      {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'})
       .replace(' AM','a').replace(' PM','p').replace('12:00a','12a').replace('12:00p','12p');
-const mdy  = ms => new Date(ms).toLocaleDateString('en-US',{month:'numeric',day:'numeric',timeZone:'America/New_York'});
-const wkd  = ms => new Date(ms).toLocaleDateString('en-US',{weekday:'short',timeZone:'America/New_York'});
-const wkdmd= ms => new Date(ms).toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric',timeZone:'America/New_York'});
+const mdy  = ms => new Date(ms).toLocaleDateString('en-US',{month:'numeric',day:'numeric',timeZone:'America/Denver'});
+const wkd  = ms => new Date(ms).toLocaleDateString('en-US',{weekday:'short',timeZone:'America/Denver'});
+const wkdmd= ms => new Date(ms).toLocaleDateString('en-US',{weekday:'short',month:'numeric',day:'numeric',timeZone:'America/Denver'});
 
 // One day's dome: bright waking sky on top, shaded slept-through sky beneath.
 function domeRing(cx,cy,wakeMs,sleepMs,ri,ro,da){
@@ -740,13 +740,13 @@ function renderAllViz(sessions){
   const ro=document.getElementById('today-readout');
   if(ro) ro.textContent=`Today she catches ~${caughtH.toFixed(1)}h of daylight and sleeps through ~${slept.toFixed(1)}h of sun.`;
   const fa=document.getElementById('foot-anchor');
-  if(fa) fa.textContent='Last recorded wake: '+new Date(today.wakeMs).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})+' ET';
+  if(fa) fa.textContent='Last recorded wake: '+new Date(today.wakeMs).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'})+' MT';
 }
 
 function setStatus(cls,msg){ const el=document.getElementById('status'); if(el){ el.className='status '+cls; el.textContent=msg; } }
 
-const fa=ms=>new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})+' ET';
-const ftime=ms=>new Date(ms).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'});
+const fa=ms=>new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'})+' MT';
+const ftime=ms=>new Date(ms).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'});
 const LIVE_REFRESH_MS=15*60*1000, MIN_REFRESH_GAP_MS=5*60*1000;
 let _refreshInFlight=false, _lastAttempt=0, _hadLiveData=false;
 

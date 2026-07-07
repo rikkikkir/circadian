@@ -316,10 +316,10 @@ hr.div{border:none;border-top:1px solid var(--divider)}
 <div id="wake-modal" class="modal-overlay" onclick="if(event.target===this)closeWakeModal()">
   <div class="modal">
     <h3>Manual Wake Override</h3>
-    <p>Override the Oura wake anchor. Enter the time you woke up in Eastern Time. All forecasts recalculate from this anchor until you clear it.</p>
-    <label for="wake-date">Date (ET)</label>
+    <p>Override the Oura wake anchor. Enter the time you woke up in Mountain Time. All forecasts recalculate from this anchor until you clear it.</p>
+    <label for="wake-date">Date (MT)</label>
     <input type="date" id="wake-date" style="margin-bottom:14px">
-    <label for="wake-time">Time (ET)</label>
+    <label for="wake-time">Time (MT)</label>
     <input type="time" id="wake-time">
     <div class="modal-btns">
       <button class="api-btn" id="wake-clear-btn" onclick="clearWakeOverride()" style="display:none">✕ Clear Override</button>
@@ -667,9 +667,9 @@ const PERSONAL = {
   tau:    25.4,   // circadian period in hours
   awakeH: 13.4,   // hours of active waking per cycle
   tibH:   12.0,   // time in bed per cycle
-  lat:    43,
-  lng:   -85,
-  tz:    'America/New_York',
+  lat:    46,
+  lng:   -111,
+  tz:    'America/Denver',
   // Shared daily life wheel (Rikki + Luke). Types: waking, food, open, winddown, sleep
   // Hours must sum to tau (25.4). Sleep = tibH (12.0).
   pieChart: [
@@ -818,7 +818,7 @@ async function loadHistoricalData(onProgress) {
 
 // ── NY time helpers ────────────────────────────────────────────────────────
 const _nyFmt = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/New_York',
+  timeZone: 'America/Denver',
   year:'numeric', month:'2-digit', day:'2-digit',
   hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
 });
@@ -853,7 +853,7 @@ function isInDST(d) {
 function sunTimes(dateObj) {
   const y = dateObj.getFullYear();
   const doy = Math.round((dateObj - new Date(y,0,1)) / 86400000) + 1;
-  const lat  = 43 * Math.PI / 180;
+  const lat  = 46 * Math.PI / 180;
   const B    = 2*Math.PI*(doy-1)/365;
   const decl = 0.006918 - 0.399912*Math.cos(B) + 0.070257*Math.sin(B)
              - 0.006758*Math.cos(2*B) + 0.000907*Math.sin(2*B);
@@ -861,8 +861,8 @@ function sunTimes(dateObj) {
   const haH  = ha * 12 / Math.PI;
   const eot  = 229.18*(0.000075 + 0.001868*Math.cos(B) - 0.032077*Math.sin(B)
                       -0.014615*Math.cos(2*B) - 0.04089*Math.sin(2*B));
-  const utcOff = isInDST(dateObj) ? -4 : -5;
-  const lonCorr = (-85 - utcOff*15) / 15;
+  const utcOff = isInDST(dateObj) ? -6 : -7;
+  const lonCorr = (-111 - utcOff*15) / 15;
   const noon = 12 - lonCorr - eot/60;
   return { sunrise: noon - haH, sunset: noon + haH };
 }
@@ -870,15 +870,15 @@ function sunTimes(dateObj) {
 // ── Format helpers ─────────────────────────────────────────────────────────
 function fmt12(ms) {
   const parts = new Date(ms).toLocaleTimeString('en-US',{
-    hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
+    hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'
   });
-  if (parts === '12:00 PM') return 'Noon ET';
-  if (parts === '12:00 AM') return 'Midnight ET';
-  return parts + ' ET';
+  if (parts === '12:00 PM') return 'Noon MT';
+  if (parts === '12:00 AM') return 'Midnight MT';
+  return parts + ' MT';
 }
 function fmtShort(ms) {
   const s = new Date(ms).toLocaleTimeString('en-US',
-    {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'});
+    {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'});
   if (s === '12:00 PM') return 'Noon';
   if (s === '12:00 AM') return 'Midnight';
   return s;
@@ -1148,8 +1148,8 @@ function renderPersonalDials(anchorMs) {
       svg += '<text x="' + mlx.toFixed(1) + '" y="' + mly.toFixed(1) + '" font-size="6.5" fill="rgba(180,175,210,0.85)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" font-weight="500">Midn</text>';
     }
 
-    const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short', timeZone: 'America/New_York'}).toUpperCase();
-    const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
+    const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short', timeZone: 'America/Denver'}).toUpperCase();
+    const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/Denver'});
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
@@ -1290,8 +1290,8 @@ function renderMiniDials(anchorMs) {
     svg += '<text x="' + nlx.toFixed(1) + '" y="' + nly.toFixed(1) + '" font-size="6.5" fill="rgba(201,168,76,0.85)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" font-weight="500">Noon</text>';
 
     // Center label: day name + date
-    const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short',  timeZone: 'America/New_York'}).toUpperCase();
-    const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/New_York'});
+    const dayName = dayDate.toLocaleDateString('en-US', {weekday: 'short',  timeZone: 'America/Denver'}).toUpperCase();
+    const dateStr = dayDate.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', timeZone: 'America/Denver'});
     svg += '<text x="' + CX + '" y="' + (CY - 5) + '" font-size="9" font-weight="700" fill="rgba(230,220,200,0.92)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif" letter-spacing="0.5">' + dayName + '</text>';
     svg += '<text x="' + CX + '" y="' + (CY + 7) + '" font-size="8" font-weight="400" fill="rgba(180,170,150,0.78)" text-anchor="middle" dominant-baseline="middle" font-family="Inter,sans-serif">' + dateStr + '</text>';
 
@@ -1325,7 +1325,7 @@ function renderCards(anchorMs) {
     const dayStartMs = dayDate.getTime();
     const dayEndMs   = new Date(mYear, mMon, 2 + i).getTime();
     const dayLabel   = dayDate.toLocaleDateString('en-US', {
-      weekday:'short', month:'short', day:'numeric', timeZone:'America/New_York'
+      weekday:'short', month:'short', day:'numeric', timeZone:'America/Denver'
     });
 
     // Find which cycle overlaps the start of this calendar day (projection)
@@ -1420,7 +1420,7 @@ function renderForecast(anchorMs) {
     const isToday = day === 0;
 
     const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
-      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/Denver'
     });
     const conf     = day < 7 ? 'conf-high' : day < 14 ? 'conf-med' : 'conf-low';
     const rowClass = isToday ? 'today-row' : '';
@@ -2174,7 +2174,7 @@ function buildShareICS(anchorMs) {
   const lines   = ["Rikki's predicted sleep/wake schedule:"];
   cycles.forEach(c => {
     const day = new Date(c.wakeMs).toLocaleDateString('en-US',{
-      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/Denver'
     });
     lines.push(`${day}: awake ${fmt12(c.wakeMs)} → sleep ${fmt12(c.sleepMs)} → wake ${fmt12(c.nwakeMs)}`);
   });
@@ -2209,7 +2209,7 @@ function doICS() {
 function updateDial(h) {
   const deg = (h/24)*360, rad = (deg-90)*Math.PI/180;
   const dx  = Math.cos(rad), dy = Math.sin(rad);
-  const x   = (220 + 238*dx).toFixed(1), y = (220 + 238*dy).toFixed(1);
+  const x   = (220 + 263*dx).toFixed(1), y = (220 + 263*dy).toFixed(1);
   const hl  = document.getElementById('hand-line');
   if (hl) { hl.setAttribute('x2', x); hl.setAttribute('y2', y); }
 }
@@ -2229,12 +2229,12 @@ function updateNow(anchorMs) {
   const dx = Math.sin(rRad), dy = -Math.cos(rRad);
   const lbl = document.getElementById('orn-lbl');
   if (lbl) {
-    lbl.setAttribute('x', (220 + 245 * dx).toFixed(1));
-    lbl.setAttribute('y', (220 + 245 * dy).toFixed(1));
+    lbl.setAttribute('x', (220 + 271 * dx).toFixed(1));
+    lbl.setAttribute('y', (220 + 271 * dy).toFixed(1));
     lbl.setAttribute('text-anchor', 'start');
     // Compact format matches ring labels: "3:44A", "12P", etc.
     const s = new Date().toLocaleTimeString('en-US',
-      {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'});
+      {hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'});
     const [time, period] = s.split(' ');
     const suf = period[0];
     const [h, m] = time.split(':');
@@ -2325,7 +2325,7 @@ function drawOuterClock(anchorMs) {
   // Compact clock-time formatter for ring labels (e.g. "12:55A", "noon", "3P")
   function ringLabel(ms) {
     const s = new Date(ms).toLocaleTimeString('en-US',{
-      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
     });
     const [time, period] = s.split(' ');
     const suf = period[0];
@@ -2505,7 +2505,7 @@ function renderHourTable(anchorMs) {
     const dayMs   = todayMs + day * 86400000;
     const isToday = day === 0;
     const dayLabel = new Date(dayMs).toLocaleDateString('en-US',{
-      weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'
+      weekday:'short',month:'short',day:'numeric',timeZone:'America/Denver'
     });
     const n      = Math.round((dayMs + 12 * 3600000 - anchorMs) / TAU_MS);
     const wakeMs = anchorMs + n * TAU_MS;
@@ -2762,9 +2762,9 @@ function applyWakeOverride() {
   renderAll(ms);
   const timeStr = new Date(ms).toLocaleString('en-US', {
     month:'short', day:'numeric',
-    hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+    hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
   });
-  setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+  setStatus('overridden', `⚑ Manual wake override · ${timeStr} MT`);
   document.getElementById('wake-override-btn').classList.add('active');
 }
 
@@ -2871,10 +2871,10 @@ function renderRainbow(anchorMs) {
       + `fill="#46a6f0" stroke="#ffffff" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
   }
   const compactT = ms => new Date(ms).toLocaleTimeString('en-US',
-        {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'})
+        {hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'})
         .replace(' AM','a').replace(' PM','p').replace('12:00a','12a').replace('12:00p','12p');
   const mdy = ms => new Date(ms).toLocaleDateString('en-US',
-        {month:'numeric',day:'numeric',timeZone:'America/New_York'});
+        {month:'numeric',day:'numeric',timeZone:'America/Denver'});
 
   // Build the waking-day timeline from real Oura sessions; project only the future
   const now = Date.now();
@@ -2984,8 +2984,8 @@ function renderAll(anchorMs) {
   if (footAnchor) {
     footAnchor.textContent = 'Last wake: ' + new Date(anchorMs).toLocaleString('en-US',{
       month:'short',day:'numeric',year:'numeric',
-      hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/New_York'
-    }) + ' ET';
+      hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Denver'
+    }) + ' MT';
   }
 
   if (_liveTimer) clearInterval(_liveTimer);
@@ -3022,9 +3022,9 @@ async function init() {
       renderAll(ovr);
       const timeStr = new Date(ovr).toLocaleString('en-US', {
         month:'short', day:'numeric',
-        hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+        hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
       });
-      setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+      setStatus('overridden', `⚑ Manual wake override · ${timeStr} MT`);
       document.getElementById('wake-override-btn').classList.add('active');
     }
     startHistoricalLoad();
@@ -3055,9 +3055,9 @@ async function refreshFromAPI() {
       renderAll(ovr);
       const timeStr = new Date(ovr).toLocaleString('en-US', {
         month:'short', day:'numeric',
-        hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+        hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
       });
-      setStatus('overridden', `⚑ Manual wake override · ${timeStr} ET`);
+      setStatus('overridden', `⚑ Manual wake override · ${timeStr} MT`);
       return;
     }
     if (ovr) clearWakeOverrideSilently();   // Oura logged a more recent wake → live data wins
@@ -3066,12 +3066,12 @@ async function refreshFromAPI() {
     renderAll(anchor);
     const latestStr = new Date(anchor).toLocaleString('en-US', {
       month:'short', day:'numeric',
-      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
     });
     const updatedStr = new Date().toLocaleTimeString('en-US', {
-      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/New_York'
+      hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Denver'
     });
-    setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} ET · updated ${updatedStr}`);
+    setStatus('connected', `✓ Live Oura data · last wake: ${latestStr} MT · updated ${updatedStr}`);
   } catch (e) {
     if (getWakeOverride()) return;
     const cached = getCached();
