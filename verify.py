@@ -57,14 +57,17 @@ if "--offline" not in sys.argv:
     # that CSV export is its only surviving source. Verified once, on recovery:
     # 282 of 283 overlapping nights matched the API exactly; the one that didn't
     # was Oura re-segmenting a night into six fragments after the fact.
+    # ONE seamless sweep of the whole range, paginated with next_token.
+    #
+    # Deliberately NOT chunked. The first backfill walked year by year with adjacent
+    # ranges and silently lost 4 sessions at the seams (a sleep starting 31 Dec but
+    # filed under day=1 Jan falls between two queries). This verifier ORIGINALLY had
+    # the same chunking — so it fetched the same incomplete set and certified it as
+    # correct. A check that shares its method with the thing it checks is not a check.
+    # The gap was caught by an independent oracle: Rikki's own CSV exports.
     mine = {r["id"]: r for r in recs if r.get("src", "api") == "api"}
-    live, y = {}, int(API_FLOOR[:4])
     today = datetime.date.today()
-    while y <= today.year:
-        for r in fetch(max(datetime.date(y,1,1), datetime.date.fromisoformat(API_FLOOR)).isoformat(),
-                       min(datetime.date(y,12,31), today + datetime.timedelta(days=1)).isoformat()):
-            live[r["id"]] = r
-        y += 1
+    live = {r["id"]: r for r in fetch(API_FLOOR, (today + datetime.timedelta(days=1)).isoformat())}
     diff = 0
     for i, lr in live.items():
         m = mine.get(i)
