@@ -1,0 +1,74 @@
+# Sync Oura → data/sleep.json, then deploy.
+# ONE workflow on purpose. A separate sync job whose commit is meant to trigger
+# deploy.yml would never fire: GitHub's docs are explicit that "events triggered
+# by the GITHUB_TOKEN will not create a new workflow run." So this job syncs and
+# deploys in the same run.
+#
+# No Oura token lives in GitHub. The Cloudflare Worker holds it, and this job
+# reaches the Worker the same way the browser does. That is safe *because* the
+# Worker is restricted to the sleep endpoint — everything it can serve is data
+# already published at data/sleep.json. There is no secret behind it to protect.
+#
+# Cron is offset off the hour on purpose: GitHub's docs warn that schedule "can be
+# delayed during periods of high load" and that "some queued jobs may be dropped",
+# and the start of every hour is the worst of it.
+#
+# KNOWN RISK, deliberately unmitigated: GitHub auto-disables scheduled workflows
+# on public repos after 60 days of inactivity. Whether this job's own commits reset
+# that clock is undocumented, and the popular keepalive action was banned by GitHub
+# for ToS violation in April 2025. The backstop is honest rather than clever —
+# calendar.html prints how stale the data is, in the nav, on every page load.
+
+name: Sync Oura and deploy
+
+on:
+  schedule:
+    - cron: '37 11 * * *'      # 11:37 UTC daily — off the hour on purpose
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false     # never cancel mid-commit
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull recent nights and merge
+        if: github.event_name != 'push'
+        run: python3 .github/scripts/sync.py
+
+      - name: Verify before publishing anything
+        if: github.event_name != 'push'
+        run: python3 verify.py
+
+      - name: Commit if the archive grew
+        if: github.event_name != 'push'
+        run: |
+          if git diff --quiet -- data/; then
+            echo "no new nights"
+          else
+            git config user.name  "oura-sync"
+            git config user.email "actions@github.com"
+            git add data/
+            git commit -m "Sync Oura — $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: '.' }
+      - id: deployment
+        uses: actions/deploy-pages@v4
