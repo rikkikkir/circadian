@@ -11,7 +11,7 @@ WORKER = "https://circadian.rikkidelaine84.workers.dev"
 HDRS = {"Origin": "https://rikkikkir.github.io",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"}
-FLOOR = "2022-01-24"
+API_FLOOR = "2022-01-24"   # the API returns nothing before this. The archive itself reaches to 2021-01-12 via CSV.
 fails, warns = [], []
 
 recs = json.load(open(SLIM))
@@ -52,11 +52,16 @@ def fetch(s, e):
         if not tok: return out
 
 if "--offline" not in sys.argv:
-    mine = {r["id"]: r for r in recs}
-    live, y = {}, int(FLOOR[:4])
+    # Only src=api records are checkable. The API returns ZERO sessions before
+    # 2022-01-24, so the src=csv era cannot be diffed against anything live —
+    # that CSV export is its only surviving source. Verified once, on recovery:
+    # 282 of 283 overlapping nights matched the API exactly; the one that didn't
+    # was Oura re-segmenting a night into six fragments after the fact.
+    mine = {r["id"]: r for r in recs if r.get("src", "api") == "api"}
+    live, y = {}, int(API_FLOOR[:4])
     today = datetime.date.today()
     while y <= today.year:
-        for r in fetch(max(datetime.date(y,1,1), datetime.date.fromisoformat(FLOOR)).isoformat(),
+        for r in fetch(max(datetime.date(y,1,1), datetime.date.fromisoformat(API_FLOOR)).isoformat(),
                        min(datetime.date(y,12,31), today + datetime.timedelta(days=1)).isoformat()):
             live[r["id"]] = r
         y += 1
@@ -67,10 +72,18 @@ if "--offline" not in sys.argv:
         if m["bedtime_start"] != lr["bedtime_start"] or m["bedtime_end"] != lr["bedtime_end"]:
             diff += 1; fails.append(f"  [5] FAIL {i} ({lr['day']}) disagrees with Oura")
     ghosts = set(mine) - set(live)
-    if ghosts: warns.append(f"      {len(ghosts)} records in sleep.json that Oura no longer returns")
+    if ghosts: warns.append(f"      {len(ghosts)} api records in sleep.json that Oura no longer returns")
     print(f"  [5] {len(live)} live Oura sessions checked -> {diff} discrepancies")
+    print(f"      ({len(recs)-len(mine)} src=csv records skipped — the API will not serve that era)")
 else:
     print("  [5] skipped (--offline)")
+
+# 5b. provenance is declared on every record
+bad_src = [r for r in recs if r.get("src") not in ("api", "csv")]
+if bad_src: fails.append(f"  [5b] FAIL {len(bad_src)} records with no/unknown src")
+else:
+    n_api = sum(1 for r in recs if r["src"] == "api")
+    print(f"  [5b] provenance declared on all {len(recs)}: {n_api} api, {len(recs)-n_api} csv")
 
 # 6. gaps are real, not filled
 days = sorted({r["day"] for r in recs if r["type"] == "long_sleep"})

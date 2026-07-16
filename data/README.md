@@ -1,6 +1,6 @@
 # data/sleep.json — the source of truth
 
-Every session Oura recorded for Rikki since the ring began: 2022-01-24 onward.
+Every session Oura recorded for Rikki since the ring began: **2021-01-12 onward**.
 Measured only. **No estimated, projected, or modelled records — ever.**
 Projections belong to render time; they are never written back here.
 
@@ -18,6 +18,26 @@ One object per sleep session, Oura-native field names:
 | `tsd` `rem` `deep` `light` | sleep durations, seconds |
 | `hrv` `hr` `score` | nightly averages |
 | `type` | `long_sleep` = a real night · `sleep` = a nap |
+| `src` | **provenance.** `api` = pulled live from Oura · `csv` = recovered from an export |
+
+## Two provenances, and why
+
+The Oura API returns **zero sessions before 2022-01-24**. It is not that the ring
+started then — it is as far back as the API reaches. 304 nights from
+**2021-01-12 → 2022-01-19** survive only inside one 54-column CSV export
+(`~/Documents/Documents(1)/oura_2021-01-01_2023-02-01_trends.csv`). Those carry
+`src: "csv"`, a synthetic `csv-<date>-<time>` id, and no naps — a trends export is
+daily-resolution, one row per night.
+
+They were checked before merging: of 283 nights where the CSV and the API overlap,
+**282 matched to the second**. The one that didn't is the most instructive record here —
+2022-04-02, which the CSV holds as a single 09:48→18:04 sleep and the API now returns
+as six fragments. **Oura re-scores nights after the fact.** That is exactly why the
+merge key is `id` and not `day` or `bedtime_start`: a correction must *replace* its
+record, not settle in beside it.
+
+`verify.py` diffs `src: "api"` records against live Oura and skips `src: "csv"` ones —
+there is nothing live left to diff them against.
 
 ## Rules
 
@@ -43,4 +63,6 @@ Green means faithful. That is the whole point of this file: *finding out when it
 
 ## Provenance
 
-Captured 2026-07-16 · 2,507 sessions · 1,381 nights + 1,126 naps · 0 discrepancies vs Oura.
+Captured 2026-07-16 · **2,811 sessions · 2021-01-12 → 2026-07-16** ·
+2,507 from the API + 304 recovered from CSV · 1,627 nights + 1,126 naps ·
+385 genuine gaps (19%) preserved as gaps · 0 discrepancies vs live Oura.
