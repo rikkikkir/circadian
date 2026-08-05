@@ -2728,10 +2728,12 @@ function clearWakeOverrideSilently() {
   if (btn) btn.classList.remove('active');
 }
 
-function etToMs(dateStr, timeStr) {
+// The entered wall-clock time is Mountain (this page runs on MT, like the rest
+// of the app). Convert MT → UTC ms: MDT is UTC-6, MST is UTC-7, so add 6/7.
+function mtToMs(dateStr, timeStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const [h, min]  = timeStr.split(':').map(Number);
-  const offset = isInDST(new Date(y, m - 1, d)) ? 4 : 5;
+  const offset = isInDST(new Date(y, m - 1, d)) ? 6 : 7;
   return Date.UTC(y, m - 1, d, h + offset, min, 0);
 }
 
@@ -2756,7 +2758,7 @@ function applyWakeOverride() {
   const dateVal = document.getElementById('wake-date').value;
   const timeVal = document.getElementById('wake-time').value;
   if (!dateVal || !timeVal) return;
-  const ms = etToMs(dateVal, timeVal);
+  const ms = mtToMs(dateVal, timeVal);
   localStorage.setItem(WAKE_OVERRIDE_KEY, String(ms));
   closeWakeModal();
   renderAll(ms);
