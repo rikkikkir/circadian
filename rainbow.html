@@ -32,6 +32,7 @@
     border:1px solid #333;color:var(--dim);background:rgba(255,255,255,0.02)}
   .status.connected{border-color:rgba(201,168,76,0.4);color:var(--gold)}
   .status.error{border-color:rgba(210,90,60,0.5);color:#e0a08c}
+  .status.overridden{border-color:rgba(196,176,224,0.55);color:#c4b0e0}
 
   .legend{display:flex;flex-wrap:wrap;gap:11px 20px;justify-content:center;margin:24px auto 6px;max-width:700px;
     font-size:.76rem;color:var(--dim)}
@@ -170,6 +171,27 @@ const FALLBACK_ANCHOR_MS = 1781042731000;
 const WORKER_URL = 'https://circadian.rikkidelaine84.workers.dev';
 const _viewMode = 'sky';
 
+// ── Manual wake override (shared with index.html) ──────────────────────────
+// index.html's "Manual Wake Override" writes an absolute wake instant (ms) to
+// this same localStorage key. Both pages live on the rikkikkir.github.io origin,
+// so rainbow reads the very same value. When a manual wake is set, use it as the
+// last/ongoing wake; otherwise fall back to the Oura ring.
+const WAKE_OVERRIDE_KEY = 'manual_wake_override';
+const OVERRIDE_HOLD_MS  = 15 * 3600000; // 15h ≈ one waking day: held before Oura may supersede
+function getWakeOverride(){ const v=localStorage.getItem(WAKE_OVERRIDE_KEY); return v?parseInt(v,10):null; }
+// A newer Oura wake supersedes the manual entry, but only once the 15h hold lapses.
+function overrideSupersededBy(sessions){
+  const ovr=getWakeOverride();
+  if(!ovr||!sessions||!sessions.length) return false;
+  if(Date.now()-ovr<OVERRIDE_HOLD_MS) return false;
+  return getAnchor(sessions,true) > ovr;
+}
+// The manual wake to honor right now, or null when Oura should drive.
+function activeWakeOverride(sessions){
+  const ovr=getWakeOverride();
+  return (ovr && !overrideSupersededBy(sessions)) ? ovr : null;
+}
+
 // Real recent Oura sleeps (so the page is accurate even when the live Worker can't be
 // reached — it only allows the rikkikkir.github.io origin, so file:// / localhost fall back
 // here). The DEPLOYED page fetches live and supersedes these.
@@ -255,8 +277,9 @@ async function fetchSleep(days=90){
     url=j.next_token?`${WORKER_URL}/v2/usercollection/sleep?start_date=${start}&end_date=${end}&next_token=${j.next_token}`:null; }
   return out;
 }
-function getAnchor(sessions){
-  if(!sessions||!sessions.length)return FALLBACK_ANCHOR_MS;
+function getAnchor(sessions,raw){
+  if(!raw){ const ovr=activeWakeOverride(sessions); if(ovr) return ovr; } // manual wake wins over Oura
+  if(!sessions||!sessions.length)return getWakeOverride()||FALLBACK_ANCHOR_MS;
   // Anchor on the main nightly sleep — a nap shouldn't be reported as the last wake.
   const mains=sessions.filter(s=>s.type==='long_sleep'&&s.bedtime_end);
   const pool=mains.length?mains:sessions;
@@ -273,13 +296,17 @@ function buildWakingDays(sessions){
     .filter(s=>s.be>s.bs).sort((a,b)=>a.bs-b.bs);
   // de-dupe near-identical sessions
   const m=[]; for(const s of mains){ if(!m.length||s.bs-m[m.length-1].bs>4*3600000) m.push(s); }
-  if(!m.length){ const a=FALLBACK_ANCHOR_MS,out=[]; for(let k=0;k<31;k++){const w=a+k*TAU_MS;out.push({wakeMs:w,sleepMs:w+AWAKE_MS,real:false});} return out; }
+  const ovr=activeWakeOverride(sessions); // manual wake, or null when Oura drives
+  if(!m.length){ const a=ovr||FALLBACK_ANCHOR_MS,out=[]; if(ovr)out.push({wakeMs:a,sleepMs:a+AWAKE_MS,real:'manual'}); for(let k=ovr?1:0;k<31;k++){const w=a+k*TAU_MS;out.push({wakeMs:w,sleepMs:w+AWAKE_MS,real:false});} return out; }
   let sum=0,n=0; for(let i=0;i<m.length-1;i++){ const aw=m[i+1].bs-m[i].be; if(aw>4*3600000&&aw<22*3600000){sum+=aw;n++;} }
   const avgAwake=n?sum/n:AWAKE_MS;
   const days=[];
   for(let i=0;i<m.length-1;i++){ if(m[i+1].bs>m[i].be) days.push({wakeMs:m[i].be,sleepMs:m[i+1].bs,real:true}); }
-  const lastWake=m[m.length-1].be;
-  days.push({wakeMs:lastWake,sleepMs:lastWake+avgAwake,real:'wake'}); // ongoing day: wake real, sleep estimated
+  // Ongoing day: honor a manual wake if it's later than Oura's last recorded wake, else use Oura's.
+  const ouraWake=m[m.length-1].be;
+  const useManual=ovr&&ovr>ouraWake;
+  const lastWake=useManual?ovr:ouraWake;
+  days.push({wakeMs:lastWake,sleepMs:lastWake+avgAwake,real:useManual?'manual':'wake'}); // wake real (Oura or manual), sleep estimated
   for(let k=1;k<=31;k++){ const w=lastWake+k*TAU_MS; days.push({wakeMs:w,sleepMs:w+avgAwake,real:false}); }
   return days;
 }
@@ -757,19 +784,29 @@ async function refresh(force){
   try{
     const sessions=await fetchSleep(90); setCache(sessions);
     renderAllViz(sessions); _hadLiveData=true;
-    setStatus('connected','✓ Live Oura data · last wake '+fa(getAnchor(sessions))+' · updated '+ftime(Date.now()));
+    if(activeWakeOverride(sessions))
+      setStatus('overridden','⚑ Manual wake · '+fa(getAnchor(sessions))+' · Oura still syncing · '+ftime(Date.now()));
+    else
+      setStatus('connected','✓ Live Oura data · last wake '+fa(getAnchor(sessions))+' · updated '+ftime(Date.now()));
   }catch(e){
     if(!_hadLiveData){ // only fall back if we've never had live data; otherwise keep good data on screen
       renderAllViz(FALLBACK_SESSIONS);
-      setStatus('error','⚠ Live Oura unavailable here — showing your last synced days. Updates live on the published page.');
+      if(activeWakeOverride(FALLBACK_SESSIONS))
+        setStatus('overridden','⚑ Manual wake · '+fa(getAnchor(FALLBACK_SESSIONS))+' · projecting from your entry.');
+      else
+        setStatus('error','⚠ Live Oura unavailable here — showing your last synced days. Updates live on the published page.');
     }
   }finally{ _refreshInFlight=false; }
 }
 
 async function init(){
   const cached=getCached();
-  renderAllViz(cached || FALLBACK_SESSIONS);
-  setStatus(cached?'connected':'', cached?'✓ Showing cached Oura data · refreshing…':'↻ Loading your Oura data…');
+  const base=cached || FALLBACK_SESSIONS;
+  renderAllViz(base);
+  if(activeWakeOverride(base))
+    setStatus('overridden','⚑ Manual wake · '+fa(getAnchor(base))+' · refreshing…');
+  else
+    setStatus(cached?'connected':'', cached?'✓ Showing cached Oura data · refreshing…':'↻ Loading your Oura data…');
   await refresh(true);
   // keep it live without polling a hidden tab: timer fires only when visible, plus an instant pull on return to the tab
   setInterval(()=>{ if(document.visibilityState==='visible') refresh(false); }, LIVE_REFRESH_MS);
