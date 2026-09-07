@@ -48601,5 +48601,39 @@
   "src": "api",
   "tsd": 37440,
   "type": "long_sleep"
+ },
+ {
+  "bedtime_end": "2026-09-06T15:42:58.000-06:00",
+  "bedtime_start": "2026-09-06T01:26:58.000-06:00",
+  "day": "2026-09-06",
+  "deep": 2760,
+  "dur": 14.27,
+  "hr": 69.25,
+  "hrv": 43,
+  "id": "7e1c74f0-30c2-4933-8c04-bfc0b96ce619",
+  "light": 30330,
+  "off": -360,
+  "rem": 6840,
+  "score": null,
+  "src": "api",
+  "tsd": 39930,
+  "type": "long_sleep"
+ },
+ {
+  "bedtime_end": "2026-09-07T00:18:28.000-06:00",
+  "bedtime_start": "2026-09-06T23:53:58.000-06:00",
+  "day": "2026-09-07",
+  "deep": 0,
+  "dur": 0.41,
+  "hr": 0.0,
+  "hrv": null,
+  "id": "0cd84a10-62b6-43fb-abc9-646322ab2c1a",
+  "light": 510,
+  "off": -360,
+  "rem": 0,
+  "score": null,
+  "src": "api",
+  "tsd": 510,
+  "type": "sleep"
  }
 ]
