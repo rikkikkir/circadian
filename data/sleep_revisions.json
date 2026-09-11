@@ -1,0 +1,26 @@
+[
+ {
+  "captured_at": "2026-08-24T11:56:47+00:00",
+  "id": "8c31fd8c-d5d9-47a2-af7c-ed725b07a018",
+  "kind": "recovered",
+  "note": "version sync.py overwrote in place before the append-only change; restored from git history",
+  "record": {
+   "bedtime_end": "2026-08-23T21:46:30.000-06:00",
+   "bedtime_start": "2026-08-23T08:34:30.000-06:00",
+   "day": "2026-08-24",
+   "deep": 3450,
+   "dur": 13.2,
+   "hr": 63.875,
+   "hrv": 44,
+   "id": "8c31fd8c-d5d9-47a2-af7c-ed725b07a018",
+   "light": 24180,
+   "off": -360,
+   "rem": 7470,
+   "score": null,
+   "src": "api",
+   "tsd": 35100,
+   "type": "long_sleep"
+  },
+  "recovered_from": "f26abfa9bfed3ccdab9fc7caa21d9ba1b5d8257a"
+ }
+]
