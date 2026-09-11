@@ -65,7 +65,14 @@ if "--offline" not in sys.argv:
     # the same chunking — so it fetched the same incomplete set and certified it as
     # correct. A check that shares its method with the thing it checks is not a check.
     # The gap was caught by an independent oracle: Rikki's own CSV exports.
-    mine = {r["id"]: r for r in recs if r.get("src", "api") == "api"}
+    # sleep.json is append-only: a re-scored night keeps its original record and the
+    # new version lives in sleep_revisions.json. Compare Oura with the CURRENT version.
+    current = {r["id"]: r for r in recs}
+    rev_path = os.path.join(os.path.dirname(SLIM), "sleep_revisions.json")
+    for rv in (json.load(open(rev_path)) if os.path.exists(rev_path) else []):
+        if rv.get("kind") == "revision":
+            current[rv["id"]] = rv["record"]
+    mine = {i: r for i, r in current.items() if r.get("src", "api") == "api"}
     today = datetime.date.today()
     live = {r["id"]: r for r in fetch(API_FLOOR, (today + datetime.timedelta(days=1)).isoformat())}
     diff = 0

@@ -5,9 +5,12 @@
 # deploys in the same run.
 #
 # No Oura token lives in GitHub. The Cloudflare Worker holds it, and this job
-# reaches the Worker the same way the browser does. That is safe *because* the
-# Worker is restricted to the sleep endpoint — everything it can serve is data
-# already published at data/sleep.json. There is no secret behind it to protect.
+# reaches the Worker the same way the browser does. The job needs only the summary
+# fields that are published here in data/sleep.json.
+#
+# APPEND-ONLY: sync.py never changes or removes a record already in data/sleep.json;
+# re-scored nights are appended to data/sleep_revisions.json. check_append_only.py
+# refuses the commit if anything already committed would be changed or removed.
 #
 # Cron is offset off the hour on purpose: GitHub's docs warn that schedule "can be
 # delayed during periods of high load" and that "some queued jobs may be dropped",
@@ -46,7 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Pull recent nights and merge
+      - name: Pull recent nights and add them (append-only)
         if: github.event_name != 'push'
         run: python3 .github/scripts/sync.py
 
@@ -54,10 +57,14 @@ jobs:
         if: github.event_name != 'push'
         run: python3 verify.py
 
+      - name: Refuse to overwrite or remove committed data
+        if: github.event_name != 'push'
+        run: python3 .github/scripts/check_append_only.py
+
       - name: Commit if the archive grew
         if: github.event_name != 'push'
         run: |
-          if git diff --quiet -- data/; then
+          if git diff --quiet -- data/ && [ -z "$(git ls-files --others --exclude-standard -- data/)" ]; then
             echo "no new nights"
           else
             git config user.name  "oura-sync"
