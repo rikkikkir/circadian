@@ -154,5 +154,49 @@
    "tsd": 30330,
    "type": "long_sleep"
   }
+ },
+ {
+  "captured_at": "2026-10-07T17:56:17+00:00",
+  "id": "fc5f0dd2-4877-402f-838b-9e5454c5d967",
+  "kind": "revision",
+  "record": {
+   "bedtime_end": "2026-10-05T18:06:29.000-06:00",
+   "bedtime_start": "2026-10-05T16:56:59.000-06:00",
+   "day": "2026-10-06",
+   "deep": 510,
+   "dur": 1.16,
+   "hr": 78.625,
+   "hrv": 36,
+   "id": "fc5f0dd2-4877-402f-838b-9e5454c5d967",
+   "light": 1560,
+   "off": -360,
+   "rem": 0,
+   "score": null,
+   "src": "api",
+   "tsd": 2070,
+   "type": "late_nap"
+  }
+ },
+ {
+  "captured_at": "2026-10-07T17:56:17+00:00",
+  "id": "89162f19-530b-4aaf-bcc2-8ada5075b2a2",
+  "kind": "revision",
+  "record": {
+   "bedtime_end": "2026-10-06T13:39:01.000-06:00",
+   "bedtime_start": "2026-10-05T22:39:01.000-06:00",
+   "day": "2026-10-06",
+   "deep": 4620,
+   "dur": 15.0,
+   "hr": 68.375,
+   "hrv": 74,
+   "id": "89162f19-530b-4aaf-bcc2-8ada5075b2a2",
+   "light": 21780,
+   "off": -360,
+   "rem": 7980,
+   "score": null,
+   "src": "api",
+   "tsd": 34380,
+   "type": "long_sleep"
+  }
  }
 ]
