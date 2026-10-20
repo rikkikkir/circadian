@@ -352,5 +352,27 @@
    "tsd": 34770,
    "type": "long_sleep"
   }
+ },
+ {
+  "captured_at": "2026-10-20T15:48:22+00:00",
+  "id": "5fbe4084-5ea1-45d2-ad0e-7685455a1938",
+  "kind": "revision",
+  "record": {
+   "bedtime_end": "2026-10-19T07:48:57.000-06:00",
+   "bedtime_start": "2026-10-19T04:19:57.000-06:00",
+   "day": "2026-10-19",
+   "deep": 2070,
+   "dur": 3.48,
+   "hr": 69.25,
+   "hrv": 38,
+   "id": "5fbe4084-5ea1-45d2-ad0e-7685455a1938",
+   "light": 5310,
+   "off": -360,
+   "rem": 390,
+   "score": null,
+   "src": "api",
+   "tsd": 7770,
+   "type": "sleep"
+  }
  }
 ]
