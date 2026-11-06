@@ -255,7 +255,7 @@ function render(){
   view.className=mode==='wake'?'v-wake':'v-mid';
   view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct);
   document.getElementById('foot').textContent=mode==='wake'
-    ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise, noon and sunset are marked), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
+    ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise and sunset are marked, and the day name where midnight falls), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
     :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
 }
 
@@ -296,7 +296,6 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
     for(let hh=first; hh<=wall(d.w0).hr+awakeH; hh++){
       const t=hh-wall(d.w0).hr; if(t<0.2||t>awakeH-0.2) continue;
       const ts=d.w0+t*H, clock=((hh%24)+24)%24; if(clock===0) continue;
-      marks+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${clock%6===0?6:3}px;background:${lineAt(ts)}"></i>`;
       if(clock===12&&!compact) marks+=`<span class="m c" style="left:${X(ts).toFixed(2)}%;color:${inkAt(ts)};text-shadow:${haloAt(ts)}">noon</span>`;
     }
     marks+=compact?sunIn(d.w0,d.bed).map(s=>`<i class="tick" style="left:${X(s.ts).toFixed(2)}%;bottom:0;background:${lineAt(s.ts)}"></i>`).join(''):sunMarks(sunIn(d.w0,d.bed),X,100);
