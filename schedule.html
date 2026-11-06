@@ -26,6 +26,9 @@ a{color:#3b3d78}a:hover{color:var(--accent)}
 .seg button+button{margin-left:-1.5px}
 .seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
 .seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.seg .datelab{display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-right:0;border-radius:8px 0 0 8px;padding:0 12px;font-size:13px;font-weight:600;background:#fff}
+.seg input[type=date]{appearance:none;-webkit-appearance:none;margin:0;border:1.5px solid var(--ink);border-radius:0;padding:8px 10px;font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);background:#fff;min-height:38px}
+.seg input[type=date]+button{margin-left:-1.5px}
 .sheet{background:var(--sheet);box-shadow:0 2px 14px rgba(0,0,0,.12);padding:26px 32px 20px}
 .head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1.5px solid var(--ink);padding-bottom:7px;flex-wrap:wrap}
 h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:0;letter-spacing:-.01em}
@@ -65,13 +68,13 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .bedin small{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .bed{padding-left:12px;text-align:right;font-size:14px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
 .bed.none{color:var(--mute)}
-.bed small{display:block;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.bed small{display:inline;margin-left:5px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .ghost .txt{font-size:10.5px;font-style:italic;color:var(--soft);padding-right:8px;text-wrap:pretty}
 .state{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;z-index:2;overflow:hidden}
 .state.one{flex-direction:row;gap:7px}
 .state.asleep{color:var(--soft);text-shadow:0 0 2px #ebe8e4,0 0 2px #ebe8e4,0 0 3px #ebe8e4}
 .state em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums;font-size:9.5px}
-.v-mid .bar{height:34px}
+.v-mid .bar{height:22px}
 .foot{margin-top:14px;padding-top:7px;font-size:11px;line-height:1.45;color:#4a4c6a;text-wrap:pretty;border-top:1px solid rgba(26,27,46,.15)}
 .colophon{margin:16px 2px 0;font-size:12px;line-height:1.5;color:var(--soft);text-align:center;text-wrap:pretty}
 /* wake-aligned grid */
@@ -92,6 +95,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
   .v-wake .row,.v-wake .ruler{grid-template-columns:var(--labw) 1fr var(--bedw)}
   .v-wake .bedcol{display:block}
   .bed{font-size:12px;padding-left:8px}
+  .bed small{display:block;margin-left:0}
   .state{font-size:9px;letter-spacing:.08em}
   .state em{display:none}
 }
@@ -114,6 +118,11 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
       <button type="button" id="b-14" onclick="setRange(14)">2 weeks</button>
       <button type="button" id="b-21" onclick="setRange(21)">3 weeks</button>
       <button type="button" id="b-28" onclick="setRange(28)">4 weeks</button>
+    </div>
+    <div class="seg" role="group" aria-label="Start date">
+      <label class="datelab" for="start">Start on</label>
+      <input type="date" id="start" onchange="setStart(this.value)">
+      <button type="button" id="b-today" onclick="setStart('')">Today</button>
     </div>
   </div>
   <main class="sheet" id="sheet">
@@ -205,6 +214,8 @@ try{ mode=localStorage.getItem('rikki-sched-mode')||'wake'; nDays=+localStorage.
 if(mode!=='mid') mode='wake'; if(![14,21,28].includes(nDays)) nDays=28;
 window.setMode=m=>{mode=m; try{localStorage.setItem('rikki-sched-mode',m);}catch(e){} render();};
 window.setRange=n=>{nDays=n; try{localStorage.setItem('rikki-sched-days',String(n));}catch(e){} render();};
+let startISO=''; // '' means today; a date chosen in the picker is for this visit only
+window.setStart=v=>{startISO=/^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:''; render();};
 
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
@@ -213,7 +224,11 @@ function render(){
   const compact=window.innerWidth<=720;
   const view0=document.getElementById('view'); const barW=Math.max(120,(view0.clientWidth||800)-(compact?112:176)-(mode==='mid'||compact?(compact?70:96):0));
   const minPct=Math.min(45,(compact?48:62)/barW*100), timesPct=Math.min(90,200/barW*100);
-  const startTs=midnightOf(now); let endTs=startTs; for(let i=0;i<nDays;i++) endTs=nextMidnight(endTs);
+  const todayTs=midnightOf(now);
+  const startTs=startISO?mk(+startISO.slice(0,4),+startISO.slice(5,7)-1,+startISO.slice(8,10)):todayTs;
+  const tw=wall(todayTs); document.getElementById('start').value=startISO||`${tw.y}-${pad(tw.m+1)}-${pad(tw.d)}`;
+  document.getElementById('b-today').setAttribute('aria-pressed',!startISO);
+  let endTs=startTs; for(let i=0;i<nDays;i++) endTs=nextMidnight(endTs);
   // wake-ups covering the range with a cushion either side
   const n0=Math.floor((startTs-ANCHOR)/CYCLE)-3, n1=Math.ceil((endTs-ANCHOR)/CYCLE)+3, awake=[];
   for(let n=n0;n<n1;n++){ const w0=wakeN(n), w1=wakeN(n+1); awake.push({w0,bed:w1-SLEEP,w1}); }
@@ -225,7 +240,7 @@ function render(){
   [14,21,28].forEach(n=>document.getElementById('b-'+n).setAttribute('aria-pressed',nDays===n));
 
   // "right now" line
-  const cur=awake.find(a=>now>=a.w0&&now<a.w1), nowW=wall(now);
+  const nn=Math.floor((now-ANCHOR)/CYCLE), cur=(()=>{ for(let n=nn-2;n<=nn+2;n++){ const w0=wakeN(n), w1=wakeN(n+1); if(now>=w0&&now<w1) return {w0,bed:w1-SLEEP,w1}; } })(), nowW=wall(now);
   let line=`<span class="pill">Now</span>${FULLDOW[nowW.dow]}, ${FULL[nowW.m]} ${nowW.d}, ${apL(nowW.h,nowW.mi)} in Bozeman — `;
   if(cur&&now<cur.bed){ const bw=wall(cur.bed), same=bw.d===wall(cur.w0).d; line+=`Rikki is <b>awake</b>. She woke at ${fmtL(cur.w0)}${wall(cur.w0).d!==nowW.d?' on '+DOW[wall(cur.w0).dow]:''} and falls asleep around <b>${fmtL(cur.bed)}</b>${bw.d!==nowW.d?' '+DOW[bw.dow]:''}.`; }
   else if(cur){ const ww=wall(cur.w1); line+=`Rikki is <b>asleep</b>. She went to sleep at ${fmtL(cur.bed)}${wall(cur.bed).d!==nowW.d?' on '+DOW[wall(cur.bed).dow]:''} and wakes up around <b>${fmtL(cur.w1)}</b>${ww.d!==nowW.d?' '+DOW[ww.dow]:''}.`; }
@@ -233,10 +248,10 @@ function render(){
 
   const view=document.getElementById('view');
   view.className=mode==='wake'?'v-wake':'v-mid';
-  view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,now,compact):renderMid(awake,startTs,endTs,now,isUp,compact,minPct,timesPct);
+  view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct);
   document.getElementById('foot').textContent=mode==='wake'
     ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise, noon and sunset are marked), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
-    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. Her waking day slides later and later across the clock, then comes back around.';
+    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. An arrow on a label (◂ or ▸) means that stretch continues from the day before or into the day after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
 }
 
 function labRow(w,wakeTxt,extra){ // label column
@@ -248,9 +263,9 @@ const sunMarks=(suns,X,W,tsOf)=>suns.map(s=>{
   return `<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(s.ts)}"></i><span class="m${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(s.ts)};text-shadow:${haloAt(s.ts)}">${s.kind==='sr'?'▲':'▼'} ${fmtL(s.ts)}</span>`;
 }).join('');
 
-function renderWake(awake,startTs,endTs,now,compact){
+function renderWake(awake,startTs,endTs,todayTs,compact){
   const days=awake.filter(a=>a.w0>=startTs&&a.w0<endTs);
-  const todayM=startTs;
+  const todayM=todayTs;
   let out='', prevM=null, prev=null;
   // header ruler: "Awake" over the sky, "Bedtime" over the hatch
   const d0=days[0]||awake.find(a=>a.bed>startTs);
@@ -296,7 +311,7 @@ function renderWake(awake,startTs,endTs,now,compact){
   return out;
 }
 
-function renderMid(awake,startTs,endTs,now,isUp,compact,minPct,timesPct){
+function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
   let out='';
   out+='<div class="ruler"><div class="lab"><span>Day</span><span>Wake up</span></div><div class="track">';
   for(let hh=0;hh<=24;hh+=3){ const x=hh/24*100, edge=hh===0||hh===24; out+=`<i style="left:${x.toFixed(2)}%;height:${hh%6===0?6:4}px"></i>`; if(compact&&hh%6) continue; out+=`<span style="left:${x.toFixed(2)}%;transform:translateX(${hh===0?'0':hh===24?'-100%':'-50%'});font-weight:${edge?700:500};color:${edge?'var(--ink)':'var(--soft)'}">${edge?(compact?'12a':'Midnight'):fmtH(hh)}</span>`; }
@@ -306,15 +321,14 @@ function renderMid(awake,startTs,endTs,now,isUp,compact,minPct,timesPct){
     const M1=nextMidnight(M), g=wall(M), sun=sunTimes(M);
     if(prevM!==g.m){ out+=`<div class="div"><span>${FULL[g.m]} ${g.y}</span><i></i></div>`; prevM=g.m; }
     const X=ts=>(ts-M)/(M1-M)*100;
-    const wk=awake.find(a=>a.w0>=M&&a.w0<M1), bd=awake.find(a=>a.bed>=M&&a.bed<M1);
+    const wk=awake.find(a=>a.w0>=M&&a.w0<M1);
     const segs=awake.filter(a=>a.bed>M&&a.w0<M1).map(a=>({a0:Math.max(a.w0,M),a1:Math.min(a.bed,M1),a}));
     let inner='';
     // awake stretches, each labelled
     segs.forEach(s=>{
       const wPct=X(s.a1)-X(s.a0), midTs=(s.a0+s.a1)/2;
       inner+=`<div class="sky" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(s.a0,s.a1)}"></div>`;
-      const span=s.a0===M&&s.a1<M1?`until ${fmtL(s.a1)}`:s.a0>M&&s.a1===M1?`from ${fmtL(s.a0)}`:`${fmtL(s.a0)} – ${fmtL(s.a1)}`;
-      if(wPct>=minPct) inner+=`<div class="state awake${wPct>=timesPct?' one':''}" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span>${wPct>=minPct*1.6?`<em>${span}</em>`:''}</div>`;
+      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}">${s.a0===M?'◂ ':''}Awake${s.a1===M1?' ▸':''}</div>`;
     });
     // asleep stretches = the gaps
     const gaps=[]; let cursor=M;
@@ -322,14 +336,13 @@ function renderMid(awake,startTs,endTs,now,isUp,compact,minPct,timesPct){
     if(cursor<M1) gaps.push([cursor,M1]);
     gaps.forEach(([g0,g1])=>{
       const wPct=X(g1)-X(g0); if(wPct<minPct) return;
-      const span=g0===M&&g1<M1?`until ${fmtL(g1)}`:g0>M&&g1===M1?`from ${fmtL(g0)}`:`${fmtL(g0)} – ${fmtL(g1)}`;
-      inner+=`<div class="state asleep${wPct>=timesPct?' one':''}" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span>${wPct>=minPct*1.6?`<em>${span}</em>`:''}</div>`;
+      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%">${g0===M?'◂ ':''}Asleep${g1===M1?' ▸':''}</div>`;
     });
     // 3-hour ticks and sun lines
     for(let hh=3;hh<24;hh+=3){ const ts=M+hh*H; inner+=`<i class="tick" style="left:${(hh/24*100).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
     [sun.sr,sun.ss].forEach(h=>{ const ts=M+h*H; inner+=`<i class="tick" style="left:${(h/24*100).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
-    const cls=['row']; if(g.dow===0) cls.push('wk'); if(M===startTs) cls.push('today');
-    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===startTs?'<span class="tpill">Today</span>':'')}<div class="bar">${inner}</div><div class="bed${bd?'':' none'}">${bd?fmtL(bd.bed):'—'}</div></div>`;
+    const cls=['row']; if(g.dow===0) cls.push('wk'); if(M===todayTs) cls.push('today');
+    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill">Today</span>':'')}<div class="bar">${inner}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
   }
   out+='</div>';
   return out;
