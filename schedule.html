@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rikki's Wake &amp; Sleep Schedule</title>
+<title>Rikki’s Wake &amp; Sleep Schedule</title>
 <meta name="description" content="When Rikki is awake and asleep over the next few weeks, recalculated from today's date every time the page opens.">
-<meta property="og:title" content="Rikki's Wake &amp; Sleep Schedule">
+<meta property="og:title" content="Rikki’s Wake &amp; Sleep Schedule">
 <meta property="og:description" content="When Rikki is awake and asleep over the next few weeks. Today is always the first row.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -108,6 +108,8 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
   html,body{background:#fff}
   .sheet{box-shadow:none;padding:0}
   .wrap{padding:0;max-width:none}
+  .row,.div{break-inside:avoid}
+  .div{break-after:avoid}
 }
 </style>
 </head>
@@ -130,18 +132,18 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
     </div>
   </div>
   <main class="sheet" id="sheet">
-    <div class="head"><h1>Rikki's Wake &amp; Sleep Schedule</h1><span class="range" id="range"></span></div>
+    <div class="head"><h1>Rikki’s Wake &amp; Sleep Schedule</h1><span class="range" id="range"></span></div>
     <p class="now" id="now"></p>
     <div id="view"></div>
     <p class="foot" id="foot"></p>
   </main>
-  <p class="colophon">This page works out the schedule from today's date every time someone opens the link, so today is always the first row. All times are Bozeman, Montana time (Mountain). Part of <a href="index.html">Rikki's Circadian Universe</a>.</p>
+  <p class="colophon">This page works out the schedule from today's date every time someone opens the link, so today is always the first row. All times are Bozeman, Montana time (Mountain). Part of <a href="index.html">Rikki’s Circadian Universe</a>.</p>
 </div>
 <script>
 (function(){
 'use strict';
 // ---------- the path ----------
-// Rikki's innate day: one wake-up every CYCLE, asleep for SLEEP before each wake-up.
+// Rikki’s innate day: one wake-up every CYCLE, asleep for SLEEP before each wake-up.
 // ANCHOR is the wake-up on Dec 31, 2026 at 5:34 pm Mountain Standard Time, taken from the innate-path data file.
 const TZ='America/Denver', LAT=45.677, LON=-111.0429;
 const H=3600000, DAY=86400000, MIN=60000;
@@ -221,13 +223,12 @@ window.setRange=n=>{nDays=n; try{localStorage.setItem('rikki-sched-days',String(
 let startISO=''; // '' means today; a date chosen in the picker is for this visit only
 window.setStart=v=>{startISO=/^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:''; render();};
 
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
 function render(){
   const now=Date.now();
   const compact=window.innerWidth<=720;
   const view0=document.getElementById('view'); const barW=Math.max(120,(view0.clientWidth||800)-(compact?112:176)-(mode==='mid'||compact?(compact?70:96):0));
-  const minPct=Math.min(45,(compact?48:62)/barW*100), timesPct=Math.min(90,200/barW*100);
+  const minPct=Math.min(45,(compact?48:62)/barW*100);
   const todayTs=midnightOf(now);
   const startTs=startISO?mk(+startISO.slice(0,4),+startISO.slice(5,7)-1,+startISO.slice(8,10)):todayTs;
   const tw=wall(todayTs); document.getElementById('start').value=startISO||`${tw.y}-${pad(tw.m+1)}-${pad(tw.d)}`;
@@ -252,7 +253,7 @@ function render(){
 
   const view=document.getElementById('view');
   view.className=mode==='wake'?'v-wake':'v-mid';
-  view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct);
+  view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct);
   document.getElementById('foot').textContent=mode==='wake'
     ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise, noon and sunset are marked), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
     :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
@@ -280,7 +281,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
     const g=wall(gM), tail=p.bed-gM, up1=wall(p.w1);
     const txt=tail>3*MIN?`No wake-up. ${DOW[wall(p.w0).dow]} ${wall(p.w0).d}’s day runs on — awake until ${fmtL(p.bed)}, then asleep.`:`No wake-up. Asleep all day — up again ${DOW[up1.dow]} ${fmtL(p.w1)}.`;
     const cls=['row','ghost']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(gM===todayM) cls.push('today');
-    out+=`<div class="${cls.join(' ')}">${labRow(g,'',gM===todayM?'<span class="tpill">Today</span>':'')}<div class="txt">${txt}</div><div class="bedcol bed none">—</div></div>`;
+    out+=`<div class="${cls.join(' ')}">${labRow(g,'',gM===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="txt">${txt}</div><div class="bedcol bed none">—</div></div>`;
   };
   days.forEach(d=>{
     const w=wall(d.w0), M=midnightOf(d.w0);
@@ -304,7 +305,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
     if(mid<d.bed){ const mw=wall(mid), x=X(mid), R=x>80; marks+=`<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(mid)};z-index:3"></i><span class="m b${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(mid)};text-shadow:${haloAt(mid)}">${compact?`${DOW[mw.dow]} ${mw.d}`:`${DOW[mw.dow]} ${mw.m+1}/${mw.d}`}</span>`; }
     const bw=wall(d.bed), bedDow=bw.d!==w.d?DOW[bw.dow]:'';
     const cls=['row']; if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today');
-    out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,M===todayM?'<span class="tpill">Today</span>':'')}`+
+    out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,M===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}`+
       `<div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
       `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>`+
       `<div class="bedcol bed">${fmtL(d.bed)}${bedDow?`<small>${bedDow}</small>`:''}</div></div>`;
@@ -315,7 +316,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
   return out;
 }
 
-function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
+function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct){
   let out='';
   out+='<div class="ruler"><div class="lab"><span>Day</span><span>Wake up</span></div><div class="track">';
   for(let hh=0;hh<=24;hh+=3){ const x=hh/24*100, edge=hh===0||hh===24; out+=`<i style="left:${x.toFixed(2)}%;height:${hh%6===0?6:4}px"></i>`; if(compact&&hh%6) continue; out+=`<span style="left:${x.toFixed(2)}%;transform:translateX(${hh===0?'0':hh===24?'-100%':'-50%'});font-weight:${edge?700:500};color:${edge?'var(--ink)':'var(--soft)'}">${edge?(compact?'12a':'Midnight'):fmtH(hh)}</span>`; }
@@ -343,10 +344,10 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
       inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span></div>`;
     });
     // 3-hour ticks and sun lines
-    for(let hh=3;hh<24;hh+=3){ const ts=M+hh*H; inner+=`<i class="tick" style="left:${(hh/24*100).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
-    [sun.sr,sun.ss].forEach(h=>{ const ts=M+h*H; inner+=`<i class="tick" style="left:${(h/24*100).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
+    for(let hh=3;hh<24;hh+=3){ const ts=mk(g.y,g.m,g.d,hh); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
+    [sun.sr,sun.ss].forEach(h=>{ const ts=mk(g.y,g.m,g.d,Math.floor(h),Math.round((h%1)*60)); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
     const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today');
-    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill">Today</span>':'')}<div class="bar">${inner}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
+    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="bar">${inner}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
   }
   out+='</div>';
   return out;
