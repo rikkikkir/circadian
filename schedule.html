@@ -265,7 +265,7 @@ function labRow(w,wakeTxt,extra){ // label column
 }
 const sunMarks=(suns,X,W,tsOf)=>suns.map(s=>{
   const x=X(s.ts), R=x>W*0.8;
-  return `<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(s.ts)}"></i><span class="m${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(s.ts)};text-shadow:${haloAt(s.ts)}">${s.kind==='sr'?'▲':'▼'} ${fmtL(s.ts)}</span>`;
+  return `<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(s.ts)}"></i><span class="m${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(s.ts)};text-shadow:${haloAt(s.ts)}">${s.kind==='sr'?'sunrise':'sunset'} ${fmtL(s.ts)}</span>`;
 }).join('');
 
 function renderWake(awake,startTs,endTs,todayTs,compact){
