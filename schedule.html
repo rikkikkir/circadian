@@ -70,7 +70,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .bed.none{color:var(--mute)}
 .bed small{display:inline;margin-left:5px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .ghost .txt{font-size:10.5px;font-style:italic;color:var(--soft);padding-right:8px;text-wrap:pretty}
-.state{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;z-index:2;overflow:hidden}
+.state{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;text-align:left;padding-left:7px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;z-index:2;overflow:hidden}
 .state.one{flex-direction:row;gap:7px}
 .state.asleep{color:var(--soft);text-shadow:0 0 2px #ebe8e4,0 0 2px #ebe8e4,0 0 3px #ebe8e4}
 .state em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums;font-size:9.5px}
@@ -251,7 +251,7 @@ function render(){
   view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct);
   document.getElementById('foot').textContent=mode==='wake'
     ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise, noon and sunset are marked), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
-    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. An arrow on a label (◂ or ▸) means that stretch continues from the day before or into the day after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
+    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
 }
 
 function labRow(w,wakeTxt,extra){ // label column
@@ -328,7 +328,7 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
     segs.forEach(s=>{
       const wPct=X(s.a1)-X(s.a0), midTs=(s.a0+s.a1)/2;
       inner+=`<div class="sky" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(s.a0,s.a1)}"></div>`;
-      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}">${s.a0===M?'◂ ':''}Awake${s.a1===M1?' ▸':''}</div>`;
+      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}">Awake</div>`;
     });
     // asleep stretches = the gaps
     const gaps=[]; let cursor=M;
@@ -336,7 +336,7 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
     if(cursor<M1) gaps.push([cursor,M1]);
     gaps.forEach(([g0,g1])=>{
       const wPct=X(g1)-X(g0); if(wPct<minPct) return;
-      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%">${g0===M?'◂ ':''}Asleep${g1===M1?' ▸':''}</div>`;
+      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%">Asleep</div>`;
     });
     // 3-hour ticks and sun lines
     for(let hh=3;hh<24;hh+=3){ const ts=M+hh*H; inner+=`<i class="tick" style="left:${(hh/24*100).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
