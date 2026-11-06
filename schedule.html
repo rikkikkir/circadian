@@ -48,6 +48,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .div i{flex:1;height:1px;background:rgba(26,27,46,.45)}
 .row{display:grid;align-items:center;min-height:var(--rowh);border-top:1px solid var(--rule);position:relative}
 .row.wk{border-top-color:var(--rule-strong)}
+.row.wkend{background:rgba(26,27,46,.045)}
 .row.today{background:var(--today);box-shadow:inset 3px 0 0 var(--accent)}
 .lab{display:flex;align-items:baseline;gap:7px;padding:0 12px 0 6px}
 .dow{font-size:10.5px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);min-width:30px;font-variant-numeric:tabular-nums}
@@ -70,9 +71,12 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .bed.none{color:var(--mute)}
 .bed small{display:inline;margin-left:5px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .ghost .txt{font-size:10.5px;font-style:italic;color:var(--soft);padding-right:8px;text-wrap:pretty}
-.state{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;text-align:left;padding-left:7px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;z-index:2;overflow:hidden}
+.state{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1;white-space:nowrap;z-index:2;overflow:hidden}
 .state.one{flex-direction:row;gap:7px}
-.state.asleep{color:var(--soft);text-shadow:0 0 2px #ebe8e4,0 0 2px #ebe8e4,0 0 3px #ebe8e4}
+.state.asleep{color:var(--soft)}
+.state.asleep,.state.awake{z-index:4}
+.state.asleep>span{background:rgba(235,232,228,.94);padding:3px 6px;border-radius:3px}
+.state.awake>span{padding:3px 6px}
 .state em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums;font-size:9.5px}
 .v-mid .bar{height:22px}
 .foot{margin-top:14px;padding-top:7px;font-size:11px;line-height:1.45;color:#4a4c6a;text-wrap:pretty;border-top:1px solid rgba(26,27,46,.15)}
@@ -275,7 +279,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
   const ghost=(gM,p)=>{ // a calendar day with no wake-up
     const g=wall(gM), tail=p.bed-gM, up1=wall(p.w1);
     const txt=tail>3*MIN?`No wake-up. ${DOW[wall(p.w0).dow]} ${wall(p.w0).d}’s day runs on — awake until ${fmtL(p.bed)}, then asleep.`:`No wake-up. Asleep all day — up again ${DOW[up1.dow]} ${fmtL(p.w1)}.`;
-    const cls=['row','ghost']; if(g.dow===0) cls.push('wk'); if(gM===todayM) cls.push('today');
+    const cls=['row','ghost']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(gM===todayM) cls.push('today');
     out+=`<div class="${cls.join(' ')}">${labRow(g,'',gM===todayM?'<span class="tpill">Today</span>':'')}<div class="txt">${txt}</div><div class="bedcol bed none">—</div></div>`;
   };
   days.forEach(d=>{
@@ -299,7 +303,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact){
     const mid=nextMidnight(M);
     if(mid<d.bed){ const mw=wall(mid), x=X(mid), R=x>80; marks+=`<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(mid)};z-index:3"></i><span class="m b${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(mid)};text-shadow:${haloAt(mid)}">${compact?`${DOW[mw.dow]} ${mw.d}`:`${DOW[mw.dow]} ${mw.m+1}/${mw.d}`}</span>`; }
     const bw=wall(d.bed), bedDow=bw.d!==w.d?DOW[bw.dow]:'';
-    const cls=['row']; if(w.dow===0) cls.push('wk'); if(M===todayM) cls.push('today');
+    const cls=['row']; if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today');
     out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,M===todayM?'<span class="tpill">Today</span>':'')}`+
       `<div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
       `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>`+
@@ -328,7 +332,7 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
     segs.forEach(s=>{
       const wPct=X(s.a1)-X(s.a0), midTs=(s.a0+s.a1)/2;
       inner+=`<div class="sky" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(s.a0,s.a1)}"></div>`;
-      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}">Awake</div>`;
+      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span></div>`;
     });
     // asleep stretches = the gaps
     const gaps=[]; let cursor=M;
@@ -336,12 +340,12 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,timesPct){
     if(cursor<M1) gaps.push([cursor,M1]);
     gaps.forEach(([g0,g1])=>{
       const wPct=X(g1)-X(g0); if(wPct<minPct) return;
-      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%">Asleep</div>`;
+      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span></div>`;
     });
     // 3-hour ticks and sun lines
     for(let hh=3;hh<24;hh+=3){ const ts=M+hh*H; inner+=`<i class="tick" style="left:${(hh/24*100).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
     [sun.sr,sun.ss].forEach(h=>{ const ts=M+h*H; inner+=`<i class="tick" style="left:${(h/24*100).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
-    const cls=['row']; if(g.dow===0) cls.push('wk'); if(M===todayTs) cls.push('today');
+    const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today');
     out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill">Today</span>':'')}<div class="bar">${inner}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
   }
   out+='</div>';
