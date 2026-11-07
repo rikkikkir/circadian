@@ -51,7 +51,6 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .row.wkend{background:rgba(26,27,46,.045)}
 .row.today{background:var(--today);box-shadow:inset 3px 0 0 var(--accent)}
 .row.cur{background:var(--today);box-shadow:inset 3px 0 0 var(--accent);margin-bottom:6px;border-top:0}
-.tpill.now{background:var(--ink)}
 .lab{display:flex;align-items:baseline;gap:7px;padding:0 12px 0 6px}
 .dow{font-size:10.5px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);min-width:30px;font-variant-numeric:tabular-nums}
 .we .dow{font-weight:700;color:var(--ink)}
@@ -310,7 +309,7 @@ function renderWake(awake,startTs,endTs,todayTs,compact,now){
     const bw=wall(d.bed), bedDow=bw.d!==w.d?DOW[bw.dow]:'';
     const hasNow=now>=d.w0&&now<d.w1;
     const cls=['row']; if(cur) cls.push('cur'); else { if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today'); } if(hasNow) cls.push('hasnow');
-    out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,cur?'<span class="tpill now">Now</span>':M===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}`+
+    out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,cur?'':M===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}`+
       `<div class="barwrap"><div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
       `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>${hasNow?nowMark((now<d.bed?(now-d.w0)/H:awakeH+(now-d.bed)/H/4)/cTot*100):''}</div>`+
       `<div class="bedcol bed">${fmtL(d.bed)}${bedDow?`<small>${bedDow}</small>`:''}</div></div>`;
