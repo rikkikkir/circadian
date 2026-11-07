@@ -275,8 +275,7 @@ const sunMarks=(suns,X,W,tsOf)=>suns.map(s=>{
 }).join('');
 
 function renderWake(awake,startTs,endTs,todayTs,compact,now){
-  // the wake-up still in progress is shown first when the range starts today, so NOW has a row to sit on
-  const days=awake.filter(a=>(a.w0>=startTs&&a.w0<endTs)||(startTs===todayTs&&a.w0<startTs&&now>=a.w0&&now<a.w1));
+  const days=awake.filter(a=>a.w0>=startTs&&a.w0<endTs);
   const todayM=todayTs;
   let out='', prevM=null, prev=null;
   // header ruler: "Awake" over the sky, "Bedtime" over the hatch
