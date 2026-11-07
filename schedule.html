@@ -79,8 +79,11 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .state.awake>span{padding:3px 6px}
 .state em{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums;font-size:9.5px}
 .v-mid .bar{height:22px}
-.nowline{position:absolute;top:-1px;bottom:-1px;width:2px;margin-left:-1px;background:var(--accent);box-shadow:0 0 0 1px rgba(255,255,255,.85);z-index:6}
-.nowtag{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.1em;color:#fff;background:var(--accent);border-radius:3px;padding:2px 4px;line-height:1;z-index:6;white-space:nowrap}
+.barwrap{position:relative}
+.row.hasnow{padding-top:20px}
+.nowline{position:absolute;top:-6px;bottom:-2px;width:2px;margin-left:-1px;background:var(--accent);box-shadow:0 0 0 1px rgba(255,255,255,.85);z-index:6}
+.nowtag{position:absolute;bottom:calc(100% + 7px);transform:translateX(-50%);font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;color:#fff;background:var(--accent);border-radius:4px;padding:3px 7px;line-height:1;z-index:7;white-space:nowrap}
+.nowtag::after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--accent);border-bottom:0}
 .foot{margin-top:14px;padding-top:7px;font-size:11px;line-height:1.45;color:#4a4c6a;text-wrap:pretty;border-top:1px solid rgba(26,27,46,.15)}
 .colophon{margin:16px 2px 0;font-size:12px;line-height:1.5;color:var(--soft);text-align:center;text-wrap:pretty}
 /* wake-aligned grid */
@@ -261,7 +264,7 @@ function render(){
     :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
 }
 
-const nowMark=pct=>`<i class="nowline" style="left:${pct.toFixed(2)}%"></i><span class="nowtag" style="${pct>88?`right:${(100-pct+1).toFixed(2)}%`:`left:calc(${pct.toFixed(2)}% + 5px)`}">NOW</span>`;
+const nowMark=pct=>`<i class="nowline" style="left:${pct.toFixed(2)}%"></i><span class="nowtag" style="left:${pct.toFixed(2)}%">NOW</span>`;
 function labRow(w,wakeTxt,extra){ // label column
   const we=w.dow===0||w.dow===6;
   return `<div class="lab${we?' we':''}"><span class="dow">${DOW[w.dow]}</span><span class="num">${w.d}</span>${extra||''}${wakeTxt}</div>`;
@@ -307,10 +310,11 @@ function renderWake(awake,startTs,endTs,todayTs,compact,now){
     const mid=nextMidnight(M);
     if(mid<d.bed){ const mw=wall(mid), x=X(mid), R=x>80; marks+=`<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(mid)};z-index:3"></i><span class="m b${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(mid)};text-shadow:${haloAt(mid)}">${compact?`${DOW[mw.dow]} ${mw.d}`:`${DOW[mw.dow]} ${mw.m+1}/${mw.d}`}</span>`; }
     const bw=wall(d.bed), bedDow=bw.d!==w.d?DOW[bw.dow]:'';
-    const cls=['row']; if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today');
+    const hasNow=now>=d.w0&&now<d.w1;
+    const cls=['row']; if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today'); if(hasNow) cls.push('hasnow');
     out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,M===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}`+
-      `<div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>${now>=d.w0&&now<d.w1?nowMark((now<d.bed?(now-d.w0)/H:awakeH+(now-d.bed)/H/4)/cTot*100):''}`+
-      `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>`+
+      `<div class="barwrap"><div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
+      `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>${hasNow?nowMark((now<d.bed?(now-d.w0)/H:awakeH+(now-d.bed)/H/4)/cTot*100):''}</div>`+
       `<div class="bedcol bed">${fmtL(d.bed)}${bedDow?`<small>${bedDow}</small>`:''}</div></div>`;
     prev=d;
   });
@@ -349,8 +353,9 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
     // 3-hour ticks and sun lines
     for(let hh=3;hh<24;hh+=3){ const ts=mk(g.y,g.m,g.d,hh); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
     [sun.sr,sun.ss].forEach(h=>{ const ts=mk(g.y,g.m,g.d,Math.floor(h),Math.round((h%1)*60)); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
-    const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today');
-    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="bar">${inner}${now>=M&&now<M1?nowMark(X(now)):''}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
+    const hasNow=now>=M&&now<M1;
+    const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today'); if(hasNow) cls.push('hasnow');
+    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="barwrap"><div class="bar">${inner}</div>${hasNow?nowMark(X(now)):''}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
   }
   out+='</div>';
   return out;
