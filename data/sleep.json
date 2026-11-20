@@ -50403,5 +50403,22 @@
   "src": "api",
   "tsd": 37530,
   "type": "long_sleep"
+ },
+ {
+  "bedtime_end": "2026-11-20T06:18:01.000-07:00",
+  "bedtime_start": "2026-11-20T03:13:31.000-07:00",
+  "day": "2026-11-20",
+  "deep": 240,
+  "dur": 3.08,
+  "hr": 66.875,
+  "hrv": 38,
+  "id": "bde694d6-9a39-4fa5-ac53-d078b541a6c4",
+  "light": 6750,
+  "off": -420,
+  "rem": 60,
+  "score": null,
+  "src": "api",
+  "tsd": 7050,
+  "type": "sleep"
  }
 ]
