@@ -175,7 +175,7 @@ const zoneOff=(fmt,ts)=>{const p={}; for(const x of fmt.formatToParts(new Date(t
 const wcache=new Map();
 function wall(ts){
   let w=wcache.get(ts); if(w) return w;
-  const o=offAt(ts);
+  const o=pastOff(ts);
   if(o!==null){ // measured past: the clock offset the ring recorded that night (data/README.md: "off is stored because it is true")
     const t=new Date(ts+o*MIN), h=t.getUTCHours(), mi=t.getUTCMinutes(), s=t.getUTCSeconds();
     w={y:t.getUTCFullYear(),m:t.getUTCMonth(),d:t.getUTCDate(),h,mi,dow:t.getUTCDay(),off:o,hr:h+mi/60+s/3600};
@@ -195,6 +195,15 @@ const MI_LAT=43.6, MI_LON=-84.7;      // middle of Michigan's Lower Peninsula: s
 const MAX_AWAKE_H=22;                 // same rule as calendar.html: a longer gap means the ring was off, not 22 h awake
 const MAIN_H=3, JOIN_MIN=60;          // a sleep of 3 h or more starts a new day; sleeps under an hour apart count as one
 let EP=null, WINS=null, LOADERR='', FIRST=0, LASTEND=0;
+// Michigan's clock, except on days when the nearest record says Rikki was in another time zone (a trip);
+// then that zone's offset holds for the whole Michigan calendar day, so the clock never flips between two records
+const dcache=new Map();
+function pastOff(ts){
+  if(!EP||!EP.length||ts>=MOVE) return null;
+  const mo=zoneOff(FMI,ts), k=Math.floor((ts+mo*MIN)/DAY);
+  if(!dcache.has(k)){ const noon=k*DAY+12*H-zoneOff(FMI,k*DAY+12*H)*MIN, o=offAt(noon); dcache.set(k,o===zoneOff(FMI,noon)?null:o); }
+  const t=dcache.get(k); return t===null?mo:t;
+}
 function offAt(ts){
   if(!EP||!EP.length||ts>=MOVE) return null;
   let lo=0,hi=EP.length-1,i=-1; while(lo<=hi){const k=(lo+hi)>>1; if(EP[k].s<=ts){i=k;lo=k+1;}else hi=k-1;}
@@ -221,7 +230,7 @@ function prep(recs,revs){
     w.naps=n&&!w.gap?epIn(c.e,n.s).filter(e=>e.s>=c.e&&e.e<=n.s):[];
     WINS.push(w);
   });
-  wcache.clear(); scache.clear();
+  wcache.clear(); scache.clear(); dcache.clear();
 }
 // one measured calendar day: asleep, awake and no-data stretches, clipped to [M,M1)
 function realSpans(M,M1){
@@ -468,7 +477,8 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
     if(!past&&startTs<todayTs&&!predDiv){ out+=srcDiv(true); prevM=null; predDiv=true; }
     const M1=nextMidnight(M), g=wall(M), sun=sunTimes(M);
     if(prevM!==g.m){ out+=`<div class="div"><span>${FULL[g.m]} ${g.y}</span><i></i></div>`; prevM=g.m; }
-    const X=ts=>(ts-M)/(M1-M)*100;
+    // place by the clock, not by elapsed time: on a 23- or 25-hour day (clock change) 3 am still sits under 3A
+    const X=ts=>{ if(ts<=M) return 0; if(ts>=M1) return 100; const w=wall(ts), dd=Math.round((Date.UTC(w.y,w.m,w.d)-Date.UTC(g.y,g.m,g.d))/DAY); return Math.min(100,Math.max(0,(dd*24+w.hr)/24*100)); };
     let wk, awakeSp, asleepSp, nodSp=[], up=isUp;
     if(past){
       const sp=realSpans(M,M1); awakeSp=sp.awake; asleepSp=sp.asleep; nodSp=sp.nod;
@@ -486,18 +496,18 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
     let inner='';
     // awake stretches, each labelled
     awakeSp.forEach(([a0,a1])=>{
-      const wPct=X(a1)-X(a0), midTs=(a0+a1)/2;
+      const wPct=Math.max(0,X(a1)-X(a0)), midTs=(a0+a1)/2;
       inner+=`<div class="sky" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(a0,a1)}"></div>`;
       if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span></div>`;
     });
     // no-data stretches (measured days only): the ring recorded nothing
     nodSp.forEach(([a0,a1])=>{
-      const wPct=X(a1)-X(a0);
+      const wPct=Math.max(0,X(a1)-X(a0));
       inner+=`<div class="nodata" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"></div>`;
       if(wPct>=minPct) inner+=`<div class="state nod" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>No data</span></div>`;
     });
     asleepSp.forEach(([g0,g1])=>{
-      const wPct=X(g1)-X(g0); if(wPct<minPct) return;
+      const wPct=Math.max(0,X(g1)-X(g0)); if(wPct<minPct) return;
       inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span></div>`;
     });
     // 3-hour ticks and sun lines
