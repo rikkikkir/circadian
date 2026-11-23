@@ -14,7 +14,7 @@
   --paper:#e9e6e0; --sheet:#fff; --ink:#1a1b2e; --mute:#8a8ca4; --soft:#5a5c78; --rule:rgba(26,27,46,.07); --rule-strong:rgba(26,27,46,.5);
   --accent:#c9772a; --today:rgba(201,119,42,.10);
   --sans:'IBM Plex Sans',system-ui,sans-serif; --serif:'Newsreader',Georgia,serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
-  --labw:176px; --bedw:96px; --rowh:28px;
+  --labw:176px; --bedw:96px; --rowh:28px; --dayw:92px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
@@ -98,9 +98,15 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .v-wake .row,.v-wake .ruler{grid-template-columns:var(--labw) 1fr}
 .v-wake .bedcol{display:none}
 /* midnight-aligned grid */
-.v-mid .row,.v-mid .ruler{grid-template-columns:var(--labw) 1fr var(--bedw)}
+.v-mid .row,.v-mid .ruler{grid-template-columns:var(--dayw) 1fr}
+.v-mid .bar{height:24px}
+.tl{position:absolute;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;line-height:1;white-space:nowrap;z-index:5;font-variant-numeric:tabular-nums}
+.tl.chip{color:var(--ink);background:rgba(235,232,228,.94);padding:2px 4px;border-radius:3px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:720px){
-  :root{--labw:112px;--bedw:70px;--rowh:34px}
+  :root{--labw:112px;--bedw:70px;--rowh:34px;--dayw:66px}
+  .tl{font-size:10px}
+  .v-mid .bar{height:32px}
   .wrap{padding:14px 10px 32px}
   .sheet{padding:16px 12px 14px}
   h1{font-size:22px}.range{font-size:17px}
@@ -342,7 +348,7 @@ function render(){
   const hasPast=startTs<todayTs, hasFut=endTs>todayTs;
   const futFoot=mode==='wake'
     ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise and sunset are marked, and the day name where midnight falls), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
-    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
+    :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The time at the start of a colored stretch is when Rikki woke up; the time at the end is when Rikki fell asleep. A time in a small grey box sits just outside a stretch too short to hold it.';
   let pastFoot='Rows marked MEASURED are what Rikki’s Oura ring recorded, nothing filled in. '+(mode==='wake'
     ?'Each row starts at a wake-up from a sleep of 3 hours or more; shorter sleeps show as hatched naps inside the colored bar. Rows are drawn to one shared scale, so a longer day is a longer bar.'
     :'Hatched stretches are every sleep the ring recorded, naps included. Pale boxed stretches marked NO DATA are times the ring recorded nothing: no sleep of 3 hours or more for over 22 hours usually means the ring was off.')+' Gaps stay gaps. Times are the local clock where Rikki was; sky colors on travel days are approximate.';
@@ -464,11 +470,17 @@ function renderWake(awake,startTs,endTs,todayTs,compact,now){
   return out;
 }
 
-function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
+function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct0,now){
+  // wake and sleep times sit inside each row (Rikki, 2026-11-23: the numbers on the edges were hard to read)
+  const barW=Math.max(120,(document.getElementById('view').clientWidth||800)-(compact?66:92));
+  const P1=barW/100, pad=5/P1;                       // px per percent; 5 px gap from a boundary
+  const mctx=renderMid.ctx||(renderMid.ctx=document.createElement('canvas').getContext('2d'));
+  const txtW=(s,chip,word)=>{ mctx.font=word?`700 ${compact?9:10}px 'IBM Plex Sans',system-ui,sans-serif`:`700 ${compact?10:11}px 'IBM Plex Sans',system-ui,sans-serif`; return (mctx.measureText(word?s.toUpperCase():s).width*(word?1.12:1)+(chip?8:0)+2)/P1; }; // measured label width, percent
+  const minPct=Math.min(45,(compact?48:62)/barW*100);
   let out='';
-  out+='<div class="ruler"><div class="lab"><span>Day</span><span>Wake up</span></div><div class="track">';
+  out+='<div class="ruler"><div class="lab"><span>Day</span></div><div class="track">';
   for(let hh=0;hh<=24;hh+=3){ const x=hh/24*100, edge=hh===0||hh===24; out+=`<i style="left:${x.toFixed(2)}%;height:${hh%6===0?6:4}px"></i>`; if(compact&&hh%6) continue; out+=`<span style="left:${x.toFixed(2)}%;transform:translateX(${hh===0?'0':hh===24?'-100%':'-50%'});font-weight:${edge?700:500};color:${edge?'var(--ink)':'var(--soft)'}">${edge?(compact?'12a':'Midnight'):fmtH(hh)}</span>`; }
-  out+='</div><div class="bedh">Bedtime</div></div><div class="rows">';
+  out+='</div></div><div class="rows">';
   let prevM=null, predDiv=false;
   if(startTs<todayTs){ out+=srcDiv(false); if(!WINS) out+=msgRow(dataMsg()); }
   for(let M=startTs; M<endTs; M=nextMidnight(M)){
@@ -479,44 +491,67 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
     if(prevM!==g.m){ out+=`<div class="div"><span>${FULL[g.m]} ${g.y}</span><i></i></div>`; prevM=g.m; }
     // place by the clock, not by elapsed time: on a 23- or 25-hour day (clock change) 3 am still sits under 3A
     const X=ts=>{ if(ts<=M) return 0; if(ts>=M1) return 100; const w=wall(ts), dd=Math.round((Date.UTC(w.y,w.m,w.d)-Date.UTC(g.y,g.m,g.d))/DAY); return Math.min(100,Math.max(0,(dd*24+w.hr)/24*100)); };
-    let wk, awakeSp, asleepSp, nodSp=[], up=isUp;
+    let awakeSp, asleepSp, nodSp=[], up=isUp, wakes=[], sleeps=[];
     if(past){
       const sp=realSpans(M,M1); awakeSp=sp.awake; asleepSp=sp.asleep; nodSp=sp.nod;
       up=ts=>awakeSp.some(([a,b])=>ts>=a&&ts<b);
-      wk=WINS.find(a=>a.w0>=M&&a.w0<M1);
+      WINS.forEach(w=>{ if(w.w0>=M&&w.w0<M1) wakes.push(w.w0); if(!w.gap&&!w.open&&w.bed!=null&&w.bed>=M&&w.bed<M1) sleeps.push(w.bed); });
     } else {
-      wk=awake.find(a=>a.w0>=M&&a.w0<M1);
       const segs=awake.filter(a=>a.bed>M&&a.w0<M1).map(a=>({a0:Math.max(a.w0,M),a1:Math.min(a.bed,M1),a}));
       awakeSp=segs.map(s=>[s.a0,s.a1]);
+      segs.forEach(s=>{ if(s.a.w0>=M) wakes.push(s.a.w0); if(s.a.bed<M1) sleeps.push(s.a.bed); });
       // asleep stretches = the gaps
       asleepSp=[]; let cursor=M;
       segs.sort((p,q)=>p.a0-q.a0).forEach(s=>{ if(s.a0>cursor) asleepSp.push([cursor,s.a0]); cursor=Math.max(cursor,s.a1); });
       if(cursor<M1) asleepSp.push([cursor,M1]);
     }
-    let inner='';
-    // awake stretches, each labelled
-    awakeSp.forEach(([a0,a1])=>{
-      const wPct=Math.max(0,X(a1)-X(a0)), midTs=(a0+a1)/2;
-      inner+=`<div class="sky" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(a0,a1)}"></div>`;
-      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span></div>`;
-    });
-    // no-data stretches (measured days only): the ring recorded nothing
-    nodSp.forEach(([a0,a1])=>{
-      const wPct=Math.max(0,X(a1)-X(a0));
-      inner+=`<div class="nodata" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"></div>`;
-      if(wPct>=minPct) inner+=`<div class="state nod" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>No data</span></div>`;
-    });
-    asleepSp.forEach(([g0,g1])=>{
-      const wPct=Math.max(0,X(g1)-X(g0)); if(wPct<minPct) return;
-      inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span></div>`;
-    });
+    let inner='', labels='';
+    awakeSp.forEach(([a0,a1])=>{ inner+=`<div class="sky" style="left:${X(a0).toFixed(2)}%;width:${Math.max(0,X(a1)-X(a0)).toFixed(2)}%;background:${skyGrad(a0,a1)}"></div>`; });
+    nodSp.forEach(([a0,a1])=>{ inner+=`<div class="nodata" style="left:${X(a0).toFixed(2)}%;width:${Math.max(0,X(a1)-X(a0)).toFixed(2)}%"></div>`; });
+    // ---- labels: times first, then the Awake / Asleep / No data words where room is left ----
+    // lanes: m = middle of the bar; u / d = upper / lower half. A row whose times would collide in the middle
+    // puts wake-up times in the upper half and fall-asleep times in the lower half instead.
+    const LANE={m:'50%',u:'27%',d:'73%'};
+    let used=[];
+    const free=(a,b,ln='m')=>a>=0&&b<=100&&!used.some(([p,q,l])=>(l==='m'||ln==='m'||l===ln)&&a<q+pad&&b>p-pad);
+    const spanOf=(ts,end)=>awakeSp.find(([a,b])=>end?Math.abs(b-ts)<MIN:Math.abs(a-ts)<MIN);
+    const placeTimes=(lw,ls)=>{
+      used=[]; let html='', clash=false;
+      const put=(ts,isWake)=>{
+        const lane=typeof lw==='function'?lw(ts):isWake?lw:ls, s=fmtL(ts), x=X(ts), sp=spanOf(ts,!isWake), roomIn=sp?(isWake?X(sp[1])-x:x-X(sp[0])):0;
+        const wIn=txtW(s,false), wOut=txtW(s,true);
+        const inBox=isWake?[x+pad,x+pad+wIn]:[x-pad-wIn,x-pad], outBox=isWake?[x-pad-wOut,x-pad]:[x+pad,x+pad+wOut];
+        let box, inside;
+        if(roomIn>=wIn+2*pad&&free(inBox[0],inBox[1],lane)){ box=inBox; inside=true; }
+        else if(free(outBox[0],outBox[1],lane)){ box=outBox; inside=false; }
+        else { // no clean spot: keep the label whole and inside the bar, as a boxed label
+          const w=wOut, c=isWake?x+pad:x-pad-w; box=[Math.min(100-w,Math.max(0,c)),0]; box[1]=box[0]+w; inside=false;
+          if(!free(box[0],box[1],lane)) clash=true; }
+        used.push([box[0],box[1],lane]);
+        const at=isWake?ts+10*MIN:ts-10*MIN, tip=`${isWake?'Woke':'Fell asleep'} ${s}`;
+        html+=`<span class="tl${inside?'':' chip'}" title="${tip}" style="left:${box[0].toFixed(2)}%;top:${LANE[lane]};${inside?`color:${inkAt(at)};text-shadow:${haloAt(at)}`:''}"><span class="vh">${isWake?'Woke ':'Fell asleep '}</span>${s}</span>`;
+      };
+      wakes.forEach(t=>put(t,true)); sleeps.forEach(t=>put(t,false));
+      return {html,clash};
+    };
+    let tp=placeTimes('m','m'); if(tp.clash) tp=placeTimes('u','d');
+    if(tp.clash){ const order=wakes.concat(sleeps).sort((a,b)=>a-b); tp=placeTimes(ts=>order.indexOf(ts)%2?'d':'u'); } // last resort: alternate by time
+    labels+=tp.html;
+    const putWord=(a0,a1,cls,word,style)=>{
+      const x0=X(a0), x1=X(a1), w=txtW(word,false,true)+12/P1, c=(x0+x1)/2;
+      if(x1-x0<minPct||!free(c-w/2,c+w/2)) return;
+      used.push([c-w/2,c+w/2,'m']);
+      labels+=`<div class="state ${cls}" style="left:${x0.toFixed(2)}%;width:${(x1-x0).toFixed(2)}%;${style||''}"><span>${word}</span></div>`;
+    };
+    awakeSp.forEach(([a0,a1])=>{ const m=(a0+a1)/2; putWord(a0,a1,'awake','Awake',`color:${inkAt(m)};text-shadow:${haloAt(m)}`); });
+    nodSp.forEach(([a0,a1])=>putWord(a0,a1,'nod','No data'));
+    asleepSp.forEach(([a0,a1])=>putWord(a0,a1,'asleep','Asleep'));
     // 3-hour ticks and sun lines
     for(let hh=3;hh<24;hh+=3){ const ts=mk(g.y,g.m,g.d,hh); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${up(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
     [sun.sr,sun.ss].forEach(h=>{ const ts=mk(g.y,g.m,g.d,Math.floor(h),Math.round((h%1)*60)); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;bottom:0;background:${up(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
     const hasNow=!past&&now>=M&&now<M1;
     const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today'); if(hasNow) cls.push('hasnow');
-    const bedOk=wk&&!wk.gap&&!wk.open&&wk.bed!=null;
-    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="barwrap"><div class="bar">${inner}</div>${hasNow?nowMark(X(now)):''}</div><div class="bed${bedOk?'':' none'}">${bedOk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
+    out+=`<div class="${cls.join(' ')}">${labRow(g,'',M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="barwrap"><div class="bar">${inner}${labels}</div>${hasNow?nowMark(X(now)):''}</div></div>`;
   }
   out+='</div>';
   return out;
