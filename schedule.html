@@ -87,6 +87,13 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
 .nowtag::after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--accent);border-bottom:0}
 .foot{margin-top:14px;padding-top:7px;font-size:11px;line-height:1.45;color:#4a4c6a;text-wrap:pretty;border-top:1px solid rgba(26,27,46,.15)}
 .colophon{margin:16px 2px 0;font-size:12px;line-height:1.5;color:var(--soft);text-align:center;text-wrap:pretty}
+/* measured (past) rows */
+.div.src span.tag{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--ink);border-radius:3px;padding:3px 6px;line-height:1}
+.div.src.pred span.tag{background:var(--accent)}
+.div.src span.note{font-family:var(--sans);font-size:11px;font-weight:500;color:var(--soft)}
+.nap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,#ebe8e4 0 3px,#dcd8d3 3px 4px);z-index:1}
+.nodata{position:absolute;top:0;bottom:0;background:#f6f5f2;box-shadow:inset 0 0 0 1px rgba(26,27,46,.14);z-index:1}
+.state.nod{color:var(--mute);z-index:4}
 /* wake-aligned grid */
 .v-wake .row,.v-wake .ruler{grid-template-columns:var(--labw) 1fr}
 .v-wake .bedcol{display:none}
@@ -133,8 +140,9 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
     </div>
     <div class="seg" role="group" aria-label="Start date">
       <label class="datelab" for="start">Start on</label>
-      <input type="date" id="start" onchange="setStart(this.value)">
+      <input type="date" id="start" min="2021-01-12" onchange="setStart(this.value)">
       <button type="button" id="b-today" onclick="setStart('')">Today</button>
+      <button type="button" id="b-past" onclick="setPast()" title="The weeks just before today, as the Oura ring measured them">Past</button>
     </div>
   </div>
   <main class="sheet" id="sheet">
@@ -143,7 +151,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1;margin:
     <div id="view"></div>
     <p class="foot" id="foot"></p>
   </main>
-  <p class="colophon">This page works out the schedule from today's date every time someone opens the link, so today is always the first row. All times are Bozeman, Montana time (Mountain). Part of <a href="index.html">Rikki’s Circadian Universe</a>.</p>
+  <p class="colophon">This page works out the schedule from today's date every time someone opens the link, so today is always the first row. Dates before today show what Rikki’s Oura ring measured, read fresh from the site’s data file. Predicted times are Bozeman, Montana time (Mountain); measured times are the local clock where Rikki was that night (Michigan before July 2026). Part of <a href="index.html">Rikki’s Circadian Universe</a>.</p>
 </div>
 <script>
 (function(){
@@ -162,13 +170,67 @@ const wakeN=n=>Math.round((ANCHOR+n*CYCLE)/MIN)*MIN;
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], FULLDOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const F=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric',weekday:'short'});
+const FMI=new Intl.DateTimeFormat('en-US',{timeZone:'America/Detroit',hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric'});
+const zoneOff=(fmt,ts)=>{const p={}; for(const x of fmt.formatToParts(new Date(ts))) p[x.type]=x.value; return (Date.UTC(+p.year,+p.month-1,+p.day,(+p.hour)%24,+p.minute,+p.second)-ts)/MIN;};
 const wcache=new Map();
 function wall(ts){
   let w=wcache.get(ts); if(w) return w;
+  const o=offAt(ts);
+  if(o!==null){ // measured past: the clock offset the ring recorded that night (data/README.md: "off is stored because it is true")
+    const t=new Date(ts+o*MIN), h=t.getUTCHours(), mi=t.getUTCMinutes(), s=t.getUTCSeconds();
+    w={y:t.getUTCFullYear(),m:t.getUTCMonth(),d:t.getUTCDate(),h,mi,dow:t.getUTCDay(),off:o,hr:h+mi/60+s/3600};
+    wcache.set(ts,w); return w;
+  }
   const p={}; for(const x of F.formatToParts(new Date(ts))) p[x.type]=x.value;
   const y=+p.year, m=+p.month-1, d=+p.day, h=(+p.hour)%24, mi=+p.minute, s=+p.second;
   w={y,m,d,h,mi,dow:DOW.indexOf(p.weekday),off:(Date.UTC(y,m,d,h,mi,s)-ts)/MIN,hr:h+mi/60+s/3600};
   wcache.set(ts,w); return w;
+}
+
+// ---------- measured data (data/sleep.json; this page inlines zero records) ----------
+// Before the move to Bozeman (data/README.md: Jun 30 – Jul 1 2026) the clock comes from each record's own
+// UTC offset, so Michigan nights and trips show the time Rikki actually lived. From the move on, Bozeman time.
+const MOVE=Date.UTC(2026,6,1,6,0);    // Jul 1 2026, midnight Mountain
+const MI_LAT=43.6, MI_LON=-84.7;      // middle of Michigan's Lower Peninsula: sky colour only, state level on purpose
+const MAX_AWAKE_H=22;                 // same rule as calendar.html: a longer gap means the ring was off, not 22 h awake
+const MAIN_H=3, JOIN_MIN=60;          // a sleep of 3 h or more starts a new day; sleeps under an hour apart count as one
+let EP=null, WINS=null, LOADERR='', FIRST=0, LASTEND=0;
+function offAt(ts){
+  if(!EP||!EP.length||ts>=MOVE) return null;
+  let lo=0,hi=EP.length-1,i=-1; while(lo<=hi){const k=(lo+hi)>>1; if(EP[k].s<=ts){i=k;lo=k+1;}else hi=k-1;}
+  if(i<0) return EP[0].off;
+  const a=EP[i]; if(ts<=a.e||i===EP.length-1) return a.off;
+  const b=EP[i+1]; return (ts-a.e)<(b.s-ts)?a.off:b.off;
+}
+function firstEndingAfter(t){ let lo=0,hi=EP.length; while(lo<hi){const k=(lo+hi)>>1; if(EP[k].e<=t) lo=k+1; else hi=k;} return lo; }
+function epIn(a,b){ const out=[]; for(let i=firstEndingAfter(a); i<EP.length&&EP[i].s<b; i++) out.push(EP[i]); return out; }
+function prep(recs,revs){
+  const cur=new Map(); recs.forEach(r=>cur.set(r.id,r));
+  // a night's current version is its last revision, else its record (data/README.md); "recovered" entries are history only
+  (revs||[]).forEach(v=>{ if(v&&v.kind==='revision'&&v.record&&cur.has(v.id)) cur.set(v.id,v.record); });
+  const ep=[...cur.values()].filter(r=>r.type!=='rest') // Oura "rest" periods are not sleep
+    .map(r=>({s:+new Date(r.bedtime_start),e:+new Date(r.bedtime_end),off:r.off}))
+    .filter(e=>e.e>e.s&&isFinite(e.off)).sort((a,b)=>a.s-b.s);
+  const m=[]; ep.forEach(e=>{const l=m[m.length-1]; if(l&&e.s<=l.e) l.e=Math.max(l.e,e.e); else m.push({...e});});
+  const cl=[]; m.forEach(e=>{const l=cl[cl.length-1]; if(l&&e.s-l.e<JOIN_MIN*MIN) l.e=Math.max(l.e,e.e); else cl.push({s:e.s,e:e.e});});
+  const main=cl.filter(c=>c.e-c.s>=MAIN_H*H);
+  EP=m; FIRST=m[0].s; LASTEND=m[m.length-1].e; WINS=[];
+  main.forEach((c,i)=>{
+    const n=main[i+1], w={w0:c.e,bed:n?n.s:null,w1:n?n.e:null,real:true};
+    w.open=!n; w.gap=!!n&&(n.s-c.e)/H>MAX_AWAKE_H;
+    w.naps=n&&!w.gap?epIn(c.e,n.s).filter(e=>e.s>=c.e&&e.e<=n.s):[];
+    WINS.push(w);
+  });
+  wcache.clear(); scache.clear();
+}
+// one measured calendar day: asleep, awake and no-data stretches, clipped to [M,M1)
+function realSpans(M,M1){
+  const asleep=epIn(M,M1).map(e=>[Math.max(e.s,M),Math.min(e.e,M1)]), nod=[];
+  if(M<FIRST) nod.push([M,Math.min(M1,FIRST)]);
+  WINS.forEach(w=>{ if(!(w.gap||w.open)) return; const b=w.open?Infinity:w.bed; if(w.w0<M1&&b>M) nod.push([Math.max(w.w0,M),Math.min(b,M1)]); });
+  const blk=asleep.concat(nod).sort((p,q)=>p[0]-q[0]), awake=[]; let c=M;
+  blk.forEach(([a,b])=>{ if(a>c) awake.push([c,a]); c=Math.max(c,b); }); if(c<M1) awake.push([c,M1]);
+  return {asleep,nod,awake};
 }
 function mk(y,m,d,h,mi){ const g=Date.UTC(y,m,d,h||0,mi||0); let ts=g-wall(g).off*MIN; const o2=wall(ts).off; if(g-o2*MIN!==ts) ts=g-o2*MIN; return ts; }
 const midnightOf=ts=>{const w=wall(ts);return mk(w.y,w.m,w.d);};
@@ -184,6 +246,10 @@ const scache=new Map();
 function sunTimes(M){ // M = local midnight; returns local hours of sunrise and sunset that day
   let s=scache.get(M); if(s) return s;
   const w=wall(M+12*H), offH=w.off/60;
+  // where the sky was: Bozeman from the move on; Michigan before, unless the clock says Rikki was in another time zone,
+  // then the middle of that zone (approximate, and said so in the footnote)
+  let LAT=45.677, LON=-111.0429;
+  if(EP&&M<MOVE){ const mi=zoneOff(FMI,M+12*H); LAT=MI_LAT; LON=w.off===mi?MI_LON:((mi===-240?w.off-60:w.off)/60)*15; }
   const doy=Math.floor((Date.UTC(w.y,w.m,w.d)-Date.UTC(w.y,0,1))/DAY)+1;
   const g=2*Math.PI/365*(doy-1+0.5);
   const eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
@@ -227,7 +293,9 @@ if(mode!=='mid') mode='wake'; if(![14,21,28].includes(nDays)) nDays=28;
 window.setMode=m=>{mode=m; try{localStorage.setItem('rikki-sched-mode',m);}catch(e){} render();};
 window.setRange=n=>{nDays=n; try{localStorage.setItem('rikki-sched-days',String(n));}catch(e){} render();};
 let startISO=''; // '' means today; a date chosen in the picker is for this visit only
-window.setStart=v=>{startISO=/^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:''; render();};
+let pastMode=false; // "Past": the range that ends yesterday, whatever its length
+window.setStart=v=>{startISO=/^\d{4}-\d{2}-\d{2}$/.test(v||'')?v:''; pastMode=false; render();};
+window.setPast=()=>{startISO=''; pastMode=true; render();};
 
 
 function render(){
@@ -236,9 +304,11 @@ function render(){
   const view0=document.getElementById('view'); const barW=Math.max(120,(view0.clientWidth||800)-(compact?112:176)-(mode==='mid'||compact?(compact?70:96):0));
   const minPct=Math.min(45,(compact?48:62)/barW*100);
   const todayTs=midnightOf(now);
-  const startTs=startISO?mk(+startISO.slice(0,4),+startISO.slice(5,7)-1,+startISO.slice(8,10)):todayTs;
-  const tw=wall(todayTs); document.getElementById('start').value=startISO||`${tw.y}-${pad(tw.m+1)}-${pad(tw.d)}`;
-  document.getElementById('b-today').setAttribute('aria-pressed',!startISO);
+  const tw=wall(todayTs);
+  const startTs=pastMode?mk(tw.y,tw.m,tw.d-nDays):startISO?mk(+startISO.slice(0,4),+startISO.slice(5,7)-1,+startISO.slice(8,10)):todayTs;
+  const sw=wall(startTs); document.getElementById('start').value=startISO||`${sw.y}-${pad(sw.m+1)}-${pad(sw.d)}`;
+  document.getElementById('b-today').setAttribute('aria-pressed',!startISO&&!pastMode);
+  document.getElementById('b-past').setAttribute('aria-pressed',pastMode);
   let endTs=startTs; for(let i=0;i<nDays;i++) endTs=nextMidnight(endTs);
   // wake-ups covering the range with a cushion either side
   const n0=Math.floor((startTs-ANCHOR)/CYCLE)-3, n1=Math.ceil((endTs-ANCHOR)/CYCLE)+3, awake=[];
@@ -260,10 +330,20 @@ function render(){
   const view=document.getElementById('view');
   view.className=mode==='wake'?'v-wake':'v-mid';
   view.innerHTML=mode==='wake'?renderWake(awake,startTs,endTs,todayTs,compact,now):renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now);
-  document.getElementById('foot').textContent=mode==='wake'
+  const hasPast=startTs<todayTs, hasFut=endTs>todayTs;
+  const futFoot=mode==='wake'
     ?'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one wake-up: the colored bar is the sky while she is awake (sunrise and sunset are marked, and the day name where midnight falls), and the hatched part is sleep, drawn at a quarter of real length. A row without a bar is a calendar day on which she does not wake up at all.'
     :'Rikki’s body runs on a 25-hour day, so she wakes about an hour and twenty minutes later each day. Each row is one calendar day, midnight to midnight, at true scale. Colored stretches are the sky while she is AWAKE; hatched stretches are ASLEEP. A stretch that touches the edge of a row continues on the row before or after. The Wake up column is the wake-up on that date; the Bedtime column is the bedtime that follows that wake-up, marked with a day name when the bedtime lands on the next date. A dash means no wake-up on that date.';
+  let pastFoot='Rows marked MEASURED are what Rikki’s Oura ring recorded, nothing filled in. '+(mode==='wake'
+    ?'Each row starts at a wake-up from a sleep of 3 hours or more; shorter sleeps show as hatched naps inside the colored bar. Rows are drawn to one shared scale, so a longer day is a longer bar.'
+    :'Hatched stretches are every sleep the ring recorded, naps included. Pale boxed stretches marked NO DATA are times the ring recorded nothing: no sleep of 3 hours or more for over 22 hours usually means the ring was off.')+' Gaps stay gaps. Times are the local clock where Rikki was; sky colors on travel days are approximate.';
+  if(EP&&hasPast){ const lw=wall(LASTEND); pastFoot+=` Last measured sleep ended ${DOW[lw.dow]} ${MON[lw.m]} ${lw.d}, ${lw.y} at ${fmtL(LASTEND)}.`; }
+  document.getElementById('foot').textContent=hasPast&&hasFut?pastFoot+' Rows marked PREDICTED come from the 25-hour path. '+futFoot:hasPast?pastFoot:futFoot;
 }
+const srcDiv=pred=>pred?'<div class="div src pred"><span class="tag">Predicted</span><span class="note">from the 25-hour path, from today on</span><i></i></div>'
+  :'<div class="div src"><span class="tag">Measured</span><span class="note">by Rikki’s Oura ring</span><i></i></div>';
+const msgRow=txt=>`<div class="row ghost"><div class="lab"></div><div class="txt">${txt}</div><div class="bedcol bed none"></div></div>`;
+const dataMsg=()=>LOADERR?`Couldn’t load the Oura data (data/sleep.json): ${LOADERR}. This page holds no records of its own, so measured days stay empty.`:'Loading the Oura data…';
 
 const nowMark=pct=>`<i class="nowline" style="left:${pct.toFixed(2)}%"></i><span class="nowtag" style="left:${pct.toFixed(2)}%">NOW</span>`;
 function labRow(w,wakeTxt,extra){ // label column
@@ -276,25 +356,49 @@ const sunMarks=(suns,X,W,tsOf)=>suns.map(s=>{
 }).join('');
 
 function renderWake(awake,startTs,endTs,todayTs,compact,now){
-  const days=awake.filter(a=>a.w0>=startTs&&a.w0<endTs);
-  const todayM=todayTs;
+  const todayM=todayTs, pastEnd=Math.min(endTs,todayTs), futStart=Math.max(startTs,todayTs);
+  const days=awake.filter(a=>a.w0>=futStart&&a.w0<endTs);
+  const curWin=awake.find(a=>now>=a.w0&&now<a.w1);
+  const showCur=startTs===todayTs&&curWin&&curWin.w0<todayTs;
+  const pastWins=startTs<todayTs&&WINS?WINS.filter(w=>w.w0>=startTs&&w.w0<pastEnd):[];
+  const full=d=>!d.gap&&!d.open&&d.bed!=null;
+  const cT=d=>(d.bed-d.w0)/H+(d.w1-d.bed)/H/4;
+  // one shared scale for every bar on the sheet, so a longer measured day draws as a longer bar
+  const shown=pastWins.filter(full).concat(days,showCur?[curWin]:[]);
+  const S=pastWins.some(full)?Math.max(...shown.map(cT)):0; // no measured rows: every bar full width, as before
   let out='', prevM=null, prev=null;
   // header ruler: "Awake" over the sky, "Bedtime" over the hatch
-  const d0=days[0]||awake.find(a=>a.bed>startTs);
-  const r0=d0?(d0.bed-d0.w0)/((d0.bed-d0.w0)+(d0.w1-d0.bed)/4)*100:80;
+  const d0=pastWins.find(full)||days[0]||awake.find(a=>a.bed>startTs);
+  const r0=d0?((d0.bed-d0.w0)/H)/(S||cT(d0))*100:80;
   out+=`<div class="ruler"><div class="lab"><span>Day</span><span>Wake up</span></div><div class="track"><span style="left:0;width:${r0.toFixed(1)}%;text-align:center;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em">Awake</span><i style="left:${r0.toFixed(1)}%;height:6px"></i>${compact?'':`<span style="left:${r0.toFixed(1)}%;width:${(100-r0).toFixed(1)}%;text-align:center;font-family:var(--sans);font-size:9.5px;letter-spacing:.1em">Bedtime</span>`}</div><div class="bedcol ruler-bed" style="padding:0 0 4px 8px;text-align:right">Bedtime</div></div>`;
   out+='<div class="rows">';
-  const ghost=(gM,p)=>{ // a calendar day with no wake-up
-    const g=wall(gM), tail=p.bed-gM, up1=wall(p.w1);
-    const txt=tail>3*MIN?`No wake-up. ${DOW[wall(p.w0).dow]} ${wall(p.w0).d}’s day runs on — awake until ${fmtL(p.bed)}, then asleep.`:`No wake-up. Asleep all day — up again ${DOW[up1.dow]} ${fmtL(p.w1)}.`;
+  const monthDiv=w=>{ if(prevM!==w.m){ out+=`<div class="div"><span>${FULL[w.m]} ${w.y}</span><i></i></div>`; prevM=w.m; } };
+  const ghost=(gM,p,real)=>{ // a calendar day with no wake-up
+    const g=wall(gM); let txt;
+    if(real) monthDiv(g);
+    if(real&&!p){ const f=wall(FIRST); txt=`Before the first sleep the ring recorded (${MON[f.m]} ${f.d}, ${f.y}).`; }
+    else if(real&&p.open) txt='No wake-up recorded yet. Newer nights appear after the daily sync.';
+    else if(real&&p.gap){ const a=wall(p.w0), b=wall(p.bed); txt=`No wake-up recorded. No ring data between ${DOW[a.dow]} ${MON[a.m]} ${a.d} at ${fmtL(p.w0)} and a sleep that began ${DOW[b.dow]} ${MON[b.m]} ${b.d} at ${fmtL(p.bed)}.`; }
+    else { const tail=p.bed-gM, up1=wall(p.w1); txt=tail>3*MIN?`No wake-up. ${DOW[wall(p.w0).dow]} ${wall(p.w0).d}’s day runs on — awake until ${fmtL(p.bed)}, then asleep.`:`No wake-up. Asleep all day — up again ${DOW[up1.dow]} ${fmtL(p.w1)}.`; }
     const cls=['row','ghost']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(gM===todayM) cls.push('today');
     out+=`<div class="${cls.join(' ')}">${labRow(g,'',gM===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="txt">${txt}</div><div class="bedcol bed none">—</div></div>`;
+  };
+  const noteRow=d=>{ // a measured wake-up whose next main sleep is missing or not synced yet
+    const w=wall(d.w0);
+    let txt;
+    if(d.open) txt='No sleep of 3 hours or more recorded after this wake-up yet. Newer nights appear after the daily sync.';
+    else { const b=wall(d.bed); const gh=(d.bed-d.w0)/H, span=gh>=48?`${Math.round(gh/24)} days`:`${Math.round(gh)} hours`; txt=`No sleep of 3 hours or more recorded for the next ${span}, so the ring was probably off for part of that time. Next measured sleep began ${DOW[b.dow]} ${MON[b.m]} ${b.d} at ${fmtL(d.bed)}.`; }
+    const cls=['row','ghost']; if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend');
+    out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`)}<div class="txt">${txt}</div><div class="bedcol bed none">—</div></div>`;
   };
   const rowHtml=(d,cur)=>{
     const w=wall(d.w0), M=midnightOf(d.w0); let out='';
     const awakeH=(d.bed-d.w0)/H, sleepH=(d.w1-d.bed)/H, cTot=awakeH+sleepH/4, skyPct=awakeH/cTot*100;
+    const wp=S?Math.min(100,cTot/S*100):100, wcss=wp<99.95?` style="width:${wp.toFixed(2)}%"`:'';
     const X=ts=>(ts-d.w0)/(d.bed-d.w0)*100; // percent of the sky strip
     let marks='';
+    // measured naps inside the waking day
+    (d.naps||[]).forEach(n=>{ marks+=`<div class="nap" style="left:${X(n.s).toFixed(2)}%;width:${Math.max(0.3,X(n.e)-X(n.s)).toFixed(2)}%" title="Nap ${fmtL(n.s)} – ${fmtL(n.e)}"></div>`; });
     // hour ticks + noon
     const first=Math.ceil((wall(d.w0).hr)-1e-9);
     for(let hh=first; hh<=wall(d.w0).hr+awakeH; hh++){
@@ -307,25 +411,46 @@ function renderWake(awake,startTs,endTs,todayTs,compact,now){
     const mid=nextMidnight(M);
     if(mid<d.bed){ const mw=wall(mid), x=X(mid), R=x>80; marks+=`<i class="tick" style="left:${x.toFixed(2)}%;bottom:0;background:${lineAt(mid)};z-index:3"></i><span class="m b${R?' r':''}" style="left:${(R?x-0.6:x+0.6).toFixed(2)}%;color:${inkAt(mid)};text-shadow:${haloAt(mid)}">${compact?`${DOW[mw.dow]} ${mw.d}`:`${DOW[mw.dow]} ${mw.m+1}/${mw.d}`}</span>`; }
     const bw=wall(d.bed), bedDow=bw.d!==w.d?DOW[bw.dow]:'';
-    const hasNow=now>=d.w0&&now<d.w1;
+    const hasNow=!d.real&&now>=d.w0&&now<d.w1;
     const cls=['row']; if(cur) cls.push('cur'); else { if(w.dow===0) cls.push('wk'); if(w.dow===0||w.dow===6) cls.push('wkend'); if(M===todayM) cls.push('today'); } if(hasNow) cls.push('hasnow');
     out+=`<div class="${cls.join(' ')}">${labRow(w,`<span class="wake">${fmtL(d.w0)}</span>`,cur?'':M===todayM?'<span class="tpill" aria-label="today">Today</span>':'')}`+
-      `<div class="barwrap"><div class="bar"><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
-      `<span class="bedin" style="left:calc(${skyPct.toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span></div>${hasNow?nowMark((now<d.bed?(now-d.w0)/H:awakeH+(now-d.bed)/H/4)/cTot*100):''}</div>`+
+      `<div class="barwrap"><div class="bar"${wcss}><div class="sky" style="width:${skyPct.toFixed(2)}%;background:${skyGrad(d.w0,d.bed)}">${marks}</div>`+
+      `</div><span class="bedin" style="left:calc(${(skyPct*wp/100).toFixed(2)}% + 10px)"><span>${fmtL(d.bed)}</span>${bedDow?`<small>${bedDow}</small>`:''}</span>${hasNow?nowMark((now<d.bed?(now-d.w0)/H:awakeH+(now-d.bed)/H/4)/cTot*wp):''}</div>`+
       `<div class="bedcol bed">${fmtL(d.bed)}${bedDow?`<small>${bedDow}</small>`:''}</div></div>`;
     return out;
   };
-  const curWin=awake.find(a=>now>=a.w0&&now<a.w1);
-  if(startTs===todayTs&&curWin&&curWin.w0<todayTs){ out+=`<div class="div"><span>Current wake window</span><i></i></div>`+rowHtml(curWin,true); }
-  days.forEach(d=>{
-    const w=wall(d.w0), M=midnightOf(d.w0);
-    if(prevM!==w.m){ out+=`<div class="div"><span>${FULL[w.m]} ${w.y}</span><i></i></div>`; prevM=w.m; }
-    if(prev) for(let gM=nextMidnight(midnightOf(prev.w0)); gM<M; gM=nextMidnight(gM)) ghost(gM,prev);
-    else for(let gM=startTs; gM<M; gM=nextMidnight(gM)) ghost(gM,awake[awake.indexOf(d)-1]);
-    out+=rowHtml(d,false);
-    prev=d;
-  });
-  if(prev) for(let gM=nextMidnight(midnightOf(prev.w0)); gM<endTs; gM=nextMidnight(gM)) ghost(gM,prev);
+  // ---- measured: every day before today ----
+  if(startTs<todayTs){
+    out+=srcDiv(false);
+    if(!WINS) out+=msgRow(dataMsg());
+    else {
+      for(let i=WINS.length-1;i>=0;i--) if(WINS[i].w0<startTs){ prev=WINS[i]; break; }
+      let gFrom=startTs;
+      pastWins.forEach(d=>{
+        const w=wall(d.w0), M=midnightOf(d.w0);
+        for(let gM=gFrom; gM<M; gM=nextMidnight(gM)) ghost(gM,prev,true);
+        monthDiv(w);
+        if(full(d)) out+=rowHtml(d,false); else noteRow(d);
+        prev=d; gFrom=Math.max(gFrom,nextMidnight(M));
+      });
+      for(let gM=gFrom; gM<pastEnd; gM=nextMidnight(gM)) ghost(gM,prev,true);
+    }
+  }
+  // ---- predicted: today on ----
+  if(endTs>todayTs){
+    if(startTs<todayTs){ out+=srcDiv(true); prevM=null; }
+    prev=null;
+    if(showCur){ out+=`<div class="div"><span>Current wake window</span><i></i></div>`+rowHtml(curWin,true); }
+    days.forEach(d=>{
+      const w=wall(d.w0), M=midnightOf(d.w0);
+      if(prevM!==w.m){ out+=`<div class="div"><span>${FULL[w.m]} ${w.y}</span><i></i></div>`; prevM=w.m; }
+      if(prev) for(let gM=nextMidnight(midnightOf(prev.w0)); gM<M; gM=nextMidnight(gM)) ghost(gM,prev);
+      else for(let gM=futStart; gM<M; gM=nextMidnight(gM)) ghost(gM,awake[awake.indexOf(d)-1]);
+      out+=rowHtml(d,false);
+      prev=d;
+    });
+    if(prev) for(let gM=nextMidnight(midnightOf(prev.w0)); gM<endTs; gM=nextMidnight(gM)) ghost(gM,prev);
+  }
   out+='</div>';
   return out;
 }
@@ -335,40 +460,64 @@ function renderMid(awake,startTs,endTs,todayTs,isUp,compact,minPct,now){
   out+='<div class="ruler"><div class="lab"><span>Day</span><span>Wake up</span></div><div class="track">';
   for(let hh=0;hh<=24;hh+=3){ const x=hh/24*100, edge=hh===0||hh===24; out+=`<i style="left:${x.toFixed(2)}%;height:${hh%6===0?6:4}px"></i>`; if(compact&&hh%6) continue; out+=`<span style="left:${x.toFixed(2)}%;transform:translateX(${hh===0?'0':hh===24?'-100%':'-50%'});font-weight:${edge?700:500};color:${edge?'var(--ink)':'var(--soft)'}">${edge?(compact?'12a':'Midnight'):fmtH(hh)}</span>`; }
   out+='</div><div class="bedh">Bedtime</div></div><div class="rows">';
-  let prevM=null;
+  let prevM=null, predDiv=false;
+  if(startTs<todayTs){ out+=srcDiv(false); if(!WINS) out+=msgRow(dataMsg()); }
   for(let M=startTs; M<endTs; M=nextMidnight(M)){
+    const past=M<todayTs;
+    if(past&&!WINS) continue;
+    if(!past&&startTs<todayTs&&!predDiv){ out+=srcDiv(true); prevM=null; predDiv=true; }
     const M1=nextMidnight(M), g=wall(M), sun=sunTimes(M);
     if(prevM!==g.m){ out+=`<div class="div"><span>${FULL[g.m]} ${g.y}</span><i></i></div>`; prevM=g.m; }
     const X=ts=>(ts-M)/(M1-M)*100;
-    const wk=awake.find(a=>a.w0>=M&&a.w0<M1);
-    const segs=awake.filter(a=>a.bed>M&&a.w0<M1).map(a=>({a0:Math.max(a.w0,M),a1:Math.min(a.bed,M1),a}));
+    let wk, awakeSp, asleepSp, nodSp=[], up=isUp;
+    if(past){
+      const sp=realSpans(M,M1); awakeSp=sp.awake; asleepSp=sp.asleep; nodSp=sp.nod;
+      up=ts=>awakeSp.some(([a,b])=>ts>=a&&ts<b);
+      wk=WINS.find(a=>a.w0>=M&&a.w0<M1);
+    } else {
+      wk=awake.find(a=>a.w0>=M&&a.w0<M1);
+      const segs=awake.filter(a=>a.bed>M&&a.w0<M1).map(a=>({a0:Math.max(a.w0,M),a1:Math.min(a.bed,M1),a}));
+      awakeSp=segs.map(s=>[s.a0,s.a1]);
+      // asleep stretches = the gaps
+      asleepSp=[]; let cursor=M;
+      segs.sort((p,q)=>p.a0-q.a0).forEach(s=>{ if(s.a0>cursor) asleepSp.push([cursor,s.a0]); cursor=Math.max(cursor,s.a1); });
+      if(cursor<M1) asleepSp.push([cursor,M1]);
+    }
     let inner='';
     // awake stretches, each labelled
-    segs.forEach(s=>{
-      const wPct=X(s.a1)-X(s.a0), midTs=(s.a0+s.a1)/2;
-      inner+=`<div class="sky" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(s.a0,s.a1)}"></div>`;
-      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(s.a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span></div>`;
+    awakeSp.forEach(([a0,a1])=>{
+      const wPct=X(a1)-X(a0), midTs=(a0+a1)/2;
+      inner+=`<div class="sky" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;background:${skyGrad(a0,a1)}"></div>`;
+      if(wPct>=minPct) inner+=`<div class="state awake" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%;color:${inkAt(midTs)};text-shadow:${haloAt(midTs)}"><span>Awake</span></div>`;
     });
-    // asleep stretches = the gaps
-    const gaps=[]; let cursor=M;
-    segs.sort((p,q)=>p.a0-q.a0).forEach(s=>{ if(s.a0>cursor) gaps.push([cursor,s.a0]); cursor=Math.max(cursor,s.a1); });
-    if(cursor<M1) gaps.push([cursor,M1]);
-    gaps.forEach(([g0,g1])=>{
+    // no-data stretches (measured days only): the ring recorded nothing
+    nodSp.forEach(([a0,a1])=>{
+      const wPct=X(a1)-X(a0);
+      inner+=`<div class="nodata" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"></div>`;
+      if(wPct>=minPct) inner+=`<div class="state nod" style="left:${X(a0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>No data</span></div>`;
+    });
+    asleepSp.forEach(([g0,g1])=>{
       const wPct=X(g1)-X(g0); if(wPct<minPct) return;
       inner+=`<div class="state asleep" style="left:${X(g0).toFixed(2)}%;width:${wPct.toFixed(2)}%"><span>Asleep</span></div>`;
     });
     // 3-hour ticks and sun lines
-    for(let hh=3;hh<24;hh+=3){ const ts=mk(g.y,g.m,g.d,hh); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
-    [sun.sr,sun.ss].forEach(h=>{ const ts=mk(g.y,g.m,g.d,Math.floor(h),Math.round((h%1)*60)); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;bottom:0;background:${isUp(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
-    const hasNow=now>=M&&now<M1;
+    for(let hh=3;hh<24;hh+=3){ const ts=mk(g.y,g.m,g.d,hh); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;height:${hh%6===0?6:3}px;background:${up(ts)?lineAt(ts):'rgba(26,27,46,.35)'}"></i>`; }
+    [sun.sr,sun.ss].forEach(h=>{ const ts=mk(g.y,g.m,g.d,Math.floor(h),Math.round((h%1)*60)); inner+=`<i class="tick" style="left:${X(ts).toFixed(2)}%;bottom:0;background:${up(ts)?lineAt(ts):'rgba(26,27,46,.28)'}"></i>`; });
+    const hasNow=!past&&now>=M&&now<M1;
     const cls=['row']; if(g.dow===0) cls.push('wk'); if(g.dow===0||g.dow===6) cls.push('wkend'); if(M===todayTs) cls.push('today'); if(hasNow) cls.push('hasnow');
-    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="barwrap"><div class="bar">${inner}</div>${hasNow?nowMark(X(now)):''}</div><div class="bed${wk?'':' none'}">${wk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
+    const bedOk=wk&&!wk.gap&&!wk.open&&wk.bed!=null;
+    out+=`<div class="${cls.join(' ')}">${labRow(g,`<span class="wake${wk?'':' none'}">${wk?fmtL(wk.w0):'—'}</span>`,M===todayTs?'<span class="tpill" aria-label="today">Today</span>':'')}<div class="barwrap"><div class="bar">${inner}</div>${hasNow?nowMark(X(now)):''}</div><div class="bed${bedOk?'':' none'}">${bedOk?fmtL(wk.bed)+(wall(wk.bed).d!==g.d?`<small>${DOW[wall(wk.bed).dow]}</small>`:''):'—'}</div></div>`;
   }
   out+='</div>';
   return out;
 }
 
 render();
+Promise.all([
+  fetch('data/sleep.json',{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }),
+  fetch('data/sleep_revisions.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).catch(()=>[])
+]).then(([recs,revs])=>{ if(!Array.isArray(recs)||!recs.length) throw new Error('no records'); prep(recs,revs); render(); })
+  .catch(e=>{ LOADERR=e.message||String(e); render(); });
 let rT; window.addEventListener('resize',()=>{clearTimeout(rT); rT=setTimeout(render,150);});
 // keep "today" honest for a tab left open overnight
 setInterval(render,60000);
